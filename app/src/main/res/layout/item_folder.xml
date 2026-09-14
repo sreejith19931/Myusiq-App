@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="horizontal"
+    android:paddingVertical="12dp"
+    android:paddingHorizontal="16dp"
+    android:gravity="center_vertical"
+    android:background="@drawable/bg_folder_item">
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:paddingEnd="8dp"
+        tools:ignore="RtlSymmetry">
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/tvFolderName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Music"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textStyle="bold"
+            android:textColor="?attr/colorOnSurface"
+            tools:ignore="HardcodedText" />
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/tvFolderPath"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="/storage/emulated/0/Music"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:ellipsize="start"
+            android:singleLine="true"
+            tools:ignore="HardcodedText" />
+    </LinearLayout>
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnFolderOptions"
+        style="@style/Widget.Material3.Button.IconButton"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="8dp"
+        android:padding="0dp"
+        android:insetLeft="0dp"
+        android:insetTop="0dp"
+        android:insetRight="0dp"
+        android:insetBottom="0dp"
+        app:iconGravity="textStart"
+        android:gravity="center"
+        android:contentDescription="@string/folder_options"
+        app:icon="@drawable/ic_more_vert"
+        app:iconPadding="0dp"
+        app:iconTint="?attr/colorOnSurfaceVariant"
+        app:backgroundTint="@android:color/transparent"
+        app:rippleColor="?attr/colorControlHighlight" />
+    <com.google.android.material.materialswitch.MaterialSwitch
+        android:id="@+id/switchFolder"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+</LinearLayout>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="material_deep_teal_500">#00897B</color>
+    <color name="md_theme_default_primary">#6750A4</color>
+
+    <color name="rainbow_red">#E53935</color>
+    <color name="rainbow_orange">#FB8C00</color>
+    <color name="rainbow_yellow">#FDD835</color>
+    <color name="rainbow_green">#43A047</color>
+    <color name="rainbow_blue">#1E88E5</color>
+    <color name="rainbow_indigo">#3949AB</color>
+    <color name="rainbow_violet">#8E24AA</color>
+    <color name="sort_popup_bg">#B3FFFFFF</color>
+
+    <!-- Tinted Surface Variants for Palettes (Stable, not adaptive) -->
+    <color name="surface_red">#FFF5F5</color>
+    <color name="surface_orange">#FFF8E1</color>
+    <color name="surface_yellow">#FFFDE7</color>
+    <color name="surface_green">#E8F5E9</color>
+    <color name="surface_blue">#E3F2FD</color>
+    <color name="surface_indigo">#E8EAF6</color>
+    <color name="surface_violet">#F3E5F5</color>
+
+    <!-- Professional Palettes -->
+    <color name="midnight_blue">#0F172A</color>
+    <color name="midnight_accent">#38BDF8</color>
+    <color name="slate_dark">#1E293B</color>
+    <color name="slate_accent">#818CF8</color>
+    <color name="forest_dark">#064E3B</color>
+    <color name="forest_accent">#34D399</color>
+    <color name="charcoal_dark">#18181B</color>
+    <color name="charcoal_accent">#FACC15</color>
+    <color name="royal_dark">#2E1065</color>
+    <color name="royal_accent">#A78BFA</color>
+    <color name="replay_overlay_bg">#B3000000</color>
+</resources>

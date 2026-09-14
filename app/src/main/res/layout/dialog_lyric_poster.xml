@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="?attr/colorSurface">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Create Lyric Poster"
+        android:textAppearance="?attr/textAppearanceHeadlineSmall"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Preview Card -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardPosterPreview"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="8dp"
+        app:strokeWidth="0dp">
+
+        <FrameLayout
+            android:id="@+id/layoutPosterContent"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <ImageView
+                android:id="@+id/ivPosterBackground"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#66000000" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:padding="32dp"
+                android:gravity="center">
+
+                <TextView
+                    android:id="@+id/tvPosterLyrics"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Select lyrics from the list below to generate your poster."
+                    android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                    android:textColor="@android:color/white"
+                    android:textStyle="italic|bold"
+                    android:gravity="center"
+                    android:layout_marginBottom="24dp" />
+
+                <TextView
+                    android:id="@+id/tvPosterTrackInfo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Song Title • Artist"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="@android:color/white"
+                    android:alpha="0.8" />
+            </LinearLayout>
+        </FrameLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Select up to 4 lines"
+        android:textAppearance="?attr/textAppearanceLabelLarge"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvLyricSelection"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:layout_marginBottom="16dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSharePoster"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Share Poster"
+        app:icon="@drawable/ic_playlist" />
+
+</LinearLayout>

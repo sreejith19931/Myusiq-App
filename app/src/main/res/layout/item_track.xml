@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="10dp"
+    android:clipToPadding="false">
+
+    <!-- Subtle Tinted Background for "Now Playing" state -->
+    <View
+        android:id="@+id/viewPlayingIndicator"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="4dp"
+        android:layout_marginVertical="2dp"
+        android:background="@drawable/bg_track_item_state"
+        android:backgroundTint="?attr/colorPrimaryContainer"
+        android:alpha="0.3"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="visible" />
+
+    <!-- Progress Shade for Active Track -->
+    <View
+        android:id="@+id/viewProgressShade"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="4dp"
+        android:layout_marginVertical="2dp"
+        android:background="@drawable/bg_track_item_state"
+        android:backgroundTint="?attr/colorPrimaryContainer"
+        android:alpha="0.25"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/guidelineProgress" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guidelineProgress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.0" />
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivTrackArt"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_music_note_2"
+        android:transitionName="track_art_default"
+        android:contentDescription="@string/album_art"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Medium"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <!-- Selection Overlay and Checkmark -->
+    <View
+        android:id="@+id/viewSelectionOverlay"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="?attr/colorPrimary"
+        android:alpha="0.2"
+        android:visibility="gone"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Medium"
+        app:layout_constraintStart_toStartOf="@id/ivTrackArt"
+        app:layout_constraintEnd_toEndOf="@id/ivTrackArt"
+        app:layout_constraintTop_toTopOf="@id/ivTrackArt"
+        app:layout_constraintBottom_toBottomOf="@id/ivTrackArt" />
+
+    <ImageView
+        android:id="@+id/ivSelectionIndicator"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/ic_check"
+        android:visibility="gone"
+        app:tint="@android:color/white"
+        app:layout_constraintStart_toStartOf="@id/ivTrackArt"
+        app:layout_constraintEnd_toEndOf="@id/ivTrackArt"
+        app:layout_constraintTop_toTopOf="@id/ivTrackArt"
+        app:layout_constraintBottom_toBottomOf="@id/ivTrackArt"
+        android:contentDescription="@string/selected" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tvTrackTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="12dp"
+        android:ellipsize="marquee"
+        android:singleLine="true"
+        android:marqueeRepeatLimit="marquee_forever"
+        android:scrollHorizontally="true"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
+        android:textStyle="bold"
+        app:layout_constraintStart_toEndOf="@id/ivTrackArt"
+        app:layout_constraintEnd_toStartOf="@+id/barrierActions"
+        app:layout_constraintTop_toTopOf="@id/ivTrackArt"
+        app:layout_constraintBottom_toTopOf="@id/tvTrackArtist"
+        app:layout_constraintVertical_chainStyle="packed"
+        tools:text="Track Title" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tvTrackArtist"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginTop="2dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textAppearance="?attr/textAppearanceLabelLarge"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:alpha="0.7"
+        app:layout_constraintStart_toEndOf="@id/ivTrackArt"
+        app:layout_constraintEnd_toStartOf="@+id/barrierActions"
+        app:layout_constraintTop_toBottomOf="@id/tvTrackTitle"
+        app:layout_constraintBottom_toBottomOf="@id/ivTrackArt"
+        tools:text="Artist Name" />
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/barrierActions"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="start"
+        app:constraint_referenced_ids="ivFavoriteIndicator,layoutVisualizer,btnTrackOptions" />
+
+    <ImageView
+        android:id="@+id/ivFavoriteIndicator"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:src="@drawable/ic_heart_filled"
+        android:visibility="gone"
+        android:layout_marginEnd="12dp"
+        app:tint="?attr/colorPrimary"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/layoutVisualizer"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="visible"
+        android:contentDescription="@string/favorite" />
+
+    <LinearLayout
+        android:id="@+id/layoutVisualizer"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:orientation="horizontal"
+        android:gravity="bottom"
+        android:layout_marginEnd="12dp"
+        android:visibility="gone"
+        app:layout_constraintEnd_toStartOf="@id/btnTrackOptions"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:visibility="visible">
+        <View
+            android:id="@+id/bar1"
+            android:layout_width="4dp"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="2dp"
+            android:background="@drawable/bg_visualizer_bar" />
+
+        <View
+            android:id="@+id/bar2"
+            android:layout_width="4dp"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="2dp"
+            android:background="@drawable/bg_visualizer_bar" />
+
+        <View
+            android:id="@+id/bar3"
+            android:layout_width="4dp"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_visualizer_bar" />
+    </LinearLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnTrackOptions"
+        style="@style/Widget.Material3.Button.IconButton"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:padding="0dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:insetLeft="0dp"
+        android:insetRight="0dp"
+        app:iconGravity="textStart"
+        android:gravity="center"
+        android:contentDescription="@string/track_options"
+        app:icon="@drawable/ic_more_vert"
+        app:iconTint="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

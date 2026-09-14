@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black"
+    android:clickable="true"
+    android:focusable="true">
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnExitDriving"
+        style="@style/Widget.Material3.Button.IconButton"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_margin="16dp"
+        android:padding="0dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:insetLeft="0dp"
+        android:insetRight="0dp"
+        app:iconGravity="start"
+        app:icon="@drawable/ic_back"
+        android:contentDescription="@string/cancel"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:iconTint="@android:color/white" />
+
+    <TextView
+        android:id="@+id/tvDrivingStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/driving_mode"
+        android:textColor="#80FFFFFF"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/btnExitDriving"
+        app:layout_constraintBottom_toBottomOf="@+id/btnExitDriving" />
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivDrivingArt"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_margin="40dp"
+        android:scaleType="centerCrop"
+        app:layout_constraintBottom_toTopOf="@+id/tvDrivingTitle"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvDrivingStatus"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Large"
+        tools:src="@drawable/ic_music_note_2" />
+
+    <TextView
+        android:id="@+id/tvDrivingTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="32dp"
+        android:layout_marginBottom="8dp"
+        android:gravity="center"
+        android:textColor="@android:color/white"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:ellipsize="marquee"
+        android:singleLine="true"
+        app:layout_constraintBottom_toTopOf="@+id/tvDrivingArtist"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:text="Track Title" />
+
+    <TextView
+        android:id="@+id/tvDrivingArtist"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="32dp"
+        android:layout_marginBottom="48dp"
+        android:gravity="center"
+        android:textColor="#B3FFFFFF"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toTopOf="@+id/layoutDrivingControls"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:text="Artist Name" />
+
+    <LinearLayout
+        android:id="@+id/layoutDrivingControls"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="64dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDrivingPrev"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="88dp"
+            android:layout_height="88dp"
+            android:layout_marginEnd="24dp"
+            android:padding="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:insetLeft="0dp"
+            android:insetRight="0dp"
+            app:iconGravity="start"
+            app:icon="@drawable/ic_prev"
+            app:iconSize="48dp"
+            app:iconTint="@android:color/white" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/btnDrivingPlayPause"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:focusable="true"
+            app:backgroundTint="?attr/colorPrimary"
+            app:fabCustomSize="112dp"
+            app:maxImageSize="56dp"
+            app:srcCompat="@drawable/ic_play"
+            app:tint="@android:color/white" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDrivingNext"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="88dp"
+            android:layout_height="88dp"
+            android:layout_marginStart="24dp"
+            android:padding="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:insetLeft="0dp"
+            android:insetRight="0dp"
+            app:iconGravity="start"
+            app:icon="@drawable/ic_next"
+            app:iconSize="48dp"
+            app:iconTint="@android:color/white" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

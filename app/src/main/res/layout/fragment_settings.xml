@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent"
+    android:clipToPadding="false"
+    android:paddingBottom="180dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <include
+            android:id="@+id/settingsHeader"
+            layout="@layout/layout_page_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Hub Categories -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="4dp">
+
+            <com.music.rhythm.ui.components.SettingsHubItem
+                android:id="@+id/hubAudio"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:hubIcon="@drawable/ic_equalizer"
+                app:hubTitle="Playback &amp; Audio"
+                app:hubSubtitle="Equalizer, Crossfade, Gapless" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorOutlineVariant" android:layout_marginHorizontal="20dp"/>
+
+            <com.music.rhythm.ui.components.SettingsHubItem
+                android:id="@+id/hubAppearance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:hubIcon="@drawable/ic_palette"
+                app:hubTitle="Look &amp; Feel"
+                app:hubSubtitle="Themes, Colors, Visualizers" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorOutlineVariant" android:layout_marginHorizontal="20dp"/>
+
+            <com.music.rhythm.ui.components.SettingsHubItem
+                android:id="@+id/hubLyrics"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:hubIcon="@drawable/ic_edit"
+                app:hubTitle="Lyrics Settings"
+                app:hubSubtitle="Overlay, Minimalist mode" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorOutlineVariant" android:layout_marginHorizontal="20dp"/>
+
+            <com.music.rhythm.ui.components.SettingsHubItem
+                android:id="@+id/hubLibrary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:hubIcon="@drawable/ic_search"
+                app:hubTitle="Library &amp; Storage"
+                app:hubSubtitle="Rescan, Filters, Folder management" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorOutlineVariant" android:layout_marginHorizontal="20dp"/>
+
+            <com.music.rhythm.ui.components.SettingsHubItem
+                android:id="@+id/hubMaintenance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:hubIcon="@android:drawable/ic_menu_recent_history"
+                app:hubTitle="Backup &amp; Maintenance"
+                app:hubSubtitle="Data Export, Restore, Reset"
+                app:hubIconTint="?attr/colorError" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorOutlineVariant" android:layout_marginHorizontal="20dp"/>
+
+            <com.music.rhythm.ui.components.SettingsHubItem
+                android:id="@+id/hubAbout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:hubIcon="@drawable/ic_play"
+                app:hubTitle="About Rhythm"
+                app:hubSubtitle="Version info, updates, and more" />
+
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

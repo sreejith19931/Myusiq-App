@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="8dp"
+    android:layout_marginVertical="4dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="0dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingVertical="5dp"
+        android:paddingHorizontal="1dp">
+
+        <com.music.rhythm.ui.components.AnimatedLoadingBars
+            android:id="@+id/ivTrackArtShimmer"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginStart="8dp" />
+
+        <View
+            android:id="@+id/tvTrackTitleShimmer"
+            android:layout_width="120dp"
+            android:layout_height="16dp"
+            android:layout_marginStart="16dp"
+            android:background="?attr/colorSurfaceVariant"
+            app:layout_constraintStart_toEndOf="@id/ivTrackArtShimmer"
+            app:layout_constraintTop_toTopOf="@id/ivTrackArtShimmer"
+            app:layout_constraintBottom_toTopOf="@id/tvTrackArtistShimmer" />
+
+        <View
+            android:id="@+id/tvTrackArtistShimmer"
+            android:layout_width="80dp"
+            android:layout_height="12dp"
+            android:layout_marginStart="16dp"
+            android:background="?attr/colorSurfaceVariant"
+            app:layout_constraintStart_toEndOf="@id/ivTrackArtShimmer"
+            app:layout_constraintTop_toBottomOf="@id/tvTrackTitleShimmer"
+            app:layout_constraintBottom_toBottomOf="@id/ivTrackArtShimmer" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.material.card.MaterialCardView>

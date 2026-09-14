@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/dest_tracks"
+        android:icon="@drawable/ic_tracks"
+        android:title="@string/nav_tracks" />
+    <item
+        android:id="@+id/dest_queue"
+        android:icon="@drawable/ic_queue_2"
+        android:title="@string/nav_queue" />
+    <item
+        android:id="@+id/dest_playlists"
+        android:icon="@drawable/ic_playlist"
+        android:title="@string/playlists" />
+    <item
+        android:id="@+id/dest_albums"
+        android:icon="@drawable/ic_album"
+        android:title="@string/nav_albums"/>
+    <item
+        android:id="@+id/dest_folders"
+        android:icon="@drawable/ic_folder"
+        android:title="@string/nav_folders" />
+    <item
+        android:id="@+id/dest_settings"
+        android:icon="@drawable/ic_settings"
+        android:title="@string/nav_settings" />
+
+</menu>

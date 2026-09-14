@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context=".MainActivity">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingBottom="72dp">
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            app:cardCornerRadius="12dp"
+            app:strokeWidth="0dp"
+            app:cardElevation="2dp">
+
+            <EditText
+                android:id="@+id/etSearchSongs"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:autofillHints=""
+                android:background="@android:color/transparent"
+                android:hint="Search your songs..."
+                android:paddingHorizontal="16dp"
+                android:inputType="text"
+                android:maxLines="1"
+                tools:ignore="HardcodedText" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewSongs"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/bottomSheetPlayer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/colorSurfaceContainer"
+        android:orientation="vertical"
+        android:clickable="true"
+        android:focusable="true"
+        app:behavior_peekHeight="76dp"
+        app:behavior_hideable="true"
+        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
+
+        <LinearLayout
+            android:id="@+id/peekMiniPlayerLayout"
+            android:layout_width="match_parent"
+            android:layout_height="76dp"
+            android:orientation="vertical"
+            android:background="?attr/colorSurfaceContainerHighest">
+            <ProgressBar
+                android:id="@+id/miniProgressBar"
+                style="@android:style/Widget.ProgressBar.Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:progress="0"
+                android:max="100"
+                android:progressTint="?attr/colorPrimary"
+                android:progressBackgroundTint="?attr/colorSurfaceVariant"/>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="12dp">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/ivMiniAlbumArt"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:src="@drawable/ic_music_note_2"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Small"/>
+
+                <TextView
+                    android:id="@+id/tvCurrentTrackTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginHorizontal="10dp"
+                    android:text="Select a track to start playing"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:ellipsize="marquee"
+                    android:singleLine="true"
+                    tools:ignore="HardcodedText" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnMiniPrevious"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:padding="0dp"
+                    app:icon="@drawable/ic_prev"
+                    app:iconPadding="0dp"
+                    app:iconSize="20dp"
+                    tools:ignore="SpeakableTextPresentCheck" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnMiniPlayPause"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:padding="0dp"
+                    app:icon="@drawable/ic_play"
+                    app:iconPadding="0dp"
+                    app:iconSize="24dp"
+                    tools:ignore="SpeakableTextPresentCheck" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnMiniNext"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:padding="0dp"
+                    app:icon="@drawable/ic_next"
+                    app:iconPadding="0dp"
+                    app:iconSize="20dp"
+                    tools:ignore="SpeakableTextPresentCheck" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/fullExpandedPlayerLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:padding="24dp">
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="280dp"
+                android:layout_height="280dp"
+                android:layout_marginTop="32dp"
+                android:layout_marginBottom="24dp"
+                app:cardCornerRadius="24dp"
+                app:strokeWidth="0dp"
+                app:cardElevation="8dp">
+
+                <ImageView
+                    android:id="@+id/ivFullAlbumArt"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_music_note_2"
+                    tools:ignore="ContentDescription" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:id="@+id/tvFullTrackTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Track Title Name"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textAlignment="center"
+                android:ellipsize="marquee"
+                android:singleLine="true"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginBottom="24dp"
+                tools:ignore="HardcodedText" />
+
+            <SeekBar
+                android:id="@+id/seekBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"/>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="16dp"
+                android:layout_marginBottom="24dp">
+                <TextView
+                    android:id="@+id/tvPlayedTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="00:00"
+                    android:layout_alignParentStart="true"
+                    android:textSize="12sp"
+                    tools:ignore="HardcodedText" />
+                <TextView
+                    android:id="@+id/tvTotalTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="00:00"
+                    android:layout_alignParentEnd="true"
+                    android:textSize="12sp"
+                    tools:ignore="HardcodedText" />
+            </RelativeLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:layout_marginBottom="24dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnPrevious"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:layout_marginEnd="16dp"
+                    app:iconSize="28dp"
+                    app:icon="@drawable/ic_prev"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnPlayPause"
+                    style="@style/Widget.Material3.Button.ElevatedButton"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:padding="0dp"
+                    app:iconPadding="0dp"
+                    app:iconSize="36dp"
+                    app:iconGravity="textStart"
+                    app:icon="@drawable/ic_play"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnNext"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:layout_marginStart="16dp"
+                    app:iconSize="28dp"
+                    app:icon="@drawable/ic_next"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnShuffle"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginHorizontal="12dp"
+                    app:iconPadding="0dp"
+                    app:icon="@drawable/ic_shuffle"
+                    android:contentDescription="Shuffle Playback Toggle"
+                    tools:ignore="HardcodedText" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRepeat"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginHorizontal="12dp"
+                    app:iconPadding="0dp"
+                    app:icon="@drawable/ic_repeat"
+                    android:contentDescription="Repeat Pipeline States Selector"
+                    tools:ignore="HardcodedText" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnVolumeToggle"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginHorizontal="12dp"
+                    app:iconPadding="0dp"
+                    app:icon="@drawable/ic_volume_up"
+                    android:contentDescription="Expand Dynamic Slider Context Panel"
+                    tools:ignore="HardcodedText" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/volumeSliderContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="16dp"
+                android:visibility="gone">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_volume_up"
+                    app:tint="?attr/colorControlNormal"
+                    tools:ignore="ContentDescription" />
+                <SeekBar
+                    android:id="@+id/volumeSeekBar"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"/>
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

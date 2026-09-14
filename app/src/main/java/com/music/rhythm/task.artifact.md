@@ -1,0 +1,3 @@
+- [x] Move `layoutReplayOverlay` to the end of `activity_main.xml`
+- [x] Update `MainActivity.kt` to blur/unblur siblings of the overlay
+- [ ] Verify build

@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Custom Typography: The Pro Duo (Syne for Impact, Space Grotesk for Precision) -->
+
+    <!-- DISPLAY & HEADLINES: Syne (High-end, artistic vibe) -->
+    <style name="TextAppearance.Rhythm.DisplayLarge" parent="TextAppearance.Material3.DisplayLarge">
+        <item name="android:fontFamily">@font/syne</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textFontWeight" tools:targetApi="28">800</item>
+        <item name="android:letterSpacing">-0.01</item>
+    </style>
+    <style name="TextAppearance.Rhythm.DisplayMedium" parent="TextAppearance.Material3.DisplayMedium">
+        <item name="android:fontFamily">@font/syne</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textFontWeight" tools:targetApi="28">800</item>
+        <item name="android:letterSpacing">-0.01</item>
+    </style>
+    <style name="TextAppearance.Rhythm.DisplaySmall" parent="TextAppearance.Material3.DisplaySmall">
+        <item name="android:fontFamily">@font/syne</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textFontWeight" tools:targetApi="28">800</item>
+    </style>
+
+    <style name="TextAppearance.Rhythm.HeadlineLarge" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="android:fontFamily">@font/syne</item>
+        <item name="android:textStyle" tools:ignore="SpUsage">bold</item>
+        <item name="android:textFontWeight" tools:targetApi="28">800</item>
+        <item name="android:letterSpacing">0.01</item>
+    </style>
+    <style name="TextAppearance.Rhythm.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="android:fontFamily">@font/syne</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textFontWeight" tools:targetApi="28">800</item>
+    </style>
+    <style name="TextAppearance.Rhythm.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:fontFamily">@font/syne</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textFontWeight" tools:targetApi="28">800</item>
+    </style>
+
+    <!-- TITLES: Syne (Matched with Player Headlines for brand consistency) -->
+    <style name="TextAppearance.Rhythm.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:fontFamily">@font/syne</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textFontWeight" tools:targetApi="28">800</item>
+    </style>
+    <style name="TextAppearance.Rhythm.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:fontFamily">@font/syne</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textFontWeight" tools:targetApi="28">800</item>
+    </style>
+    <style name="TextAppearance.Rhythm.TitleSmall" parent="TextAppearance.Material3.TitleSmall">
+        <item name="android:fontFamily">@font/syne</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textFontWeight" tools:targetApi="28">700</item>
+    </style>
+
+    <!-- BODY: Space Grotesk (Exceptional legibility for long text) -->
+    <style name="TextAppearance.Rhythm.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:fontFamily">@font/space_grotesk</item>
+        <item name="android:textFontWeight" tools:targetApi="28">500</item>
+    </style>
+    <style name="TextAppearance.Rhythm.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:fontFamily">@font/space_grotesk</item>
+    </style>
+    <style name="TextAppearance.Rhythm.BodySmall" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:fontFamily">@font/space_grotesk</item>
+    </style>
+
+    <!-- LABELS: Space Grotesk (Technical look for UI metadata) -->
+    <style name="TextAppearance.Rhythm.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
+        <item name="android:fontFamily">@font/space_grotesk</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textFontWeight" tools:targetApi="28">700</item>
+        <item name="android:letterSpacing">0.02</item>
+    </style>
+    <style name="TextAppearance.Rhythm.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:fontFamily">@font/space_grotesk</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textFontWeight" tools:targetApi="28">700</item>
+        <item name="android:letterSpacing">0.03</item>
+    </style>
+    <style name="TextAppearance.Rhythm.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:fontFamily">@font/space_grotesk</item>
+        <item name="android:letterSpacing">0.05</item>
+    </style>
+
+    <!-- BUTTONS: Space Grotesk (Changed to Space Grotesk for better consistency across all interactive elements) -->
+    <style name="TextAppearance.Rhythm.Button" parent="TextAppearance.Material3.LabelLarge">
+        <item name="android:fontFamily">@font/space_grotesk</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textFontWeight" tools:targetApi="28">700</item>
+        <item name="android:letterSpacing">0.02</item>
+    </style>
+
+    <!-- Theme Overlay to apply the Pro Pairing -->
+    <!-- We use parent="" to avoid overriding the color palette from the base theme -->
+    <style name="ThemeOverlay.App.CustomFonts" parent="">
+        <item name="android:fontFamily">@font/space_grotesk</item>
+        <item name="fontFamily">@font/space_grotesk</item>
+
+        <item name="textAppearanceDisplayLarge">@style/TextAppearance.Rhythm.DisplayLarge</item>
+        <item name="textAppearanceDisplayMedium">@style/TextAppearance.Rhythm.DisplayMedium</item>
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.Rhythm.DisplaySmall</item>
+
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.Rhythm.HeadlineLarge</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.Rhythm.HeadlineMedium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.Rhythm.HeadlineSmall</item>
+
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.Rhythm.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.Rhythm.TitleMedium</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.Rhythm.TitleSmall</item>
+
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.Rhythm.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.Rhythm.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.Rhythm.BodySmall</item>
+
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.Rhythm.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.Rhythm.LabelMedium</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.Rhythm.LabelSmall</item>
+
+        <!-- Ensure Material3 buttons/chips and legacy buttons get the font -->
+        <item name="textAppearanceButton">@style/TextAppearance.Rhythm.Button</item>
+    </style>
+
+    <style name="Widget.Rhythm.TextView.Title" parent="android:Widget.TextView">
+        <item name="android:fontFamily">@font/syne</item>
+        <item name="fontFamily">@font/syne</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="Widget.Rhythm.TextView.Artist" parent="android:Widget.TextView">
+        <item name="android:fontFamily">@font/space_grotesk</item>
+        <item name="fontFamily">@font/space_grotesk</item>
+    </style>
+</resources>

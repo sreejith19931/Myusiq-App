@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="mini_player_height">52dp</dimen>
+    <dimen name="bottom_nav_height">56dp</dimen>
+    <dimen name="player_peek_height">108dp</dimen>
+    <dimen name="exit_confirm_margin_top">0dp</dimen>
+</resources>

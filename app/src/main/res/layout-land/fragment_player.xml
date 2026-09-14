@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/playerRootLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clickable="true"
+    android:focusable="true"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:background="@android:color/transparent">
+
+    <View
+        android:id="@+id/playerPageBackground"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?android:attr/colorBackground"
+        android:alpha="0" />
+
+    <ImageView
+        android:id="@+id/ivBlurredBackground"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:alpha="0"
+        android:visibility="gone"
+        android:importantForAccessibility="no" />
+
+    <View
+        android:id="@+id/playerScrim"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/black"
+        android:alpha="0" />
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/playerDragHandle"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginTop="8dp"
+        android:padding="4dp"
+        android:src="@drawable/ic_arrow_downward"
+        app:tint="?attr/colorOnSurfaceVariant"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guidelineCenter"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.45" />
+
+    <!-- Left Side: Artwork -->
+    <FrameLayout
+        android:id="@+id/layoutCardContainer"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_margin="32dp"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintTop_toBottomOf="@id/playerDragHandle"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/guidelineCenter">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/ivFullAlbumArt"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_music_note_2"
+            android:transitionName="album_art_transition"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.None" />
+
+        <FrameLayout
+            android:id="@+id/layoutLyricsBack"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            android:background="@drawable/bg_lyrics_card"
+            android:elevation="1dp"
+            android:padding="16dp">
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvLyrics"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/tvMinimalistLyric"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:visibility="gone" />
+            <LinearLayout
+                android:id="@+id/layoutLyricsLoading"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:orientation="vertical"
+                android:visibility="gone" />
+            <LinearLayout
+                android:id="@+id/layoutLyricsError"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:orientation="vertical"
+                android:visibility="gone" />
+        </FrameLayout>
+    </FrameLayout>
+
+    <!-- Right Side: Details and Controls -->
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tvFullTrackTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:layout_marginHorizontal="24dp"
+        android:gravity="start"
+        android:text="@string/no_track_playing"
+        android:textAppearance="?attr/textAppearanceHeadlineSmall"
+        android:textStyle="bold"
+        android:textColor="?attr/colorOnSurface"
+        android:ellipsize="marquee"
+        android:singleLine="true"
+        app:layout_constraintTop_toBottomOf="@id/playerDragHandle"
+        app:layout_constraintStart_toEndOf="@id/guidelineCenter"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tvFullArtistName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginHorizontal="24dp"
+        android:gravity="start"
+        android:text="@string/unknown_artist"
+        android:textAppearance="?attr/textAppearanceLabelLarge"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:ellipsize="end"
+        android:singleLine="true"
+        app:layout_constraintTop_toBottomOf="@id/tvFullTrackTitle"
+        app:layout_constraintStart_toEndOf="@id/guidelineCenter"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <com.music.rhythm.ui.components.AnimatedWaveSeekBar
+        android:id="@+id/waveformSeekBar"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toBottomOf="@id/tvFullArtistName"
+        app:layout_constraintStart_toEndOf="@id/guidelineCenter"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layoutTimeInfo"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        app:layout_constraintStart_toStartOf="@id/waveformSeekBar"
+        app:layout_constraintEnd_toEndOf="@id/waveformSeekBar"
+        app:layout_constraintTop_toBottomOf="@id/waveformSeekBar">
+        <TextView android:id="@+id/tvCurrentTime" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="11sp" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" />
+        <TextView android:id="@+id/tvTotalDuration" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="11sp" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <FrameLayout
+        android:id="@+id/layoutPlayPauseContainer"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toBottomOf="@id/layoutTimeInfo"
+        app:layout_constraintStart_toEndOf="@id/btnFullRewind"
+        app:layout_constraintEnd_toStartOf="@id/btnFullForward">
+        <com.google.android.material.progressindicator.CircularProgressIndicator android:id="@+id/progressPlayer" android:layout_width="72dp" android:layout_height="72dp" app:indicatorSize="72dp" android:alpha="0" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnFullPlayPause" style="@style/Widget.Material3.Button.IconButton.Filled" android:layout_width="64dp" android:layout_height="64dp" android:layout_gravity="center" app:icon="@drawable/ic_play" app:iconSize="32dp" app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
+    </FrameLayout>
+
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnFullRewind" style="@style/Widget.Material3.Button.IconButton" android:layout_width="48dp" android:layout_height="48dp" app:icon="@drawable/ic_fast_rewind" app:iconSize="22dp" android:insetTop="0dp" android:insetBottom="0dp" android:insetLeft="0dp" android:insetRight="0dp" app:layout_constraintTop_toTopOf="@id/layoutPlayPauseContainer" app:layout_constraintBottom_toBottomOf="@id/layoutPlayPauseContainer" app:layout_constraintStart_toEndOf="@id/btnFullPrevious" app:layout_constraintEnd_toStartOf="@id/layoutPlayPauseContainer" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnFullPrevious" style="@style/Widget.Material3.Button.IconButton" android:layout_width="48dp" android:layout_height="48dp" app:icon="@drawable/ic_prev" app:iconSize="26dp" android:insetTop="0dp" android:insetBottom="0dp" android:insetLeft="0dp" android:insetRight="0dp" app:layout_constraintTop_toTopOf="@id/layoutPlayPauseContainer" app:layout_constraintBottom_toBottomOf="@id/layoutPlayPauseContainer" app:layout_constraintStart_toEndOf="@id/btnFullShuffle" app:layout_constraintEnd_toStartOf="@id/btnFullRewind" />
+
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnFullForward" style="@style/Widget.Material3.Button.IconButton" android:layout_width="48dp" android:layout_height="48dp" app:icon="@drawable/ic_fast_forward" app:iconSize="22dp" android:insetTop="0dp" android:insetBottom="0dp" android:insetLeft="0dp" android:insetRight="0dp" app:layout_constraintTop_toTopOf="@id/layoutPlayPauseContainer" app:layout_constraintBottom_toBottomOf="@id/layoutPlayPauseContainer" app:layout_constraintStart_toEndOf="@id/layoutPlayPauseContainer" app:layout_constraintEnd_toStartOf="@id/btnFullNext" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnFullNext" style="@style/Widget.Material3.Button.IconButton" android:layout_width="48dp" android:layout_height="48dp" app:icon="@drawable/ic_next" app:iconSize="26dp" android:insetTop="0dp" android:insetBottom="0dp" android:insetLeft="0dp" android:insetRight="0dp" app:layout_constraintTop_toTopOf="@id/layoutPlayPauseContainer" app:layout_constraintBottom_toBottomOf="@id/layoutPlayPauseContainer" app:layout_constraintStart_toEndOf="@id/btnFullForward" app:layout_constraintEnd_toStartOf="@id/btnFullRepeat" />
+
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnFullShuffle" style="@style/Widget.Material3.Button.IconButton" android:layout_width="48dp" android:layout_height="48dp" app:icon="@drawable/ic_shuffle" app:iconSize="22dp" android:insetTop="0dp" android:insetBottom="0dp" android:insetLeft="0dp" android:insetRight="0dp" app:layout_constraintTop_toTopOf="@id/layoutPlayPauseContainer" app:layout_constraintBottom_toBottomOf="@id/layoutPlayPauseContainer" app:layout_constraintStart_toEndOf="@id/guidelineCenter" app:layout_constraintEnd_toStartOf="@id/btnFullPrevious" app:layout_constraintHorizontal_chainStyle="spread" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnFullRepeat" style="@style/Widget.Material3.Button.IconButton" android:layout_width="48dp" android:layout_height="48dp" app:icon="@drawable/ic_repeat" app:iconSize="22dp" android:insetTop="0dp" android:insetBottom="0dp" android:insetLeft="0dp" android:insetRight="0dp" app:layout_constraintTop_toTopOf="@id/layoutPlayPauseContainer" app:layout_constraintBottom_toBottomOf="@id/layoutPlayPauseContainer" app:layout_constraintStart_toEndOf="@id/btnFullNext" app:layout_constraintEnd_toEndOf="parent" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layoutUtilityControls"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="8dp"
+        android:paddingHorizontal="16dp"
+        app:layout_constraintTop_toBottomOf="@id/layoutPlayPauseContainer"
+        app:layout_constraintStart_toEndOf="@id/guidelineCenter"
+        app:layout_constraintEnd_toEndOf="parent">
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnVolumeToggle" style="@style/Widget.Material3.Button.IconButton" android:layout_width="44dp" android:layout_height="44dp" app:icon="@drawable/ic_volume_up" app:iconSize="22dp" android:insetTop="0dp" android:insetBottom="0dp" android:insetLeft="0dp" android:insetRight="0dp" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@id/btnSleepTimer" app:layout_constraintHorizontal_chainStyle="spread" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnSleepTimer" style="@style/Widget.Material3.Button.IconButton" android:layout_width="44dp" android:layout_height="44dp" app:icon="@drawable/ic_timer_play" app:iconSize="22dp" android:insetTop="0dp" android:insetBottom="0dp" android:insetLeft="0dp" android:insetRight="0dp" app:layout_constraintStart_toEndOf="@id/btnVolumeToggle" app:layout_constraintTop_toTopOf="parent" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@id/btnDrivingMode" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnDrivingMode" style="@style/Widget.Material3.Button.IconButton" android:layout_width="44dp" android:layout_height="44dp" app:icon="@drawable/ic_steering_wheel" app:iconSize="22dp" android:insetTop="0dp" android:insetBottom="0dp" android:insetLeft="0dp" android:insetRight="0dp" app:layout_constraintStart_toEndOf="@id/btnSleepTimer" app:layout_constraintTop_toTopOf="parent" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@id/btnMoreLikeThis" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnMoreLikeThis" style="@style/Widget.Material3.Button.IconButton" android:layout_width="44dp" android:layout_height="44dp" app:icon="@drawable/ic_featured_playlist" app:iconSize="22dp" android:insetTop="0dp" android:insetBottom="0dp" android:insetLeft="0dp" android:insetRight="0dp" app:layout_constraintStart_toEndOf="@id/btnDrivingMode" app:layout_constraintTop_toTopOf="parent" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@id/btnPlaybackSpeed" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnPlaybackSpeed" style="@style/Widget.Material3.Button.TextButton" android:layout_width="wrap_content" android:layout_height="44dp" android:text="1.0x" android:textSize="13sp" android:textStyle="bold" app:layout_constraintStart_toEndOf="@id/btnMoreLikeThis" app:layout_constraintTop_toTopOf="parent" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@id/btnFavorite" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnFavorite" style="@style/Widget.Material3.Button.IconButton" android:layout_width="44dp" android:layout_height="44dp" app:icon="@drawable/ic_heart_border" app:iconSize="22dp" android:insetTop="0dp" android:insetBottom="0dp" android:insetLeft="0dp" android:insetRight="0dp" app:layout_constraintStart_toEndOf="@id/btnPlaybackSpeed" app:layout_constraintTop_toTopOf="parent" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- All missing IDs must be present -->
+    <com.google.android.material.textview.MaterialTextView android:id="@+id/tvPlayerTitle" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" />
+    <com.google.android.material.textview.MaterialTextView android:id="@+id/tvLyricsOffset" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" />
+    <com.google.android.material.textview.MaterialTextView android:id="@+id/tvSleepTimerStatus" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" />
+
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnLyricsPlus" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnLyricsMinus" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnLyricsEdit" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnLyricsResetSearch" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnLyricsPoster" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" />
+    <com.google.android.material.textview.MaterialTextView android:id="@+id/tvLyricOverlay" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" />
+    <View android:id="@+id/layoutLyricsControls" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" />
+    <com.google.android.material.textview.MaterialTextView android:id="@+id/tvLyricsError" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnLyricsRetry" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" />
+
+    <View android:id="@+id/layoutSuggestionBanner" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" />
+    <com.google.android.material.textview.MaterialTextView android:id="@+id/tvSuggestionText" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" />
+    <com.google.android.material.textview.MaterialTextView android:id="@+id/tvSuggestionSubtext" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnSuggestionApply" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnSuggestionDismiss" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" />
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/layoutSliderExpandable"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="8dp"
+        app:layout_constraintBottom_toTopOf="@id/layoutUtilityControls"
+        app:layout_constraintStart_toStartOf="@id/layoutUtilityControls"
+        android:layout_marginBottom="8dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="12dp"
+            android:gravity="center_vertical">
+            <SeekBar
+                android:id="@+id/sbVolume"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+            <TextView
+                android:id="@+id/tvVolumeNumber"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                tools:text="50%" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

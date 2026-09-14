@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/widgetRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_widget_solid"
+    android:padding="8dp">
+
+    <ImageView
+        android:id="@+id/widgetAlbumArt"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_centerVertical="true"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_music_note_2" />
+
+    <LinearLayout
+        android:id="@+id/widgetTextContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_toEndOf="@id/widgetAlbumArt"
+        android:layout_toStartOf="@+id/widgetControls"
+        android:layout_centerVertical="true"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="8dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/widgetTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/unknown_title"
+            android:textColor="@color/widget_solid_text_primary"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/syne"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:shadowColor="#4D000000"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="2" />
+
+        <TextView
+            android:id="@+id/widgetArtist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/unknown_artist"
+            android:textColor="@color/widget_solid_text_secondary"
+            android:textSize="13sp"
+            android:fontFamily="@font/space_grotesk"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:shadowColor="#4D000000"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="2" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/widgetControls"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/widgetBtnPrev"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/bg_widget_button_control"
+            android:src="@drawable/ic_prev"
+            android:contentDescription="@string/prev"
+            android:scaleType="centerInside"
+            android:padding="6dp" />
+
+        <ImageButton
+            android:id="@+id/widgetBtnPlayPause"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/bg_widget_button_play"
+            android:src="@drawable/ic_play"
+            android:contentDescription="@string/play_music"
+            android:scaleType="centerInside"
+            android:padding="10dp" />
+
+        <ImageButton
+            android:id="@+id/widgetBtnNext"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/bg_widget_button_control"
+            android:src="@drawable/ic_next"
+            android:contentDescription="@string/next"
+            android:scaleType="centerInside"
+            android:padding="6dp" />
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/widgetProgressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="2.5dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="2dp"
+        android:layout_marginStart="64dp"
+        android:layout_marginEnd="8dp"
+        android:progress="30"
+        android:progressDrawable="@drawable/widget_progress_drawable_solid" />
+</RelativeLayout>

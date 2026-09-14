@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<HorizontalScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:scrollbars="none"
+    android:clipToPadding="false">
+
+    <LinearLayout
+        android:id="@+id/layoutPaletteOptions"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingBottom="8dp">
+
+        <include layout="@layout/item_palette_option" android:id="@+id/paletteDefault" />
+        <include layout="@layout/item_palette_option" android:id="@+id/paletteMidnight" />
+        <include layout="@layout/item_palette_option" android:id="@+id/paletteSlate" />
+        <include layout="@layout/item_palette_option" android:id="@+id/paletteForest" />
+        <include layout="@layout/item_palette_option" android:id="@+id/paletteCharcoal" />
+        <include layout="@layout/item_palette_option" android:id="@+id/paletteRoyal" />
+
+    </LinearLayout>
+</HorizontalScrollView>
