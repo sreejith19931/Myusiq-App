@@ -249,7 +249,7 @@ class PlaybackService : MediaLibraryService() {
                     val remaining = current.duration - current.currentPosition
                     
                     if (stopAfterCurrentTrack) {
-                        if ((remaining <= 60000L) && (!isFadingForStopAfterTrack) && (!isFadingForSleep)) {
+                        if ((remaining <= 8000L) && (!isFadingForStopAfterTrack) && (!isFadingForSleep)) {
                             isFadingForStopAfterTrack = true
                             fadeOut(current, remaining.coerceAtLeast(1000L))
                         }
@@ -664,12 +664,14 @@ class PlaybackService : MediaLibraryService() {
                 val fadeInEnabled = p.getBoolean("audio_fade_in", false)
                 val crossfadeEnabled = p.getBoolean("crossfade_enabled", false)
                 
-                if (fadeInEnabled || (crossfadeEnabled && reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO)) {
-                    val fadeDuration = if (crossfadeEnabled) p.getFloat("crossfade_duration", 2.0f).toLong() * 1000L else 1000L
-                    fadeIn(player, fadeDuration)
-                } else {
-                    if (player === playerA) volumeAnimatorA?.cancel() else volumeAnimatorB?.cancel()
-                    player.volume = 1.0f * duckingFactor
+                if (crossfadeAnimator?.isRunning != true) {
+                    if (fadeInEnabled || (crossfadeEnabled && reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO)) {
+                        val fadeDuration = if (crossfadeEnabled) p.getFloat("crossfade_duration", 2.0f).toLong() * 1000L else 1000L
+                        fadeIn(player, fadeDuration)
+                    } else {
+                        if (player === playerA) volumeAnimatorA?.cancel() else volumeAnimatorB?.cancel()
+                        player.volume = 1.0f * duckingFactor
+                    }
                 }
                 
                 mediaItem?.mediaMetadata?.extras?.getString("path")?.let { path ->

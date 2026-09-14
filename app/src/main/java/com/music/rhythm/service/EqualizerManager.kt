@@ -20,6 +20,9 @@ object EqualizerManager {
     const val PROFILE_WIRED = 1
     const val PROFILE_BLUETOOTH = 2
 
+    private var equalizerSecondary: Equalizer? = null
+    private var secondaryAudioSessionId: Int = 0
+
     private var currentActiveProfile = PROFILE_SPEAKER
 
     private val _isEqualizerEnabled = MutableStateFlow(value = false)
@@ -39,33 +42,74 @@ object EqualizerManager {
     )
 
     fun initEqualizer(context: Context, audioSessionId: Int) {
+        if (audioSessionId == 0) return
+        
+        // If it's already the primary, nothing to do
+        if (currentAudioSessionId == audioSessionId && equalizer != null) return
+        
+        // If it's the secondary, promote it to primary
+        if (secondaryAudioSessionId == audioSessionId && equalizerSecondary != null) {
+            val oldEq = equalizer
+            val oldId = currentAudioSessionId
+            
+            equalizer = equalizerSecondary
+            currentAudioSessionId = secondaryAudioSessionId
+            
+            equalizerSecondary = oldEq
+            secondaryAudioSessionId = oldId
+            return
+        }
+
+        // Otherwise, initialize it as the primary and move the current primary to secondary
+        // This ensures the outgoing track keeps its EQ during crossfade if the new track becomes primary
         try {
-            if (audioSessionId != 0) {
-                if ((currentAudioSessionId != audioSessionId) || (equalizer == null)) {
-                    try {
-                        equalizer?.enabled = false
-                        equalizer?.release()
-                    } catch (e: Exception) {
-                        Log.e("EqualizerManager", "Error releasing old equalizer", e)
-                    }
-                    
-                    currentAudioSessionId = audioSessionId
-                    try {
-                        equalizer = Equalizer(0, audioSessionId)
-                        loadProfileSettings(context.applicationContext, currentActiveProfile)
-                    } catch (e: UnsupportedOperationException) {
-                        Log.e("EqualizerManager", "Equalizer not supported on this device", e)
-                        equalizer = null
-                    } catch (e: Exception) {
-                        Log.e("EqualizerManager", "Failed to create Equalizer instance", e)
-                        equalizer = null
-                    }
-                }
+            val oldSecondaryEq = equalizerSecondary
+            equalizerSecondary = equalizer
+            secondaryAudioSessionId = currentAudioSessionId
+            
+            // Release the old secondary if it exists
+            try {
+                oldSecondaryEq?.enabled = false
+                oldSecondaryEq?.release()
+            } catch (e: Exception) { Log.e("EqualizerManager", "Error releasing old secondary EQ", e) }
+
+            currentAudioSessionId = audioSessionId
+            try {
+                val newEq = Equalizer(0, audioSessionId)
+                equalizer = newEq
+                loadProfileSettings(context.applicationContext, currentActiveProfile)
+            } catch (e: Exception) {
+                Log.e("EqualizerManager", "Failed to create Equalizer instance", e)
+                equalizer = null
             }
         } catch (e: Exception) {
             Log.e("EqualizerManager", "Error in initEqualizer wrapper", e)
         }
     }
+
+    private fun applyToInstance(eq: Equalizer?, context: Context, presetName: String, isEnabled: Boolean) {
+        eq?.let {
+            try {
+                it.enabled = isEnabled
+                if (presetName == "Custom") {
+                    for (i in 0 until it.numberOfBands) {
+                        val bandIndex = i.toShort()
+                        val savedLevel = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                            .getInt("eq_prof_${currentActiveProfile}_custom_band_$bandIndex", 0)
+                        it.setBandLevel(bandIndex, savedLevel.toShort())
+                    }
+                } else {
+                    presetsMap[presetName]?.let { gains ->
+                        for (i in 0 until it.numberOfBands) {
+                            val gain = if (i < gains.size) gains[i] else 0.toShort()
+                            it.setBandLevel(i.toShort(), gain)
+                        }
+                    }
+                }
+            } catch (e: Exception) { Log.e("EqualizerManager", "Error applying settings to instance", e) }
+        }
+    }
+
     fun updateDetectedHardwareRoute(profileIndex: Int) {
         _activeHardwareRoute.value = profileIndex
     }
@@ -74,45 +118,24 @@ object EqualizerManager {
         currentActiveProfile = profileIndex
         loadProfileSettings(context.applicationContext, profileIndex)
     }
+
     private fun loadProfileSettings(context: Context, profileIndex: Int) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val isEnabled = prefs.getBoolean("eq_enabled_prof_$profileIndex", false)
-        _isEqualizerEnabled.value = isEnabled
-
-        try {
-            equalizer?.enabled = isEnabled
-        } catch (e: Exception) {
-            Log.e("EqualizerManager", "Error setting equalizer state", e)
-        }
-
         val activePresetName = prefs.getString("eq_prof_${profileIndex}_active_preset", "Flat") ?: "Flat"
-        if (activePresetName == "Custom") {
-            val numBands = equalizer?.numberOfBands ?: 0
-            for (i in 0 until numBands) {
-                val bandIndex = i.toShort()
-                val savedLevel = prefs.getInt("eq_prof_${profileIndex}_custom_band_$bandIndex", 0)
-                try {
-                    equalizer?.setBandLevel(bandIndex, savedLevel.toShort())
-                } catch (e: Exception) {
-                    Log.e("EqualizerManager", "Error setting band level for band $bandIndex", e)
-                }
-            }
-        } else {
-            applyPresetToHardware(context, activePresetName, saveState = false)
-        }
+        
+        _isEqualizerEnabled.value = isEnabled
+        applyToInstance(equalizer, context, activePresetName, isEnabled)
+        applyToInstance(equalizerSecondary, context, activePresetName, isEnabled)
     }
-    fun applyPresetToHardware(context: Context, presetName: String, saveState: Boolean = true): Boolean {
-        val bandGains = presetsMap[presetName] ?: return false
-        val numBands = equalizer?.numberOfBands ?: 0
 
-        for (i in 0 until numBands) {
-            try {
-                val targetGain = if (i < bandGains.size) bandGains[i] else 0.toShort()
-                equalizer?.setBandLevel(i.toShort(), targetGain)
-            } catch (e: Exception) {
-                Log.e("EqualizerManager", "Error applying preset to band $i", e)
-            }
-        }
+    fun applyPresetToHardware(context: Context, presetName: String, saveState: Boolean = true): Boolean {
+        if (!presetsMap.containsKey(presetName)) return false
+        
+        val isEnabled = _isEqualizerEnabled.value
+        applyToInstance(equalizer, context, presetName, isEnabled)
+        applyToInstance(equalizerSecondary, context, presetName, isEnabled)
+
         if (saveState) {
             val appContext = context.applicationContext
             storageIoScope.launch {
@@ -124,6 +147,7 @@ object EqualizerManager {
         }
         return true
     }
+
     fun getActivePresetForProfile(context: Context): String {
         val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getString("eq_prof_${currentActiveProfile}_active_preset", "Flat") ?: "Flat"
@@ -133,6 +157,7 @@ object EqualizerManager {
         _isEqualizerEnabled.value = isEnabled
         try {
             equalizer?.enabled = isEnabled
+            equalizerSecondary?.enabled = isEnabled
         } catch (e: Exception) {
             Log.e("EqualizerManager", "Error toggling equalizer", e)
         }
@@ -154,6 +179,7 @@ object EqualizerManager {
     fun setBandLevel(context: Context, band: Short, level: Short) {
         try {
             equalizer?.setBandLevel(band, level)
+            equalizerSecondary?.setBandLevel(band, level)
 
             val appContext = context.applicationContext
             storageIoScope.launch {
@@ -177,14 +203,18 @@ object EqualizerManager {
             }
         }
     }
+
     fun release() {
         try {
             equalizer?.release()
+            equalizerSecondary?.release()
         } catch (e: Exception) {
             Log.e("EqualizerManager", "Error final release", e)
         }
         equalizer = null
+        equalizerSecondary = null
         currentAudioSessionId = 0
+        secondaryAudioSessionId = 0
         _isEqualizerEnabled.value = false
     }
 }

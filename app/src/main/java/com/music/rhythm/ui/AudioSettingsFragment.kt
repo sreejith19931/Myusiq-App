@@ -83,9 +83,9 @@ class AudioSettingsFragment : Fragment(R.layout.fragment_settings_audio) {
 
         // Fade In
         val switchFadeIn = view.findViewById<MaterialSwitch>(R.id.switchFadeIn)
-        switchFadeIn.isChecked = sharedPreferences.getBoolean("fade_in_enabled", false)
+        switchFadeIn.isChecked = sharedPreferences.getBoolean("audio_fade_in", false)
         switchFadeIn.setOnCheckedChangeListener { _, isChecked ->
-            sharedPreferences.edit { putBoolean("fade_in_enabled", isChecked) }
+            sharedPreferences.edit { putBoolean("audio_fade_in", isChecked) }
             viewModel.notifySettingsChanged()
         }
 

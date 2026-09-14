@@ -16,7 +16,7 @@ import com.music.rhythm.data.dao.*
         LyricsOverride::class,
         SearchHistory::class,
     ],
-    version = 10,
+    version = 11,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {

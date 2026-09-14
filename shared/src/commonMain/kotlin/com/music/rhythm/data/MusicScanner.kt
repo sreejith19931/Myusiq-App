@@ -16,6 +16,7 @@ data class RawSong(
     val duration: Int,
     val albumId: Long,
     val album: String,
+    val genre: String,
     val dateAdded: Long,
     val size: Long,
 )

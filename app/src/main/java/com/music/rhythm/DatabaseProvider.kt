@@ -15,6 +15,7 @@ object DatabaseProvider {
                 AppDatabase::class.java,
                 "music_player_database",
             )
+                .fallbackToDestructiveMigration(true)
                 .build()
             INSTANCE = instance
             instance

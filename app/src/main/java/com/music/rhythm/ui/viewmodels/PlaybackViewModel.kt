@@ -7,6 +7,7 @@ import com.music.rhythm.service.EqualizerManager
 import com.music.rhythm.utils.*
 
 import android.app.Application
+import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.ContentUris
 import android.content.Context
@@ -521,6 +522,18 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                 val intent = MediaStore.createDeleteRequest(context.contentResolver, listOf(uri))
                 _pendingDeleteIntent.value = IntentSenderRequest.Builder(intent.intentSender).build()
             } else { context.contentResolver.delete(uri, null, null); withContext(Dispatchers.Main) { processTrackDeletion() } }
+        }
+    }
+
+    fun requestDelete(intent: PendingIntent) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            _pendingDeleteIntent.value = IntentSenderRequest.Builder(intent.intentSender).build()
+        }
+    }
+
+    fun requestEdit(intent: PendingIntent) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            _pendingWriteIntent.value = IntentSenderRequest.Builder(intent.intentSender).build()
         }
     }
 

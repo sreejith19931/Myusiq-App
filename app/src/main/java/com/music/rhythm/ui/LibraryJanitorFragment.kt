@@ -236,24 +236,39 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
     }
 
     private fun showCleanDuplicatesDialog() {
-        val totalToMove = duplicateGroups.sumOf { it.size - 1 }
+        val totalToDelete = duplicateGroups.sumOf { it.size - 1 }
+        val fileListText = duplicateGroups.flatMap { it.drop(1) }
+            .take(15)
+            .joinToString("\n") { "• ${it.title}" } + if (totalToDelete > 15) "\n...and ${totalToDelete - 15} more" else ""
+
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Clean Duplicates")
-            .setMessage("This will delete $totalToMove redundant files.")
+            .setMessage("This will delete $totalToDelete redundant files:\n\n$fileListText")
             .setNegativeButton("Cancel", null)
             .setPositiveButton("Clean Up") { _, _ -> deleteDuplicates() }
             .show()
     }
 
     private fun deleteDuplicates() {
+        val songsToDelete = duplicateGroups.flatMap { it.drop(1) }
+        if (songsToDelete.isEmpty()) return
+
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-            var deletedCount = 0
-            duplicateGroups.forEach { group ->
-                group.drop(1).forEach { if (File(it.path).delete()) deletedCount++ }
-            }
-            withContext(Dispatchers.Main) {
-                Toast.makeText(requireContext(), "Deleted $deletedCount files.", Toast.LENGTH_LONG).show()
-                viewModel.forceScanMediaLibrary()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val uris = songsToDelete.map {
+                    ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, it.id)
+                }
+                val intent = MediaStore.createDeleteRequest(requireContext().contentResolver, uris)
+                withContext(Dispatchers.Main) {
+                    viewModel.requestDelete(intent)
+                }
+            } else {
+                var deletedCount = 0
+                songsToDelete.forEach { if (File(it.path).delete()) deletedCount++ }
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(requireContext(), "Deleted $deletedCount files.", Toast.LENGTH_LONG).show()
+                    viewModel.forceScanMediaLibrary()
+                }
             }
         }
     }

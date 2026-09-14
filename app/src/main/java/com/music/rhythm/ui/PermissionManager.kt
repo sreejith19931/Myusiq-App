@@ -20,7 +20,7 @@ class PermissionManager(private val activity: AppCompatActivity) {
         // No-op or log
     }
 
-    val audioPermissionLauncher = activity.registerForActivityResult(ActivityResultContracts.RequestPermission()) { _ ->
+    val audioPermissionLauncher = activity.registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { _ ->
         // No-op or log
     }
 
@@ -49,8 +49,17 @@ class PermissionManager(private val activity: AppCompatActivity) {
     }
 
     fun checkAndRequestAudioPermission() {
-        if (ContextCompat.checkSelfPermission(activity, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        val permissions = mutableListOf(Manifest.permission.RECORD_AUDIO)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            permissions.add(Manifest.permission.BLUETOOTH_CONNECT)
+        }
+        
+        val missing = permissions.filter { 
+            ContextCompat.checkSelfPermission(activity, it) != PackageManager.PERMISSION_GRANTED 
+        }
+        
+        if (missing.isNotEmpty()) {
+            audioPermissionLauncher.launch(missing.toTypedArray())
         }
     }
 }

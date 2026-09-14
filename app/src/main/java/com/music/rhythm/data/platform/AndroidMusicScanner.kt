@@ -1,6 +1,7 @@
 package com.music.rhythm.data.platform
 
 import android.content.Context
+import android.os.Build
 import android.os.Environment
 import android.provider.DocumentsContract
 import android.provider.MediaStore
@@ -27,6 +28,7 @@ class AndroidMusicScanner(private val context: Context) : MusicScanner {
             MediaStore.Audio.Media.DURATION,
             MediaStore.Audio.Media.ALBUM_ID,
             MediaStore.Audio.Media.ALBUM,
+            MediaStore.Audio.Media.GENRE,
             MediaStore.Audio.Media.DATE_ADDED,
             MediaStore.Audio.Media.SIZE,
         )
@@ -53,10 +55,13 @@ class AndroidMusicScanner(private val context: Context) : MusicScanner {
                     val duration = cursor.getInt(durationColumn)
                     val albumId = cursor.getLong(albumIdColumn)
                     val album = cursor.getString(albumColumn) ?: ""
+                    val genre = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.GENRE)) ?: ""
+                    } else ""
                     val dateAdded = cursor.getLong(dateAddedColumn)
                     val size = cursor.getLong(sizeColumn)
 
-                    songs.add(RawSong(id, title, artist, path, duration, albumId, album, dateAdded, size))
+                    songs.add(RawSong(id, title, artist, path, duration, albumId, album, genre, dateAdded, size))
                 }
             }
         } catch (e: Exception) {

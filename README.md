@@ -13,7 +13,11 @@ Rhythm is a simple, elegant, and open-source music player for Android, built wit
 
 ## Screenshots
 
-*(Add screenshots here)*
+<p align="center">
+  <img src="images/screenshot_tracks.png" width="30%" alt="Tracks List" />
+  <img src="images/screenshot_player.png" width="30%" alt="Music Player" />
+  <img src="images/screenshot_driving.png" width="30%" alt="Driving Mode" />
+</p>
 
 ## Getting Started
 

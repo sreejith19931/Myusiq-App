@@ -1,8 +1,11 @@
 package com.music.rhythm.ui
 
+import android.content.ContentUris
 import android.media.MediaScannerConnection
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.provider.MediaStore
 import android.util.Log
 import android.view.View
 import android.widget.TextView
@@ -210,15 +213,15 @@ class AudioTrimmerFragment : Fragment(R.layout.fragment_audio_trimmer) {
                     return@launch
                 }
 
-                // Use Public Music directory for better visibility
-                val musicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
-                val trimmedDir = File(musicDir, "Trimmed")
-                if (!trimmedDir.exists()) trimmedDir.mkdirs()
-
-                // Preserve extension
-                val ext = originalFile.extension
-                val finalFileName = if (replace) originalFile.name else "$newName.$ext"
-                val outputFile = File(trimmedDir, finalFileName)
+                // If replace, save to a temporary file in cache first
+                val outputFile = if (replace) {
+                    File(requireContext().cacheDir, "trimmed_temp_${System.currentTimeMillis()}.${originalFile.extension}")
+                } else {
+                    val musicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
+                    val trimmedDir = File(musicDir, "Trimmed")
+                    if (!trimmedDir.exists()) trimmedDir.mkdirs()
+                    File(trimmedDir, "$newName.${originalFile.extension}")
+                }
 
                 // Actual trimming logic
                 val success = AudioTrimmerUtil.trimAudio(originalFile.absolutePath, outputFile.absolutePath, startMs, endMs)
@@ -230,19 +233,41 @@ class AudioTrimmerFragment : Fragment(R.layout.fragment_audio_trimmer) {
                     return@launch
                 }
 
-                Log.d("AudioTrimmer", "Trimmed file saved to ${outputFile.absolutePath} from $startMs to $endMs. FadeIn=$fadeIn, FadeOut=$fadeOut")
+                if (replace) {
+                    // Use ContentResolver to overwrite the original file in Scoped Storage
+                    val uri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id)
+                    try {
+                        requireContext().contentResolver.openOutputStream(uri, "rwt")?.use { output ->
+                            outputFile.inputStream().use { input ->
+                                input.copyTo(output)
+                            }
+                        }
+                        outputFile.delete() // Clean up temp
+                        
+                        Log.d("AudioTrimmer", "Original file replaced via MediaStore URI: $uri")
+                    } catch (e: SecurityException) {
+                        // On Android 11+, we might need to request write permission for this specific URI
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            val pendingIntent = MediaStore.createWriteRequest(requireContext().contentResolver, listOf(uri))
+                            withContext(Dispatchers.Main) {
+                                // We'd need to store the pending state and retry after permission
+                                // For now, we'll use the existing ViewModel mechanism if available
+                                Toast.makeText(requireContext(), "Permission needed to replace file. Try again after granting.", Toast.LENGTH_LONG).show()
+                                viewModel.requestEdit(pendingIntent) // Requesting write permission
+                            }
+                        }
+                        return@launch
+                    }
+                }
 
                 withContext(Dispatchers.Main) {
-                    val mode = if (replace) "replaced" else "saved as new"
+                    val msg = if (replace) "replaced current track" else "saved as new track in Music/Trimmed"
                     val fadeInfo = if (fadeIn || fadeOut) " (Applied fades)" else ""
-                    Toast.makeText(requireContext(), "Trimmed audio $mode$fadeInfo! Saved in Music/Trimmed", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Trimmed audio $msg$fadeInfo!", Toast.LENGTH_SHORT).show()
                     
-                    // Actually scan the file so it appears in Tracks list
-                    MediaScannerConnection.scanFile(
-                        requireContext(),
-                        arrayOf(outputFile.absolutePath),
-                        null
-                    ) { _, _ ->
+                    // Scan the file
+                    val pathToScan = if (replace) song.path else outputFile.absolutePath
+                    MediaScannerConnection.scanFile(requireContext(), arrayOf(pathToScan), null) { _, _ ->
                         viewModel.loadSongs(force = true)
                     }
                     

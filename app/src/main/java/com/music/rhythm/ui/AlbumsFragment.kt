@@ -142,8 +142,11 @@ class AlbumsFragment : Fragment() {
     private suspend fun updateAlbums(songs: List<Song>) {
         withContext(Dispatchers.Default) {
             val albums = songs.asSequence()
-                .groupBy { AlbumUtils.getGroupingKey(it.album) }
-                .map { (name, list) -> AlbumUIModel(name, list.firstOrNull()?.artist ?: "Unknown Artist", list.size, list.firstOrNull()) }
+                .groupBy { "${AlbumUtils.getGroupingKey(it.album)}|${it.artist.lowercase()}" }
+                .map { (_, list) -> 
+                    val first = list.first()
+                    AlbumUIModel(AlbumUtils.getGroupingKey(first.album), first.artist, list.size, first) 
+                }
                 .sortedBy { it.name.lowercase() }
                 .toList()
             

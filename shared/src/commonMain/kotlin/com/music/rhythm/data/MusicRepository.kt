@@ -49,6 +49,7 @@ class MusicRepository(
                 duration = raw.duration,
                 albumId = raw.albumId,
                 album = override?.album ?: raw.album.ifEmpty { "Unknown Album" },
+                genre = override?.genre ?: raw.genre.ifEmpty { "Unknown Genre" },
                 dateAdded = raw.dateAdded,
                 size = raw.size
             )
