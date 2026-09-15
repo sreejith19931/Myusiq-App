@@ -44,6 +44,8 @@ jobs:
     needs: build
     if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -54,20 +56,6 @@ jobs:
         with:
           name: app-debug
           path: release-artifacts
-
-      - name: Create Release on Public Repo
-        uses: softprops/action-gh-release@v2
-        with:
-          repository: sreejith19931/Rhythm-App
-          token: ${{ secrets.RELEASE_TOKEN }}
-          tag_name: ${{ github.ref_name }}
-          files: |
-            release-artifacts/*.apk
-            README.md
-            CHANGELOG.md
-          draft: false
-          prerelease: false
-          generate_release_notes: true
 
       - name: Sync README and Images to Public Repo
         env:
@@ -84,3 +72,18 @@ jobs:
           git add .
           git commit -m "Update README, Changelog and Screenshots for ${GITHUB_REF_NAME}" || echo "No changes to commit"
           git push origin main
+
+      - name: Create Release on Public Repo
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: sreejith19931/Rhythm-App
+          token: ${{ secrets.RELEASE_TOKEN }}
+          tag_name: ${{ github.ref_name }}
+          target_commitish: main
+          files: |
+            release-artifacts/*.apk
+            README.md
+            CHANGELOG.md
+          draft: false
+          prerelease: false
+          generate_release_notes: true
