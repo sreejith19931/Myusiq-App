@@ -1,6 +1,9 @@
 package com.music.rhythm.ui
 
 import android.annotation.SuppressLint
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -41,6 +44,31 @@ class AboutFragment : Fragment(R.layout.fragment_about) {
             
         } catch (e: Exception) {
             Log.e("AboutFragment", "Error getting package info", e)
+        }
+
+        view.findViewById<View>(R.id.btnReportBug)?.setOnClickListener {
+            try {
+                val packageInfo = requireContext().packageManager.getPackageInfo(requireContext().packageName, 0)
+                val versionName = packageInfo.versionName
+                val packageName = packageInfo.packageName
+                val androidVersion = Build.VERSION.RELEASE
+                val deviceModel = Build.MODEL
+
+                val emailBody = "\n\n\n---\n" +
+                        "App Version: $versionName\n" +
+                        "Package: $packageName\n" +
+                        "Android Version: $androidVersion\n" +
+                        "Device: $deviceModel"
+
+                val intent = Intent(Intent.ACTION_SENDTO).apply {
+                    data = Uri.parse("mailto:rhythmmusicplayer@gmail.com")
+                    putExtra(Intent.EXTRA_SUBJECT, "Rhythm Bug Report & Feedback")
+                    putExtra(Intent.EXTRA_TEXT, emailBody)
+                }
+                startActivity(Intent.createChooser(intent, "Send Bug Report"))
+            } catch (e: Exception) {
+                Log.e("AboutFragment", "Error launching email intent", e)
+            }
         }
     }
 }

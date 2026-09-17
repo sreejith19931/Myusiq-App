@@ -524,19 +524,15 @@ class PlaybackService : MediaLibraryService() {
             ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
                 val future = SettableFuture.create<MediaSession.MediaItemsWithStartPosition>()
                 serviceScope.launch {
-                    val path = persistence.lastSongPath.firstOrNull() ?: ""
-                    val pos = persistence.lastPosition.firstOrNull() ?: 0L
-                    if (path.isNotEmpty()) {
-                        val songs = musicRepository.getSongs(filterShortAudio = false)
-                        val song = songs.find { it.path == path }
-                        if (song != null) {
-                            val mediaItem = song.toMediaItem()
-                            future.set(MediaSession.MediaItemsWithStartPosition(listOf(mediaItem), 0, pos))
+                    try {
+                        val restoredData = loadSavedQueueData()
+                        if (restoredData != null) {
+                            future.set(restoredData)
                         } else {
-                            future.setException(UnsupportedOperationException("Last played song not found"))
+                            future.setException(UnsupportedOperationException("No playback state to resume"))
                         }
-                    } else {
-                        future.setException(UnsupportedOperationException("No playback state to resume"))
+                    } catch (e: Exception) {
+                        future.setException(e)
                     }
                 }
                 return future
@@ -549,7 +545,7 @@ class PlaybackService : MediaLibraryService() {
                 playerCommand: Int
             ): Int {
                 if (playerCommand == Player.COMMAND_PLAY_PAUSE) {
-                    val isRecentBtConnection = System.currentTimeMillis() - lastBluetoothConnectionTime < 5000 // 5 seconds window
+                    val isRecentBtConnection = System.currentTimeMillis() - lastBluetoothConnectionTime < 2000 // 2 seconds window
                     val p = getSharedPreferences("app_prefs", MODE_PRIVATE)
                     val autoResumeEnabled = p.getBoolean("bluetooth_resume_on_connect", false)
 
@@ -913,6 +909,64 @@ class PlaybackService : MediaLibraryService() {
         }
     }
 
+    private suspend fun loadSavedQueueData(): MediaSession.MediaItemsWithStartPosition? {
+        val savedQueuePaths = persistence.getSavedQueuePaths()
+        val lastPath = persistence.lastSongPath.firstOrNull()
+        val lastPos = persistence.lastPosition.firstOrNull() ?: 0L
+        
+        if (savedQueuePaths.isEmpty() && lastPath == null) return null
+
+        val allSongs = musicRepository.getSongs(filterShortAudio = false)
+        val restoredQueue = mutableListOf<MediaItem>()
+        
+        if (savedQueuePaths.isNotEmpty()) {
+            for (path in savedQueuePaths) {
+                val normSaved = PlatformUtils.normalizePath(path)
+                var found = allSongs.find { PlatformUtils.normalizePath(it.path) == normSaved }
+                
+                if (found == null) {
+                    val fileName = File(path).name
+                    found = allSongs.find { File(it.path).name == fileName }
+                }
+                
+                found?.let { restoredQueue.add(it.toMediaItem()) }
+            }
+        }
+
+        var startIndex = 0
+        if (lastPath != null) {
+            val normLast = PlatformUtils.normalizePath(lastPath)
+            val idx = restoredQueue.indexOfFirst { 
+                it.mediaMetadata.extras?.getString("path")?.let { p -> PlatformUtils.normalizePath(p) } == normLast 
+            }
+            if (idx != -1) {
+                startIndex = idx
+            } else {
+                val lastFileName = File(lastPath).name
+                val idx2 = restoredQueue.indexOfFirst { 
+                    it.mediaMetadata.extras?.getString("path")?.let { p -> File(p).name } == lastFileName 
+                }
+                if (idx2 != -1) startIndex = idx2
+            }
+        }
+
+        // If queue was empty but we have a last path, try to restore at least that
+        if (restoredQueue.isEmpty() && lastPath != null) {
+            val normLast = PlatformUtils.normalizePath(lastPath)
+            val found = allSongs.find { PlatformUtils.normalizePath(it.path) == normLast } 
+                ?: allSongs.find { File(it.path).name == File(lastPath).name }
+            
+            found?.let { 
+                restoredQueue.add(it.toMediaItem())
+                startIndex = 0
+            }
+        }
+
+        return if (restoredQueue.isNotEmpty()) {
+            MediaSession.MediaItemsWithStartPosition(restoredQueue, startIndex, lastPos)
+        } else null
+    }
+
     private fun savePlaybackState() {
         val song = exoPlayer.currentMediaItem
         val pos = exoPlayer.currentPosition
@@ -926,18 +980,13 @@ class PlaybackService : MediaLibraryService() {
 
     private fun restorePlaybackState() {
         serviceScope.launch {
-            val path = persistence.lastSongPath.firstOrNull() ?: ""
-            val pos = persistence.lastPosition.firstOrNull() ?: 0L
-            if (path.isNotEmpty()) {
-                val songs = musicRepository.getSongs(filterShortAudio = false)
-                val song = songs.find { it.path == path }
-                song?.let {
-                    withContext(Dispatchers.Main) {
-                        playerA.setMediaItem(it.toMediaItem(), pos)
-                        playerA.prepare()
-                        activePlayerReference = WeakReference(playerA)
-                        mediaSession?.player = playerA
-                    }
+            val restoredData = loadSavedQueueData()
+            if (restoredData != null) {
+                withContext(Dispatchers.Main) {
+                    playerA.setMediaItems(restoredData.mediaItems, restoredData.startIndex, restoredData.startPositionMs)
+                    playerA.prepare()
+                    activePlayerReference = WeakReference(playerA)
+                    mediaSession?.player = playerA
                 }
             }
         }

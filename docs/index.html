@@ -3,75 +3,460 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rhythm - Elegant Android Music Player</title>
+    <title>Rhythm | The Ultimate Android Music Experience</title>
+
+    <link rel="icon" type="image/svg+xml" href="images/app_logo.svg">
+
+    <!-- OpenGraph / Social Metadata -->
+    <meta property="og:title" content="Rhythm | Elegant Music Player for Android">
+    <meta property="og:description" content="Experience high-fidelity audio with a UI that breathes. Open-source, modern, and built for your music collection.">
+    <meta property="og:image" content="https://rhythmmusicplayer.github.io/images/app_logo.svg">
+    <meta property="og:url" content="https://rhythmmusicplayer.github.io">
+    <meta name="twitter:card" content="summary_large_image">
+
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <header>
-        <div class="container">
-            <img src="images/screenshot_player.png" alt="Rhythm Logo" class="app-icon" style="object-fit: cover; object-position: center top;">
-            <h1>Rhythm</h1>
-            <p class="tagline">A simple, elegant, and open-source music player for Android.</p>
-            <a href="https://github.com/sreejith19931/Rhythm" class="btn">View on GitHub</a>
+    <div id="scroll-progress"></div>
+
+    <nav id="navbar">
+        <div class="container nav-container">
+            <a href="#" class="nav-logo">
+                <img src="images/app_logo.svg" alt="Rhythm Logo">
+                <span style="font-family: 'Syne', sans-serif; font-weight: 700;">Rhythm</span>
+            </a>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle Theme">
+                    <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                    <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                </button>
+                <a href="mailto:rhythmmusicplayer@gmail.com?subject=Rhythm%20Bug%20Report%20%26%20Feedback" class="btn" style="padding: 10px 24px; font-size: 1rem; border: 1px solid var(--outline); background: transparent; color: var(--on-surface);">Report Bug</a>
+                <a href="#download" class="btn btn-primary" style="padding: 10px 24px; font-size: 1rem;">Get APK</a>
+            </div>
         </div>
+    </nav>
+
+    <header class="hero">
+        <div class="container hero-content reveal active">
+            <div class="app-icon-float-wrap">
+                <img src="images/app_logo.svg" alt="Rhythm App Icon" class="app-icon-hero">
+            </div>
+            <h1>Rhythm</h1>
+            <p class="tagline">An elegant, open-source music player designed for modern Android. Experience audio that breathes.</p>
+
+            <div class="theme-widget">
+                <p style="margin-bottom: 12px; font-weight: 500; font-family: 'Space Grotesk', sans-serif;">Preview Dynamic Themes</p>
+                <div class="color-dot active" style="background: #A78BFA;" onclick="changeTheme('#A78BFA', '#2E1065', this)"></div>
+                <div class="color-dot" style="background: #38BDF8;" onclick="changeTheme('#38BDF8', '#0F172A', this)"></div>
+                <div class="color-dot" style="background: #43A047;" onclick="changeTheme('#43A047', '#1B5E20', this)"></div>
+                <div class="color-dot" style="background: #E53935;" onclick="changeTheme('#E53935', '#B71C1C', this)"></div>
+                <div class="color-dot" style="background: #FB8C00;" onclick="changeTheme('#FB8C00', '#E65100', this)"></div>
+            </div>
+        </div>
+        <a href="#intro" class="scroll-indicator" style="text-decoration: none;">↓</a>
     </header>
+
+    <section id="stats" class="stats-section">
+        <div class="container reveal">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span id="github-stars" class="stat-value">--</span>
+                    <span class="stat-label">GitHub Stars</span>
+                </div>
+                <div class="stat-item">
+                    <span id="github-forks" class="stat-value">--</span>
+                    <span class="stat-label">Forks</span>
+                </div>
+                <div class="stat-item">
+                    <span id="github-issues" class="stat-value">--</span>
+                    <span class="stat-label">Open Issues</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+    <section id="intro">
+        <div class="container">
+            <div class="value-props">
+                <div class="value-card-wrap reveal stagger-1">
+                    <div class="value-card">
+                        <h3>Pure Performance</h3>
+                        <p>Built with Jetpack Compose and Media3 for lightning-fast responsiveness and flawless playback.</p>
+                    </div>
+                </div>
+                <div class="value-card-wrap reveal stagger-2">
+                    <div class="value-card">
+                        <h3>Total Privacy</h3>
+                        <p>No ads, no tracking, and no internet required. Your music belongs to you, and Rhythm keeps it that way.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <section id="features">
         <div class="container">
-            <h2>Experience Your Music</h2>
+            <h2 class="section-title reveal">Experience the Detail</h2>
+            <p class="section-subtitle reveal">Rhythm isn't just a player; it's a toolkit for the discerning listener.</p>
+
             <div class="features-grid">
-                <div class="feature-card">
-                    <h3>Dynamic Theming</h3>
-                    <p>Beautiful UI that adapts its colors based on your album artwork using Material You.</p>
+                <div class="feature-card-wrap reveal stagger-1">
+                    <div class="feature-card">
+                        <span class="icon">🎨</span>
+                        <h3>Material You</h3>
+                        <p>The entire interface transforms to complement the colors of your album artwork, creating a truly immersive visual experience.</p>
+                    </div>
                 </div>
-                <div class="feature-card">
-                    <h3>Audio Precision</h3>
-                    <p>Professional 5-band equalizer with custom presets and environmental reverb.</p>
+                <div class="feature-card-wrap reveal stagger-2">
+                    <div class="feature-card">
+                        <span class="icon">🎚️</span>
+                        <h3>Studio-Grade EQ</h3>
+                        <p>A precision 5-band equalizer with custom presets, environmental reverb, and bass boost. Fine-tune your audio perfectly.</p>
+                    </div>
                 </div>
-                <div class="feature-card">
-                    <h3>Audio Trimmer</h3>
-                    <p>Create custom ringtones and clips directly from your favorite tracks.</p>
+                <div class="feature-card-wrap reveal stagger-3">
+                    <div class="feature-card">
+                        <span class="icon">✂️</span>
+                        <h3>Precision Trimmer</h3>
+                        <p>Found the perfect hook? Create high-quality ringtones or notification clips directly from your local library.</p>
+                    </div>
                 </div>
-                <div class="feature-card">
-                    <h3>Driving Mode</h3>
-                    <p>Simplified, large-button interface designed for safe use on the road.</p>
+                <div class="feature-card-wrap reveal stagger-4">
+                    <div class="feature-card">
+                        <span class="icon">🚗</span>
+                        <h3>Optimized Driving</h3>
+                        <p>A dedicated interface with large, tactile controls and high-contrast visuals designed for safe, distraction-free use.</p>
+                    </div>
+                </div>
+                <div class="feature-card-wrap reveal stagger-5">
+                    <div class="feature-card">
+                        <span class="icon">🧹</span>
+                        <h3>Library Janitor</h3>
+                        <p>Automatically repair missing metadata and fetch high-resolution album art. Keep your collection organized and looking best.</p>
+                    </div>
+                </div>
+                <div class="feature-card-wrap reveal stagger-6">
+                    <div class="feature-card">
+                        <span class="icon">📜</span>
+                        <h3>Seamless Lyrics</h3>
+                        <p>Dive deeper into your music with integrated support for both synced and static lyrics. Never miss a word.</p>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <section id="gallery">
+    <section id="faq" class="faq-section">
         <div class="container">
-            <h2>Gallery</h2>
-            <div class="screenshots">
-                <img src="images/screenshot_tracks.png" alt="Tracks List">
-                <img src="images/screenshot_player.png" alt="Now Playing">
-                <img src="images/screenshot_driving.png" alt="Driving Mode">
-                <img src="images/screenshot_equalizer.png" alt="Equalizer">
-                <img src="images/screenshot_trimmer.png" alt="Trimmer">
-                <img src="images/screenshot_folders.png" alt="Folders">
+            <h2 class="section-title reveal">Frequently Asked Questions</h2>
+            <div class="faq-accordion reveal">
+                <div class="faq-item">
+                    <div class="faq-question">Does Rhythm collect any user data? <span class="faq-icon">+</span></div>
+                    <div class="faq-answer"><p>No, Rhythm operates entirely offline with zero trackers, ads, or internet requirements. Your music data stays completely private on your device.</p></div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">How does the Dynamic Theming work? <span class="faq-icon">+</span></div>
+                    <div class="faq-answer"><p>Rhythm extracts core color tones dynamically from your active song's album art, morphing the application interfaces fluidly to match the visual vibe of the track.</p></div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">What does the Library Janitor feature do? <span class="faq-icon">+</span></div>
+                    <div class="faq-answer"><p>The Library Janitor helps clean up your local audio library by scanning and scrubbing duplicate tracks, fixing messy metadata tags, and fetching missing album art profiles.</p></div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">How do I create ringtones or notification clips? <span class="faq-icon">+</span></div>
+                    <div class="faq-answer"><p>You can use the built-in Precision Trimmer to select any song from your library, trim your favorite hook down to the exact millisecond, and save it as a system audio clip instantly.</p></div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">What is Driving Mode? <span class="faq-icon">+</span></div>
+                    <div class="faq-answer"><p>Driving Mode introduces a simplified, distraction-free playback interface with large tactile controls and high-contrast styling layouts optimized for safe road use.</p></div>
+                </div>
             </div>
         </div>
     </section>
 
-    <section id="download" style="text-align: center; background-color: var(--surface-variant);">
+
+
+    <section id="teaser" class="teaser-section" style="padding: 60px 0; background: transparent; text-align: center;">
         <div class="container">
-            <h2>Get Rhythm</h2>
-            <p style="margin-bottom: 24px;">Built with Kotlin, Compose, and Media3 for the best performance.</p>
-            <a href="https://github.com/sreejith19931/Rhythm/releases" class="btn">Download APK</a>
+            <h2 class="section-title reveal">See Rhythm in Action</h2>
+            <p class="section-subtitle reveal">A quick teaser of the immersive and dynamic music experience.</p>
+
+            <div class="mockup-container reveal" style="max-width: 320px; margin: 40px auto; border: 12px solid #222; border-radius: 36px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); overflow: hidden; background: #000;">
+                <img src="images/app_teaser.gif" alt="Rhythm App Teaser" style="width: 100%; display: block; border-radius: 24px;">
+            </div>
+        </div>
+    </section>
+
+    <section id="timeline" class="timeline-section">
+        <div class="container">
+            <h2 class="section-title reveal">Roadmap & Changelog</h2>
+            <div class="timeline reveal">
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <h3>v2.0.0 - Core Launch</h3>
+                        <p>Initial stable launch powered by Media3 ExoPlayer, beautiful Material Design 3 components, dynamic themes, lyrics integration, and specialized driving tools.</p>
+                        <span class="date">September 2026</span>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <h3>v2.0.1 - Stability Patch</h3>
+                        <p>Optimized database structure to version 11 with fallback auto-migration integrity routines to secure application robustness.</p>
+                        <span class="date">September 2026</span>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <h3>v2.1.0 - Next Generation</h3>
+                        <p>Planned support for audio visualizer templates, custom presets caching, and cloud backup streaming integration.</p>
+                        <span class="date">Future Roadmap</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="gallery" class="gallery-section">
+        <div class="container">
+            <h2 class="section-title reveal">A Visual Journey</h2>
+            <p class="section-subtitle reveal">Modern design language meets functional simplicity.</p>
+            <div class="gallery-container reveal">
+                <div class="gallery-arrow left" onclick="scrollGallery(-1)" aria-label="Previous screenshot">‹</div>
+                <div class="screenshots" id="screenshot-slider">
+                    <img src="images/screenshot_tracks.png" alt="Track List" loading="lazy">
+                    <img src="images/screenshot_player.png" alt="Now Playing" loading="lazy">
+                    <img src="images/screenshot_driving.png" alt="Driving Mode" loading="lazy">
+                    <img src="images/screenshot_equalizer.png" alt="Equalizer Controls" loading="lazy">
+                    <img src="images/screenshot_trimmer.png" alt="Audio Trimmer" loading="lazy">
+                    <img src="images/screenshot_folders.png" alt="Folder Navigation" loading="lazy">
+                </div>
+                <div class="gallery-arrow right" onclick="scrollGallery(1)" aria-label="Next screenshot">›</div>
+            </div>
+            <p class="reveal stagger-1" style="text-align: center; margin-top: 32px; color: var(--on-surface-variant); font-weight: 500;">← Scroll to explore the interface →</p>
+        </div>
+    </section>
+
+
+
+    <section id="download" class="cta-section">
+        <div class="container cta-content reveal">
+            <h2 class="section-title" style="margin-bottom: 32px;">Ready for Rhythm?</h2>
+            <p class="tagline" style="margin-bottom: 48px;">Join the community and experience your local music collection like never before.</p>
+            <a href="https://github.com/sreejith19931/Rhythm-App/releases" class="btn btn-primary">Download APK Now</a>
         </div>
     </section>
 
     <footer>
-        <div class="container">
-            <p>&copy; 2024 Sreejith. Licensed under MIT.</p>
-            <p>Made with ❤️ for the Android Community.</p>
+        <div class="container reveal">
+            <img src="images/app_logo.svg" alt="Rhythm" style="width: 80px; margin-bottom: 16px;">
+            <h3 style="color: var(--primary); font-size: 2.5rem; margin-bottom: 10px;">Rhythm</h3>
+            <p style="font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; opacity: 0.8;">Designed and built by Team Rhythm</p>
+            <div class="footer-links">
+                <a href="https://github.com/sreejith19931/Rhythm-App">GitHub</a>
+                <a href="mailto:rhythmmusicplayer@gmail.com?subject=Rhythm%20Support%20%26%20Feedback">Contact Support</a>
+                <a href="https://opensource.org/licenses/MIT">MIT License</a>
+            </div>
         </div>
     </footer>
 
+    <a href="#" id="back-to-top">↑</a>
+
+    <div id="lightbox" class="lightbox">
+        <span class="close-lightbox">&times;</span>
+        <img class="lightbox-content" id="lightbox-img" alt="Enlarged screenshot">
+        <div id="lightbox-caption"></div>
+    </div>
+
+    <script>
+        // Feature 6: Theme Toggle Logic
+        const themeToggle = document.getElementById('theme-toggle');
+        const htmlElement = document.documentElement;
+
+        // Check for saved theme or default to dark
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        htmlElement.setAttribute('data-theme', savedTheme);
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = htmlElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            htmlElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        });
+
+        // Feature 2: GitHub Stats
+        async function fetchGitHubStats() {
+            try {
+                const response = await fetch('https://api.github.com/repos/sreejith19931/Rhythm-App');
+                const data = await response.json();
+                document.getElementById('github-stars').textContent = data.stargazers_count;
+                document.getElementById('github-forks').textContent = data.forks_count;
+                document.getElementById('github-issues').textContent = data.open_issues_count;
+            } catch (error) {
+                console.error('Error fetching GitHub stats:', error);
+            }
+        }
+        fetchGitHubStats();
+
+        // Feature 4: FAQ Accordion
+        document.querySelectorAll('.faq-question').forEach(question => {
+            question.addEventListener('click', () => {
+                const item = question.parentElement;
+                item.classList.toggle('active');
+            });
+        });
+
+        // Feature 7: Lightbox Logic
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightbox-img');
+        const lightboxCaption = document.getElementById('lightbox-caption');
+        const closeLightbox = document.querySelector('.close-lightbox');
+
+        document.querySelectorAll('.screenshots img').forEach(img => {
+            img.addEventListener('click', () => {
+                lightbox.style.display = 'block';
+                lightboxImg.src = img.src;
+                lightboxCaption.innerHTML = img.alt;
+            });
+        });
+
+        closeLightbox.addEventListener('click', () => {
+            lightbox.style.display = 'none';
+        });
+
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) {
+                lightbox.style.display = 'none';
+            }
+        });
+
+        // Scroll Logic
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('navbar');
+            const btt = document.getElementById('back-to-top');
+            const progress = document.getElementById('scroll-progress');
+            const heroIcon = document.querySelector('.app-icon-hero');
+
+            // Scroll Progress
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            if (progress) progress.style.width = scrolled + "%";
+
+            // Navbar & Back to Top
+            if (window.scrollY > 50) nav.classList.add('scrolled');
+            else nav.classList.remove('scrolled');
+
+            if (window.scrollY > 400) btt.classList.add('visible');
+            else btt.classList.remove('visible');
+
+            // Parallax Hero Icon
+            if (heroIcon) {
+                const scrollPos = window.scrollY;
+                const scale = 1 - Math.min(scrollPos / 1200, 0.25);
+                const opacity = 1 - Math.min(scrollPos / 600, 0.6);
+                heroIcon.style.transform = `scale(${scale})`;
+                heroIcon.style.opacity = opacity;
+            }
+        });
+
+        // Intersection Observer for Reveal
+        const observerOptions = { threshold: 0.15 };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // Gallery scroll
+        function scrollGallery(direction) {
+            const slider = document.getElementById('screenshot-slider');
+            slider.scrollBy({ left: 500 * direction, behavior: 'smooth' });
+        }
+
+        // Theme changer
+        const themes = [
+            {primary: '#A78BFA', container: '#2E1065'},
+            {primary: '#38BDF8', container: '#0F172A'},
+            {primary: '#43A047', container: '#1B5E20'},
+            {primary: '#E53935', container: '#B71C1C'},
+            {primary: '#FB8C00', container: '#E65100'}
+        ];
+        let currentThemeIndex = 0;
+        let autoCycleInterval;
+
+        function changeTheme(primary, container, el, manual = true) {
+            document.documentElement.style.setProperty('--primary', primary);
+            document.documentElement.style.setProperty('--primary-container', container);
+
+            const widget = document.querySelector('.theme-widget');
+            if (manual) {
+                if (autoCycleInterval) clearInterval(autoCycleInterval);
+                if (widget) {
+                    widget.style.transform = 'scale(1.05)';
+                    setTimeout(() => { widget.style.transform = 'scale(1)'; }, 200);
+                }
+            }
+
+            document.querySelectorAll('.color-dot').forEach(dot => dot.classList.remove('active'));
+            if (el) el.classList.add('active');
+            else {
+                const dots = document.querySelectorAll('.color-dot');
+                if (dots[currentThemeIndex]) dots[currentThemeIndex].classList.add('active');
+            }
+        }
+
+        function startAutoCycle() {
+            autoCycleInterval = setInterval(() => {
+                currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+                const theme = themes[currentThemeIndex];
+                changeTheme(theme.primary, theme.container, null, false);
+            }, 1000);
+
+            setTimeout(() => {
+                if (autoCycleInterval) clearInterval(autoCycleInterval);
+                currentThemeIndex = 0;
+                const theme = themes[0];
+                changeTheme(theme.primary, theme.container, null, false);
+            }, 4000);
+        }
+
+        // Hero Mouse Parallax
+        const hero = document.querySelector('.hero');
+        const heroIcon = document.querySelector('.app-icon-hero');
+
+        if (hero && heroIcon) {
+            hero.addEventListener('mousemove', (e) => {
+                const { clientX, clientY } = e;
+                const { innerWidth, innerHeight } = window;
+                const x = (clientX / innerWidth - 0.5) * 30;
+                const y = (clientY / innerHeight - 0.5) * 30;
+                heroIcon.style.transform = `translateY(${y}px) rotateX(${-y/2}deg) rotateY(${x/2}deg)`;
+            });
+
+            hero.addEventListener('mouseleave', () => {
+                heroIcon.style.transform = `translateY(0) rotateX(0) rotateY(0)`;
+            });
+        }
+
+        // Handle page load
+        window.addEventListener('load', () => {
+            document.querySelectorAll('.reveal').forEach(el => {
+                if (el.getBoundingClientRect().top < window.innerHeight) {
+                    el.classList.add('active');
+                }
+            });
+            startAutoCycle();
+        });
+    </script>
 </body>
 </html>

@@ -301,4 +301,6 @@
     <string name="identify_unknown">Identify Unknown Tracks</string>
     <string name="about_rhythm">About Rhythm</string>
     <string name="version_format">Version %s</string>
+    <string name="report_bug">Report a Bug / Issue</string>
+    <string name="report_bug_desc">Let us know if you run into any trouble</string>
 </resources>

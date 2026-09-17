@@ -810,6 +810,11 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
             }
             
             btnPlaybackSpeed.setTextColor(accent)
+            btnPlaybackSpeed.setIconTint(iconTintList)
+            val speed = viewModel.playbackSpeed.value ?: 1.0f
+            btnPlaybackSpeed.backgroundTintList = if (speed != 1.0f)
+                ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 45))
+            else ColorStateList.valueOf(Color.TRANSPARENT)
             btnPlaybackSpeed.alpha = 1.0f
 
             tvLyricsOffset.setTextColor(accent)
