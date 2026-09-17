@@ -87,7 +87,7 @@ jobs:
           cd website-repo
           git add .
           git commit -m "deploy: update website for release ${GITHUB_REF_NAME}" || echo "No changes to commit"
-          git push origin main
+          git push https://x-access-token:${API_TOKEN_GITHUB}@github.com/rhythmmusicplayer/rhythmmusicplayer.github.io.git main
 
       - name: Create Release on Public Repo
         uses: softprops/action-gh-release@v2
