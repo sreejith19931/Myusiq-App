@@ -71,7 +71,7 @@ jobs:
           cd public-repo
           git add .
           git commit -m "Update README, Changelog and Screenshots for ${GITHUB_REF_NAME}" || echo "No changes to commit"
-          git push origin main
+          git push https://x-access-token:${API_TOKEN_GITHUB}@github.com/sreejith19931/Rhythm-App.git main
 
       - name: Sync to Website Repo
         env:
