@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.2] - 2026-09-15
+
+### Added
+- **Website Automation**: Implemented Python script to automatically update the website roadmap from changelog entries.
+- **CI/CD Optimization**: Improved release workflow with explicit token-based authentication for multiple repositories.
+- **User Support**: Integrated frictionless email reporting with diagnostic templates in-app and on the website.
+
 ## [2.0.1] - 2026-09-14
 
 ### Fixed
