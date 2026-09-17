@@ -77,12 +77,14 @@ jobs:
         env:
           API_TOKEN_GITHUB: ${{ secrets.RELEASE_TOKEN }}
         run: |
+          # Update index.html using the changelog parser
+          python scripts/update_roadmap.py
+          
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
           git clone https://x-access-token:${API_TOKEN_GITHUB}@github.com/rhythmmusicplayer/rhythmmusicplayer.github.io.git website-repo
           cp -r docs/* website-repo/
           cd website-repo
-          # Update Roadmap dates in index.html dynamically if needed (optional optimization)
-          git config --global user.email "action@github.com"
-          git config --global user.name "GitHub Action"
           git add .
           git commit -m "deploy: update website for release ${GITHUB_REF_NAME}" || echo "No changes to commit"
           git push origin main
