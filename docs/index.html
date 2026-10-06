@@ -34,8 +34,8 @@
                     <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
                     <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
                 </button>
-                <a href="mailto:rhythmmusicplayer@gmail.com?subject=Rhythm%20Bug%20Report%20%26%20Feedback" class="btn" style="padding: 10px 24px; font-size: 1rem; border: 1px solid var(--outline); background: transparent; color: var(--on-surface);">Report Bug</a>
-                <a href="#download" class="btn btn-primary" style="padding: 10px 24px; font-size: 1rem;">Get APK</a>
+                <a href="mailto:rhythmmusicplayer@gmail.com?subject=Rhythm%20Bug%20Report%20%26%20Feedback" class="btn" style="padding: 10px 24px; font-size: 1rem; border: 1px solid var(--outline); background: transparent; color: var(--on-surface); display: inline-flex; align-items: center; justify-content: center; text-align: center;">Report Bug</a>
+                <a href="#download" class="btn btn-primary" style="padding: 10px 24px; font-size: 1rem; display: inline-flex; align-items: center; justify-content: center; text-align: center;">Get APK</a>
             </div>
         </div>
     </nav>
@@ -59,27 +59,6 @@
         </div>
         <a href="#intro" class="scroll-indicator" style="text-decoration: none;">↓</a>
     </header>
-
-    <section id="stats" class="stats-section">
-        <div class="container reveal">
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <span id="github-stars" class="stat-value">--</span>
-                    <span class="stat-label">GitHub Stars</span>
-                </div>
-                <div class="stat-item">
-                    <span id="github-forks" class="stat-value">--</span>
-                    <span class="stat-label">Forks</span>
-                </div>
-                <div class="stat-item">
-                    <span id="github-issues" class="stat-value">--</span>
-                    <span class="stat-label">Open Issues</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
-
 
     <section id="intro">
         <div class="container">
@@ -288,20 +267,6 @@
             htmlElement.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
         });
-
-        // Feature 2: GitHub Stats
-        async function fetchGitHubStats() {
-            try {
-                const response = await fetch('https://api.github.com/repos/sreejith19931/Rhythm-App');
-                const data = await response.json();
-                document.getElementById('github-stars').textContent = data.stargazers_count;
-                document.getElementById('github-forks').textContent = data.forks_count;
-                document.getElementById('github-issues').textContent = data.open_issues_count;
-            } catch (error) {
-                console.error('Error fetching GitHub stats:', error);
-            }
-        }
-        fetchGitHubStats();
 
         // Feature 4: FAQ Accordion
         document.querySelectorAll('.faq-question').forEach(question => {
