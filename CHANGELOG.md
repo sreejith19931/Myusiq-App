@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.1.0] - 2026-09-17
+## [2.1.0] - 2026-10-06
 
 ### Added
 - **Album Grouping & Normalization**: Resolved duplicate album cards for multi-artist albums by grouping tracks strictly by normalized album key. Automatically displays "Various Artists" for tracks with different artists.
