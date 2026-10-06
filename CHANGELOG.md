@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.0] - 2026-09-17
+
+### Added
+- **Album Grouping & Normalization**: Resolved duplicate album cards for multi-artist albums by grouping tracks strictly by normalized album key. Automatically displays "Various Artists" for tracks with different artists.
+- **Persistent Library Sorting**: Added album sorting options (Alphabetical, Artist, Track Count, Recently Added) and track sorting options (Alphabetical, Recently Added, File Size, Popularity, Artist, Album, Recently Played) with Ascending/Descending toggles. Selected options are saved to `SharedPreferences` and restored across app restarts.
+- **Interactive Janitor Review Pop-up**: Added side-by-side comparison pop-ups for **Auto-Fix Missing Artwork** and **Repair Missing Info** displaying CURRENT vs FOUND / PROPOSED info and artwork with checkboxes, giving users full choice over applied updates.
+- **Artwork Caching & Dynamic Refresh**: Integrated `ArtworkUtils` persistent local artwork caching and updated `_artworkRefreshSignatures` timestamps to force Glide cache invalidation and render new artwork instantly across all screens.
+- **Lyrics Management & Transliteration**: Added "Clear Lyrics Files" in Backup & Maintenance settings with "Clear All" and "Select Song Lyrics to Remove" options. Raw original lyrics are loaded as default; transliteration is applied on-demand when user taps the Transliterate button. Instant lyrics cleanup on track transitions.
+
 ## [2.0.2] - 2026-09-15
 
 ### Added
