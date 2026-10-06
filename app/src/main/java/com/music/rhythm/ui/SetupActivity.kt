@@ -35,6 +35,13 @@ class SetupActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
+        super.onCreate(savedInstanceState)
+
+        val prefs = getSharedPreferences("app_setup_prefs", MODE_PRIVATE)
+        if (prefs.getBoolean("is_setup_complete", false)) {
+            launchMainActivityAndFinish()
+            return
+        }
         
         runBlocking {
             try {
@@ -48,8 +55,6 @@ class SetupActivity : AppCompatActivity() {
                 // Ignore
             }
         }
-
-        super.onCreate(savedInstanceState)
         
         if (savedInstanceState != null) {
             hasPermission = savedInstanceState.getBoolean("hasPermission")
@@ -82,12 +87,6 @@ class SetupActivity : AppCompatActivity() {
             }
         }
         
-        val prefs = getSharedPreferences("app_setup_prefs", MODE_PRIVATE)
-        if (prefs.getBoolean("is_setup_complete", false)) {
-            launchMainActivityAndFinish()
-            return
-        }
-
         binding = ActivitySetupBinding.inflate(layoutInflater)
         setContentView(binding.root)
 

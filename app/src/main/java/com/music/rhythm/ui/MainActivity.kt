@@ -155,32 +155,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val splashScreen = installSplashScreen()
-        enableEdgeToEdge()
-        
-        splashScreen.setOnExitAnimationListener { splashScreenView ->
-            try {
-                val iconView = splashScreenView.iconView
-                iconView.animate()
-                    .scaleX(2f)
-                    .scaleY(2f)
-                    .alpha(0f)
-                    .setDuration(500L)
-                    .setInterpolator(AnticipateInterpolator())
-                    .withEndAction { splashScreenView.remove() }
-                    .start()
-            } catch (_: Exception) {
-                splashScreenView.remove()
-            }
-        }
-        
         themeSettingsManager = ThemeSettingsManager(this)
         themeManager = ThemeManager(this)
         permissionManager = PermissionManager(this)
         sharedPreferences = getSharedPreferences("app_prefs", MODE_PRIVATE)
 
-        // Synchronously fetch and apply theme/color settings to prevent flickering.
-        // MUST be called before super.onCreate for night mode to take effect immediately.
+        // Synchronously fetch and apply theme/color settings before super.onCreate to prevent flickering.
         runBlocking {
             try {
                 val mode = themeSettingsManager.themeModeFlow.first()
@@ -194,6 +174,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
 
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
 
         setContentView(R.layout.activity_main)
 
@@ -227,7 +208,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
                 .replace(R.id.fullPlayerFragmentContainer, PlayerFragment(), "TAB_PLAYER")
-                .commitNow()
+                .commit()
         }
 
         permissionManager.onStoragePermissionGranted = {
@@ -373,9 +354,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             updatePeekHeight()
         }
 
-        val lastTab = sharedPreferences.getInt("last_tab", R.id.dest_tracks)
-        bottomNavigationView.selectedItemId = lastTab
-        navigationRail?.selectedItemId = lastTab
+        val savedTab = sharedPreferences.getInt("last_tab", R.id.dest_tracks)
+        val validTab = if (bottomNavigationView.menu.findItem(savedTab) != null) savedTab else R.id.dest_tracks
+        bottomNavigationView.selectedItemId = validTab
+        navigationRail?.selectedItemId = validTab
         
         bottomNavigationView.setOnItemSelectedListener { item ->
             if (!isNavigating) {
@@ -401,8 +383,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             true
         }
         
-        if (supportFragmentManager.findFragmentByTag("TAB_$lastTab") == null) {
-            navigateToTab(lastTab, initial = true)
+        if (supportFragmentManager.findFragmentByTag("TAB_$validTab") == null) {
+            navigateToTab(validTab, initial = true)
         }
     }
 

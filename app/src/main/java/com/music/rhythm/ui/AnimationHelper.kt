@@ -136,6 +136,10 @@ class AnimationHelper(
 
         val offset = alpha.coerceIn(0f, 1f)
         
+        val cameraDist = 12000 * density
+        layoutCardContainer.cameraDistance = cameraDist
+        layoutLyricsBack.cameraDistance = cameraDist
+
         if (isLyricsShowing) {
             layoutCardContainer.rotationY = 180f * offset
             layoutLyricsBack.rotationY = 180f
@@ -305,6 +309,11 @@ class AnimationHelper(
         updateLyricsVisibility: (Boolean) -> Unit,
         onFlipEnd: (Boolean) -> Unit
     ) {
+        val density = context.resources.displayMetrics.density
+        val cameraDist = 12000 * density
+        layoutCardContainer.cameraDistance = cameraDist
+        layoutLyricsBack.cameraDistance = cameraDist
+
         val targetIsLyricsShowing = !isLyricsShowing
         val start = if (isLyricsShowing) 180f else 0f
         val end = if (isLyricsShowing) 0f else 180f
@@ -329,6 +338,9 @@ class AnimationHelper(
             }
             addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) { 
+                    if (!targetIsLyricsShowing) {
+                        layoutCardContainer.rotationY = 0f
+                    }
                     onFlipEnd(targetIsLyricsShowing)
                 }
             })

@@ -55,7 +55,7 @@
             android:launchMode="singleTask"
             android:configChanges="screenLayout|smallestScreenSize"
             android:windowSoftInputMode="adjustNothing"
-            android:theme="@style/Theme.App.Starting"/>
+            android:theme="@style/Theme_Rhythm"/>
 
         <receiver android:name="com.music.rhythm.service.RhythmWidgetProvider"
             android:exported="true">
@@ -88,6 +88,7 @@
             android:exported="true"
             android:foregroundServiceType="mediaPlayback" >
             <intent-filter>
+                <action android:name="androidx.media3.session.MediaLibraryService" />
                 <action android:name="androidx.media3.session.MediaSessionService" />
                 <action android:name="android.media.browse.MediaBrowserService" />
                 <action android:name="android.intent.action.MEDIA_BUTTON" />

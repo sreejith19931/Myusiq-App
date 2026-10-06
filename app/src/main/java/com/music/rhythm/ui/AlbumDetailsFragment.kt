@@ -112,7 +112,7 @@ class AlbumDetailsFragment : Fragment(R.layout.fragment_tracks) {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.songsLibrary.collect { allSongs ->
-                        currentAlbumSongs = allSongs.filter { AlbumUtils.getGroupingKey(it.album) == albumName }
+                        currentAlbumSongs = allSongs.filter { AlbumUtils.getGroupingKey(it.album).equals(albumName, ignoreCase = true) }
                         updateAdapterItems()
                         view.findViewById<TextView>(R.id.tvHeaderSubtitle).text = "${currentAlbumSongs.size} tracks"
 
@@ -120,7 +120,10 @@ class AlbumDetailsFragment : Fragment(R.layout.fragment_tracks) {
                         currentAlbumSongs.firstOrNull()?.let { song ->
                             launch(Dispatchers.IO) {
                                 val bitmap = try {
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                    val cachedFile = com.music.rhythm.utils.ArtworkUtils.getArtworkFile(requireContext(), song.id, song.path)
+                                    if (cachedFile != null) {
+                                        BitmapFactory.decodeFile(cachedFile.absolutePath)
+                                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                                         val trackUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id)
                                         requireContext().contentResolver.loadThumbnail(trackUri, Size(600, 600), null)
                                     } else {

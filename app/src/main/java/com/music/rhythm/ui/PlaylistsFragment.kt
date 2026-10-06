@@ -206,11 +206,12 @@ class PlaylistsFragment : Fragment(R.layout.fragment_playlists) {
             R.id.chipEnergize to getString(R.string.mood_energize),
             R.id.chipRelax to getString(R.string.mood_relax),
             R.id.chipParty to getString(R.string.mood_party),
-            R.id.chipFocus to getString(R.string.mood_focus)
+            R.id.chipFocus to getString(R.string.mood_focus),
+            R.id.chipRomance to getString(R.string.mood_romance)
         )
 
         moods.forEach { (chipId, moodName) ->
-            view.findViewById<Chip>(chipId).setOnClickListener {
+            view.findViewById<Chip?>(chipId)?.setOnClickListener {
                 startMoodPlaylist(moodName)
             }
         }
@@ -223,21 +224,18 @@ class PlaylistsFragment : Fragment(R.layout.fragment_playlists) {
             return
         }
 
-        val songs = when (mood) {
-            getString(R.string.mood_energize) -> allTracks.filter { it.duration in 60000..240000 }.shuffled().take(25)
-            getString(R.string.mood_relax) -> allTracks.filter { it.duration > 180000 }.shuffled().take(20)
-            getString(R.string.mood_party) -> allTracks.shuffled().take(40)
-            getString(R.string.mood_focus) -> allTracks.filter { 
-                it.artist.contains("Soundtrack", ignoreCase = true) || it.album.contains("ost", ignoreCase = true) 
-            }.ifEmpty { allTracks.shuffled() }.take(20)
-            else -> emptyList()
-        }.ifEmpty { allTracks.shuffled().take(20) }
+        viewLifecycleOwner.lifecycleScope.launch {
+            val songs = viewModel.getMoodMix(mood)
 
-        if (songs.isNotEmpty()) {
-            viewModel.playSong(songs, 0, true)
-            val msg = getString(R.string.playing_mood_mix, mood)
-            Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
-            viewModel.navigateToTab(R.id.dest_queue)
+            if (songs.isNotEmpty()) {
+                viewModel.playSong(songs, 0, true)
+                val msg = getString(R.string.playing_mood_mix, mood)
+                Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+                viewModel.navigateToTab(R.id.dest_queue)
+            } else {
+                val msg = getString(R.string.no_mood_tracks_found, mood)
+                Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 

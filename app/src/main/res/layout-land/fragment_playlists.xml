@@ -42,6 +42,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     app:chipSpacingHorizontal="8dp"
+                    app:singleSelection="true"
+                    app:selectionRequired="false"
                     app:singleLine="true">
 
                     <com.google.android.material.chip.Chip
@@ -49,7 +51,7 @@
                         style="@style/Widget.Material3.Chip.Suggestion"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Energize"
+                        android:text="@string/mood_energize"
                         app:chipIcon="@drawable/ic_play" />
 
                     <com.google.android.material.chip.Chip
@@ -57,7 +59,7 @@
                         style="@style/Widget.Material3.Chip.Suggestion"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Relax"
+                        android:text="@string/mood_relax"
                         app:chipIcon="@drawable/ic_music_note_2" />
 
                     <com.google.android.material.chip.Chip
@@ -65,7 +67,7 @@
                         style="@style/Widget.Material3.Chip.Suggestion"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Party"
+                        android:text="@string/mood_party"
                         app:chipIcon="@drawable/ic_shuffle" />
 
                     <com.google.android.material.chip.Chip
@@ -73,8 +75,16 @@
                         style="@style/Widget.Material3.Chip.Suggestion"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Focus"
+                        android:text="@string/mood_focus"
                         app:chipIcon="@drawable/ic_speed" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipRomance"
+                        style="@style/Widget.Material3.Chip.Suggestion"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/mood_romance"
+                        app:chipIcon="@drawable/ic_heart_filled" />
 
                 </com.google.android.material.chip.ChipGroup>
             </HorizontalScrollView>

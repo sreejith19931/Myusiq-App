@@ -21,6 +21,8 @@ import android.view.ViewGroup
 import android.view.Gravity
 import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
@@ -75,6 +77,7 @@ import com.music.rhythm.service.PlaybackService
 import com.music.rhythm.R
 import com.music.rhythm.ui.viewmodels.LyricsResponse
 import com.music.rhythm.ui.viewmodels.PlaybackViewModel
+import com.music.rhythm.utils.TransliterationUtil
 import com.music.rhythm.service.FftEngineManager
 import com.music.rhythm.ui.components.*
 import com.music.rhythm.utils.*
@@ -123,6 +126,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
     private lateinit var btnLyricsPlus: MaterialButton
     private lateinit var btnLyricsMinus: MaterialButton
     private lateinit var tvLyricsOffset: TextView
+    private lateinit var btnLyricsTransliterate: MaterialButton
     private lateinit var btnLyricsEdit: MaterialButton
     private lateinit var btnLyricsResetSearch: MaterialButton
     private lateinit var btnLyricsPoster: MaterialButton
@@ -133,6 +137,10 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
     private lateinit var layoutLyricsError: View
     private lateinit var tvLyricsError: TextView
     private lateinit var btnLyricsRetry: MaterialButton
+
+    private var originalLyricsText: String? = null
+    private var transliteratedLyricsText: String? = null
+    private var showTransliteratedLyrics: Boolean = false
     
     private lateinit var visualizerComponent: VisualizerComponent
     private lateinit var gestureHelper: GestureHelper
@@ -148,6 +156,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
     private var lastAnimatedSongId: Long = -1L
     private var isShowingRemainingTime = false
     private var isBlurredModeCached: Boolean = false
+    private var lyricsPromptDialog: androidx.appcompat.app.AlertDialog? = null
 
     fun setCustomMorphStart(x: Float, y: Float, size: Float) {
         animationHelper.setCustomMorphStart(x, y, size)
@@ -277,6 +286,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
         btnLyricsPlus = view.findViewById(R.id.btnLyricsPlus)
         btnLyricsMinus = view.findViewById(R.id.btnLyricsMinus)
         tvLyricsOffset = view.findViewById(R.id.tvLyricsOffset)
+        btnLyricsTransliterate = view.findViewById(R.id.btnLyricsTransliterate)
         btnLyricsEdit = view.findViewById(R.id.btnLyricsEdit)
         btnLyricsResetSearch = view.findViewById(R.id.btnLyricsResetSearch)
         btnLyricsPoster = view.findViewById(R.id.btnLyricsPoster)
@@ -287,6 +297,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
         layoutLyricsError = view.findViewById(R.id.layoutLyricsError)
         tvLyricsError = view.findViewById(R.id.tvLyricsError)
         btnLyricsRetry = view.findViewById(R.id.btnLyricsRetry)
+        updateOffsetUI()
 
         layoutSuggestionBanner = view.findViewById(R.id.layoutSuggestionBanner)
         tvSuggestionText = view.findViewById(R.id.tvSuggestionText)
@@ -388,6 +399,20 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
             lyricOffsetMs -= 500
             updateOffsetUI()
         }
+        btnLyricsTransliterate.setOnClickListener {
+            if (originalLyricsText.isNullOrBlank()) return@setOnClickListener
+            showTransliteratedLyrics = !showTransliteratedLyrics
+            val toastMsg = if (showTransliteratedLyrics) R.string.showing_transliterated_lyrics else R.string.showing_original_lyrics
+            Toast.makeText(requireContext(), toastMsg, Toast.LENGTH_SHORT).show()
+            updateTransliterateButtonState()
+
+            val textToDisplay = if (showTransliteratedLyrics && !transliteratedLyricsText.isNullOrBlank()) {
+                transliteratedLyricsText!!
+            } else {
+                originalLyricsText!!
+            }
+            parseLyrics(textToDisplay)
+        }
         btnLyricsEdit.setOnClickListener {
             showLyricsEditorDialog()
         }
@@ -396,8 +421,10 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
             showLyricsSearchDialog()
         }
         
+        btnLyricsPoster.isEnabled = false
+        btnLyricsPoster.alpha = 0.38f
         btnLyricsPoster.setOnClickListener {
-            showLyricsPosterGenerator()
+            Toast.makeText(requireContext(), "Lyric poster feature coming soon", Toast.LENGTH_SHORT).show()
         }
         
         btnLyricsResetSearch.setOnLongClickListener {
@@ -559,13 +586,16 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
         if (song.id != lastAnimatedSongId) {
             loadLyrics(song)
             updateBlurredBackground(song)
+            val ctx = context ?: return
+            val cachedArtFile = com.music.rhythm.utils.ArtworkUtils.getArtworkFile(ctx, song.id, song.path)
             val artworkUri = ContentUris.withAppendedId("content://media/external/audio/albumart".toUri(), song.albumId)
+            val modelToLoad: Any = cachedArtFile ?: artworkUri
             val normPath = PlatformUtils.normalizePath(song.path)
             val signature = viewModel.artworkRefreshSignatures.value[normPath] ?: 0L
 
             Glide.with(this)
                 .asBitmap()
-                .load(artworkUri)
+                .load(modelToLoad)
                 .signature(ObjectKey(signature))
                 .placeholder(R.drawable.ic_music_note_2)
                 .error(
@@ -804,10 +834,15 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
             if (!isAdded) return@launch
 
             listOf(btnNext, btnPrevious, btnRewind, btnForward, btnVolumeToggle, btnSleepTimer, btnMoreLikeThis, btnDrivingMode,
-                btnLyricsEdit, btnLyricsResetSearch, btnLyricsPlus, btnLyricsMinus, btnLyricsPoster).forEach {
+                btnLyricsTransliterate, btnLyricsEdit, btnLyricsResetSearch, btnLyricsPlus, btnLyricsMinus).forEach {
                 it.setIconTint(iconTintList)
                 it.alpha = 1.0f 
             }
+
+            btnLyricsPoster.setIconTint(iconTintList)
+            btnLyricsPoster.alpha = 0.38f
+            btnLyricsPoster.isEnabled = false
+            btnLyricsPoster.backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
             
             btnPlaybackSpeed.setTextColor(accent)
             btnPlaybackSpeed.setIconTint(iconTintList)
@@ -819,12 +854,14 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
 
             tvLyricsOffset.setTextColor(accent)
 
-            // Update top utility buttons background to a translucent accent
+            // Update utility buttons background to a translucent accent
             val translucentAccent = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 40))
+            btnLyricsTransliterate.backgroundTintList = translucentAccent
             btnLyricsEdit.backgroundTintList = translucentAccent
             btnLyricsResetSearch.backgroundTintList = translucentAccent
 
-            // Sync Lyrics Pill Container
+            // Sync Lyrics Pill Container background & stroke
+            (layoutLyricsControls as? MaterialCardView)?.setCardBackgroundColor(translucentAccent)
             (layoutLyricsControls as? MaterialCardView)?.strokeColor = ColorUtils.setAlphaComponent(accent, 80)
 
             // Sync Volume Slider popup colors
@@ -852,6 +889,23 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
         )
     }
 
+    private fun updateTransliterateButtonState() {
+        val hasTransliteration = !transliteratedLyricsText.isNullOrBlank() && 
+            transliteratedLyricsText != originalLyricsText && 
+            TransliterationUtil.isAvailable()
+        
+        btnLyricsTransliterate.isVisible = hasTransliteration
+        btnLyricsTransliterate.alpha = if (showTransliteratedLyrics) 1.0f else 0.5f
+    }
+
+    private fun applyAndParseSongLyrics(rawLyrics: String) {
+        originalLyricsText = rawLyrics
+        transliteratedLyricsText = TransliterationUtil.transliterateLyrics(rawLyrics)
+        showTransliteratedLyrics = false
+        updateTransliterateButtonState()
+        parseLyrics(rawLyrics)
+    }
+
     private fun updateLyricsVisibility(showingLyrics: Boolean = isLyricsShowing) {
         viewLifecycleOwner.lifecycleScope.launch {
             val useOverlay = themeManager.useLyricOverlayFlow.first()
@@ -860,11 +914,17 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
             if (showingLyrics) {
                 // Showing Lyrics Card
                 tvLyricOverlay.isVisible = false
+                tvLyricOverlay.alpha = 0f
                 tvMinimalistLyric.isVisible = useMinimalist
                 rvLyrics.isVisible = !useMinimalist
             } else {
                 // Showing Album Art
-                tvLyricOverlay.isVisible = useOverlay && activeLyricIndex != -1
+                val hasOverlayText = tvLyricOverlay.text.isNotBlank()
+                val shouldShowOverlay = useOverlay && activeLyricIndex != -1 && hasOverlayText
+                tvLyricOverlay.isVisible = shouldShowOverlay
+                if (!shouldShowOverlay) {
+                    tvLyricOverlay.alpha = 0f
+                }
                 tvMinimalistLyric.isVisible = false
                 rvLyrics.isVisible = false
             }
@@ -877,6 +937,26 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
     }
 
     private fun loadLyrics(song: Song) {
+        lyricsPromptDialog?.dismiss()
+        lyricsPromptDialog = null
+        lyricOffsetMs = 0L
+        updateOffsetUI()
+
+        // Clear all lyrics state immediately for the new song
+        originalLyricsText = null
+        transliteratedLyricsText = null
+        currentLyrics = emptyList()
+        activeLyricIndex = -1
+        updateTransliterateButtonState()
+        lyricsAdapter.notifyDataSetChanged()
+
+        tvLyricOverlay.text = ""
+        tvLyricOverlay.alpha = 0f
+        tvLyricOverlay.isVisible = false
+        tvMinimalistLyric.text = ""
+        tvMinimalistLyric.isVisible = false
+        updateLyricsVisibility()
+
         viewLifecycleOwner.lifecycleScope.launch {
             layoutLyricsLoading.visibility = View.VISIBLE
             layoutLyricsError.visibility = View.GONE
@@ -888,34 +968,95 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
             
             if (local != null) {
                 layoutLyricsLoading.visibility = View.GONE
-                parseLyrics(local)
+                applyAndParseSongLyrics(local)
                 updateLyricsVisibility()
             } else {
-                // Try to auto-discover
+                // Try to auto-discover online lyrics when a track is played
                 val online = viewModel.fetchLyricsOnline(song.title, song.artist)
                 layoutLyricsLoading.visibility = View.GONE
                 
-                if (online != null && online.lyricContent != null) {
-                    showSuggestionBanner(online, song)
+                if (online != null && !online.lyricContent.isNullOrBlank()) {
+                    originalLyricsText = null
+                    transliteratedLyricsText = null
+                    updateTransliterateButtonState()
+                    currentLyrics = emptyList()
+                    lyricsAdapter.notifyDataSetChanged()
+                    layoutLyricsError.visibility = View.GONE
+                    
+                    if (isAdded && context != null) {
+                        showLyricsPromptDialog(online, song)
+                    }
                 } else {
+                    originalLyricsText = null
+                    transliteratedLyricsText = null
+                    updateTransliterateButtonState()
                     currentLyrics = emptyList()
                     lyricsAdapter.notifyDataSetChanged()
                     layoutLyricsError.visibility = View.VISIBLE
-                    tvLyricsError.text = "No lyrics found locally."
+                    tvLyricsError.text = getString(R.string.no_lyrics_found_for_song)
                 }
             }
         }
     }
 
-    private fun showSuggestionBanner(result: LyricsResponse, song: Song) {
-        tvSuggestionText.text = "Found info for ${result.suggestedTitle}"
-        tvSuggestionSubtext.text = "By ${result.suggestedArtist} • Apply lyrics & metadata?"
-        layoutSuggestionBanner.visibility = View.VISIBLE
-        
-        btnSuggestionApply.setOnClickListener {
-            showMetadataUpdateDialog(result, song)
-            layoutSuggestionBanner.visibility = View.GONE
+    private fun showLyricsPromptDialog(result: LyricsResponse, song: Song) {
+        val ctx = context ?: return
+        val lyricsText = result.lyricContent ?: return
+
+        val container = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            val padding = (16 * ctx.resources.displayMetrics.density).toInt()
+            setPadding(padding, padding / 2, padding, padding / 2)
         }
+
+        val tvSub = TextView(ctx).apply {
+            text = "Found lyrics for \"${result.suggestedTitle ?: song.title}\" by ${result.suggestedArtist ?: song.artist}"
+            setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyMedium)
+            setTextColor(ThemeUtils.getThemeColor(ctx, com.google.android.material.R.attr.colorOnSurfaceVariant))
+            setPadding(0, 0, 0, (12 * ctx.resources.displayMetrics.density).toInt())
+        }
+        container.addView(tvSub)
+
+        val scrollView = ScrollView(ctx).apply {
+            val maxH = (220 * ctx.resources.displayMetrics.density).toInt()
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                maxH
+            )
+        }
+
+        val tvLyrics = TextView(ctx).apply {
+            text = lyricsText
+            setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodySmall)
+            setTextColor(ThemeUtils.getThemeColor(ctx, com.google.android.material.R.attr.colorOnSurface))
+            setLineSpacing(0f, 1.2f)
+        }
+        scrollView.addView(tvLyrics)
+        container.addView(scrollView)
+
+        lyricsPromptDialog?.dismiss()
+        lyricsPromptDialog = MaterialAlertDialogBuilder(ctx)
+            .setTitle(R.string.add_lyrics_prompt_title)
+            .setView(container)
+            .setPositiveButton(R.string.add_lyrics) { dialog, _ ->
+                viewModel.saveLyrics(song.path, lyricsText)
+                applyAndParseSongLyrics(lyricsText)
+                layoutLyricsError.visibility = View.GONE
+                layoutLyricsLoading.visibility = View.GONE
+                updateLyricsVisibility()
+                Toast.makeText(ctx, R.string.lyrics_applied, Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+            }
+            .setNeutralButton(R.string.search_another) { dialog, _ ->
+                dialog.dismiss()
+                showLyricsSearchDialog()
+            }
+            .setNegativeButton(R.string.cancel) { dialog, _ ->
+                dialog.dismiss()
+                layoutLyricsError.visibility = View.VISIBLE
+                tvLyricsError.text = getString(R.string.no_lyrics_found_for_song)
+            }
+            .show()
     }
 
     private fun showMetadataUpdateDialog(result: LyricsResponse, song: Song) {
@@ -925,7 +1066,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
             .setNegativeButton("Lyrics Only") { _, _ ->
                 result.lyricContent?.let { content ->
                     viewModel.saveLyrics(song.path, content)
-                    parseLyrics(content)
+                    applyAndParseSongLyrics(content)
                     layoutLyricsError.visibility = View.GONE
                     layoutLyricsLoading.visibility = View.GONE
                     updateLyricsVisibility()
@@ -935,7 +1076,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
             .setPositiveButton("Update All") { _, _ ->
                 result.lyricContent?.let { content ->
                     viewModel.saveLyrics(song.path, content)
-                    parseLyrics(content)
+                    applyAndParseSongLyrics(content)
                     layoutLyricsError.visibility = View.GONE
                     layoutLyricsLoading.visibility = View.GONE
                     updateLyricsVisibility()
@@ -1001,7 +1142,10 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
     private fun updateActiveLyric(pos: Int) {
         if (currentLyrics.isEmpty()) {
             tvLyricOverlay.text = ""
+            tvLyricOverlay.alpha = 0f
+            tvLyricOverlay.isVisible = false
             tvMinimalistLyric.text = ""
+            updateLyricsVisibility()
             return
         }
         
@@ -1028,12 +1172,15 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
                 tvLyricOverlay.text = activeText
                 tvMinimalistLyric.text = activeText
                 
+                updateLyricsVisibility()
+                
                 // Simple fade animation for overlay
                 if (tvLyricOverlay.isVisible) {
                     tvLyricOverlay.animate().cancel()
                     tvLyricOverlay.alpha = 0f
                     tvLyricOverlay.animate().alpha(1f).setDuration(250).start()
                 }
+                
                 if (tvMinimalistLyric.isVisible) {
                     tvMinimalistLyric.animate().cancel()
                     tvMinimalistLyric.alpha = 0f
@@ -1041,7 +1188,10 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
                 }
             } else {
                 tvLyricOverlay.text = ""
+                tvLyricOverlay.alpha = 0f
+                tvLyricOverlay.isVisible = false
                 tvMinimalistLyric.text = ""
+                updateLyricsVisibility()
             }
             
             if (oldIndex != -1) lyricsAdapter.notifyItemChanged(oldIndex)
@@ -1095,7 +1245,8 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
     }
 
     private fun updateOffsetUI() {
-        tvLyricsOffset.text = "${lyricOffsetMs / 1000f}s"
+        val seconds = lyricOffsetMs / 1000f
+        tvLyricsOffset.text = if (seconds > 0) "+%.1fs".format(seconds) else "%.1fs".format(seconds)
     }
 
     private fun showLyricsEditorDialog() {
@@ -1352,10 +1503,10 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
                 
                 val isActive = position == activeLyricIndex
                 val color = if (isActive) viewModel.currentVibrantColor.value ?: Color.BLUE else Color.GRAY
-                val size = if (isActive) 22f else 18f
+                val textSizePx = itemView.context.resources.getDimension(if (isActive) R.dimen.text_size_lyric_active else R.dimen.text_size_lyric_inactive)
                 val alpha = if (isActive) 1.0f else 0.5f
                 
-                tvLine.textSize = size
+                tvLine.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, textSizePx)
                 tvLine.alpha = alpha
                 tvLine.setTypeface(null, if (isActive) Typeface.BOLD else Typeface.NORMAL)
                 tvLine.setActive(isActive)

@@ -83,6 +83,7 @@ data class PendingTrackEdit(
 
 class PlaybackViewModel(application: Application) : AndroidViewModel(application) {
     enum class TrackSortOrder { ALPHABETICAL, LAST_ADDED, SIZE, MOST_POPULAR, RECENTLY_PLAYED, ARTIST, ALBUM }
+    enum class AlbumSortOrder { ALPHABETICAL, ARTIST, TRACK_COUNT, LAST_ADDED }
     enum class SortDirection { ASCENDING, DESCENDING }
 
     private val musicRepository = MusicRepository(
@@ -244,9 +245,55 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     var lastSearchQuery: String = ""
     private var isSongsLoaded = false
-    var currentSortOrder: TrackSortOrder = TrackSortOrder.ALPHABETICAL
-    var currentSortDirection: SortDirection = SortDirection.ASCENDING
-    
+
+    private val _trackSortOrder = MutableStateFlow(TrackSortOrder.ALPHABETICAL)
+    val trackSortOrder: StateFlow<TrackSortOrder> = _trackSortOrder.asStateFlow()
+
+    private val _trackSortDirection = MutableStateFlow(SortDirection.ASCENDING)
+    val trackSortDirection: StateFlow<SortDirection> = _trackSortDirection.asStateFlow()
+
+    private val _albumSortOrder = MutableStateFlow(AlbumSortOrder.ALPHABETICAL)
+    val albumSortOrder: StateFlow<AlbumSortOrder> = _albumSortOrder.asStateFlow()
+
+    private val _albumSortDirection = MutableStateFlow(SortDirection.ASCENDING)
+    val albumSortDirection: StateFlow<SortDirection> = _albumSortDirection.asStateFlow()
+
+    var currentSortOrder: TrackSortOrder
+        get() = _trackSortOrder.value
+        set(value) { _trackSortOrder.value = value }
+
+    var currentSortDirection: SortDirection
+        get() = _trackSortDirection.value
+        set(value) { _trackSortDirection.value = value }
+
+    var currentAlbumSortOrder: AlbumSortOrder
+        get() = _albumSortOrder.value
+        set(value) { _albumSortOrder.value = value }
+
+    var currentAlbumSortDirection: SortDirection
+        get() = _albumSortDirection.value
+        set(value) { _albumSortDirection.value = value }
+
+    init {
+        val p = application.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        val savedTrackOrder = p.getString("track_sort_order", TrackSortOrder.ALPHABETICAL.name)
+        val trackOrder = runCatching { TrackSortOrder.valueOf(savedTrackOrder!!) }.getOrDefault(TrackSortOrder.ALPHABETICAL)
+
+        val savedTrackDir = p.getString("track_sort_direction", SortDirection.ASCENDING.name)
+        val trackDir = runCatching { SortDirection.valueOf(savedTrackDir!!) }.getOrDefault(SortDirection.ASCENDING)
+
+        val savedAlbumOrder = p.getString("album_sort_order", AlbumSortOrder.ALPHABETICAL.name)
+        val albumOrder = runCatching { AlbumSortOrder.valueOf(savedAlbumOrder!!) }.getOrDefault(AlbumSortOrder.ALPHABETICAL)
+
+        val savedAlbumDir = p.getString("album_sort_direction", SortDirection.ASCENDING.name)
+        val albumDir = runCatching { SortDirection.valueOf(savedAlbumDir!!) }.getOrDefault(SortDirection.ASCENDING)
+
+        _trackSortOrder.value = trackOrder
+        _trackSortDirection.value = trackDir
+        _albumSortOrder.value = albumOrder
+        _albumSortDirection.value = albumDir
+    }
+
     var originalTrackList: List<Song> = emptyList()
     private val persistence = (application as MainApplication).playbackPersistence
     private var pendingDeleteSongId: Long? = null
@@ -273,6 +320,20 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     fun saveLyrics(path: String, lyrics: String) = lyricsUseCase.saveLyrics(path, lyrics)
 
     fun deleteLyrics(path: String) = lyricsUseCase.deleteLyrics(path)
+
+    suspend fun clearAllLyrics() {
+        val songs = if (originalTrackList.isNotEmpty()) originalTrackList else musicRepository.getSongs(false)
+        lyricsUseCase.deleteAllLyrics(songs)
+    }
+
+    suspend fun getSongsWithLyrics(): List<Song> {
+        val songs = if (originalTrackList.isNotEmpty()) originalTrackList else musicRepository.getSongs(false)
+        return lyricsUseCase.getSongsWithLyrics(songs)
+    }
+
+    fun deleteLyricsForSongs(songs: List<Song>) {
+        songs.forEach { deleteLyrics(it.path) }
+    }
 
     suspend fun searchLyricsOnline(title: String, artist: String): List<LyricsResponse> = lyricsUseCase.searchLyricsOnline(title, artist)
 
@@ -426,6 +487,10 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                 } else song
             }
             
+            val normPath = PlatformUtils.normalizePath(data.path)
+            val newTimestamp = System.currentTimeMillis()
+            _artworkRefreshSignatures.value = _artworkRefreshSignatures.value + (normPath to newTimestamp)
+
             // Ensure currentSortedList is also updated by re-sorting, which also calls refreshLibraryDisplay()
             sortTracks(currentSortOrder, currentSortDirection)
             
@@ -1021,8 +1086,56 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     fun playMoreLikeThis(song: Song) {
         viewModelScope.launch(Dispatchers.Default) {
-            val rel = originalTrackList.filter { it.id != song.id && (it.artist == song.artist || it.album == song.album) }.take(5).shuffled()
-            if (rel.isNotEmpty()) withContext(Dispatchers.Main) { playSong(listOf(song) + rel, 0, true); expandPlayer() }
+            val candidates = originalTrackList.filter { it.id != song.id }
+            if (candidates.isEmpty()) {
+                withContext(Dispatchers.Main) {
+                    playSong(listOf(song), 0, true)
+                    expandPlayer()
+                }
+                return@launch
+            }
+
+            fun calculateSimilarityScore(candidate: Song): Int {
+                var score = 1
+
+                if (song.genre.isNotBlank() && candidate.genre.isNotBlank()) {
+                    if (song.genre.equals(candidate.genre, ignoreCase = true)) {
+                        score += 10
+                    } else if (song.genre.contains(candidate.genre, ignoreCase = true) || candidate.genre.contains(song.genre, ignoreCase = true)) {
+                        score += 6
+                    }
+                }
+
+                if (song.artist.isNotBlank() && candidate.artist.equals(song.artist, ignoreCase = true)) {
+                    score += 8
+                }
+                if (song.album.isNotBlank() && candidate.album.equals(song.album, ignoreCase = true)) {
+                    score += 5
+                }
+
+                val songDir = File(song.path).parent
+                val candidateDir = File(candidate.path).parent
+                if (songDir != null && songDir == candidateDir) {
+                    score += 4
+                }
+
+                val durationDiff = kotlin.math.abs(song.duration - candidate.duration)
+                if (durationDiff <= 45000) {
+                    score += 3
+                }
+
+                return score
+            }
+
+            val scoredCandidates = candidates.map { candidate -> candidate to calculateSimilarityScore(candidate) }
+                .sortedByDescending { it.second }
+
+            val topMatches = scoredCandidates.take(30).map { it.first }.shuffled()
+
+            withContext(Dispatchers.Main) {
+                playSong(listOf(song) + topMatches, 0, true)
+                expandPlayer()
+            }
         }
     }
 
@@ -1115,7 +1228,14 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     private var currentSortedList: List<Song>? = null
     private var sortJob: Job? = null
     fun sortTracks(c: TrackSortOrder, d: SortDirection) {
-        currentSortOrder = c; currentSortDirection = d
+        _trackSortOrder.value = c
+        _trackSortDirection.value = d
+        val p = getApplication<Application>().getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        p.edit()
+            .putString("track_sort_order", c.name)
+            .putString("track_sort_direction", d.name)
+            .apply()
+
         sortJob?.cancel()
         sortJob = viewModelScope.launch(Dispatchers.Default) {
             val s = when (c) {
@@ -1136,6 +1256,16 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             currentSortedList = if (d == SortDirection.DESCENDING) s.reversed() else s
             refreshLibraryDisplay()
         }
+    }
+
+    fun sortAlbums(c: AlbumSortOrder, d: SortDirection) {
+        _albumSortOrder.value = c
+        _albumSortDirection.value = d
+        val p = getApplication<Application>().getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        p.edit()
+            .putString("album_sort_order", c.name)
+            .putString("album_sort_direction", d.name)
+            .apply()
     }
 
     fun toggleFolderBlacklist(path: String, white: Boolean) {
@@ -1185,6 +1315,8 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     suspend fun getDiscoverMix(): List<Song> = smartPlaylistUseCase.getDiscoverMix(originalTrackList)
 
     suspend fun getGenreMix(genre: String): List<Song> = smartPlaylistUseCase.getGenreMix(originalTrackList, genre)
+
+    suspend fun getMoodMix(mood: String): List<Song> = smartPlaylistUseCase.getMoodMix(originalTrackList, mood)
 
     fun requestBulkMetadataUpdate(context: Context, updates: List<PendingTrackEdit>) {
         metadataUpdateUseCase.requestBulkMetadataUpdate(context, updates, metadataUpdateListener) { intent ->

@@ -25,4 +25,5 @@ dependencyResolutionManagement {
 rootProject.name = "Rhythm"
 include(":app")
 include(":shared")
+include(":wear")
  

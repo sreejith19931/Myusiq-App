@@ -1,7 +1,10 @@
 package com.music.rhythm.ui
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -12,9 +15,11 @@ import android.view.ViewGroup
 import android.view.animation.AnimationUtils
 import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.PopupWindow
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toDrawable
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -474,8 +479,9 @@ class TracksFragment : Fragment() {
     }
 
     private fun showSortPopup() {
-        val popupView = LayoutInflater.from(requireContext()).inflate(R.layout.layout_sort_popup, btnSort?.parent as? ViewGroup, false)
-        val width = (130 * resources.displayMetrics.density).toInt()
+        val btnSort = btnSort ?: return
+        val popupView = LayoutInflater.from(requireContext()).inflate(R.layout.layout_sort_popup, btnSort.parent as? ViewGroup, false)
+        val width = (180 * resources.displayMetrics.density).toInt()
         val popupWindow = PopupWindow(
             popupView,
             width,
@@ -487,62 +493,128 @@ class TracksFragment : Fragment() {
             overlapAnchor = false
         }
 
-        var direction = viewModel.currentSortDirection
+        var order = viewModel.trackSortOrder.value
+        var direction = viewModel.trackSortDirection.value
 
-        val btnAsc = popupView.findViewById<View>(R.id.btnGlobalAsc)
-        val btnDesc = popupView.findViewById<View>(R.id.btnGlobalDesc)
+        val btnAsc = popupView.findViewById<ImageView>(R.id.btnGlobalAsc)
+        val btnDesc = popupView.findViewById<ImageView>(R.id.btnGlobalDesc)
 
-        fun updateDirectionUI() {
-            btnAsc.alpha = if (direction == PlaybackViewModel.SortDirection.ASCENDING) 1.0f else 0.4f
-            btnDesc.alpha = if (direction == PlaybackViewModel.SortDirection.DESCENDING) 1.0f else 0.4f
+        val btnSortName = popupView.findViewById<TextView>(R.id.btnSortName)
+        val btnSortDate = popupView.findViewById<TextView>(R.id.btnSortDate)
+        val btnSortSize = popupView.findViewById<TextView>(R.id.btnSortSize)
+        val btnSortPopular = popupView.findViewById<TextView>(R.id.btnSortPopular)
+        val btnSortArtist = popupView.findViewById<TextView>(R.id.btnSortArtist)
+        val btnSortAlbum = popupView.findViewById<TextView>(R.id.btnSortAlbum)
+        val btnSortRecentlyPlayed = popupView.findViewById<TextView>(R.id.btnSortRecentlyPlayed)
+
+        fun updateUI() {
+            styleDirectionButton(btnAsc, direction == PlaybackViewModel.SortDirection.ASCENDING)
+            styleDirectionButton(btnDesc, direction == PlaybackViewModel.SortDirection.DESCENDING)
+
+            styleSortOptionItem(btnSortName, order == PlaybackViewModel.TrackSortOrder.ALPHABETICAL)
+            styleSortOptionItem(btnSortDate, order == PlaybackViewModel.TrackSortOrder.LAST_ADDED)
+            styleSortOptionItem(btnSortSize, order == PlaybackViewModel.TrackSortOrder.SIZE)
+            styleSortOptionItem(btnSortPopular, order == PlaybackViewModel.TrackSortOrder.MOST_POPULAR)
+            styleSortOptionItem(btnSortArtist, order == PlaybackViewModel.TrackSortOrder.ARTIST)
+            styleSortOptionItem(btnSortAlbum, order == PlaybackViewModel.TrackSortOrder.ALBUM)
+            styleSortOptionItem(btnSortRecentlyPlayed, order == PlaybackViewModel.TrackSortOrder.RECENTLY_PLAYED)
         }
 
-        updateDirectionUI()
+        updateUI()
 
         btnAsc.setOnClickListener {
             direction = PlaybackViewModel.SortDirection.ASCENDING
-            updateDirectionUI()
-            viewModel.sortTracks(viewModel.currentSortOrder, direction)
+            updateUI()
+            viewModel.sortTracks(order, direction)
         }
 
         btnDesc.setOnClickListener {
             direction = PlaybackViewModel.SortDirection.DESCENDING
-            updateDirectionUI()
-            viewModel.sortTracks(viewModel.currentSortOrder, direction)
+            updateUI()
+            viewModel.sortTracks(order, direction)
         }
 
-        popupView.findViewById<View>(R.id.btnSortName).setOnClickListener {
-            viewModel.sortTracks(PlaybackViewModel.TrackSortOrder.ALPHABETICAL, direction)
+        btnSortName.setOnClickListener {
+            order = PlaybackViewModel.TrackSortOrder.ALPHABETICAL
+            viewModel.sortTracks(order, direction)
             popupWindow.dismiss()
         }
-        popupView.findViewById<View>(R.id.btnSortDate).setOnClickListener {
-            viewModel.sortTracks(PlaybackViewModel.TrackSortOrder.LAST_ADDED, direction)
+        btnSortDate.setOnClickListener {
+            order = PlaybackViewModel.TrackSortOrder.LAST_ADDED
+            viewModel.sortTracks(order, direction)
             popupWindow.dismiss()
         }
-        popupView.findViewById<View>(R.id.btnSortSize).setOnClickListener {
-            viewModel.sortTracks(PlaybackViewModel.TrackSortOrder.SIZE, direction)
+        btnSortSize.setOnClickListener {
+            order = PlaybackViewModel.TrackSortOrder.SIZE
+            viewModel.sortTracks(order, direction)
             popupWindow.dismiss()
         }
-        popupView.findViewById<View>(R.id.btnSortPopular).setOnClickListener {
-            viewModel.sortTracks(PlaybackViewModel.TrackSortOrder.MOST_POPULAR, direction)
+        btnSortPopular.setOnClickListener {
+            order = PlaybackViewModel.TrackSortOrder.MOST_POPULAR
+            viewModel.sortTracks(order, direction)
             popupWindow.dismiss()
         }
-        popupView.findViewById<View>(R.id.btnSortArtist).setOnClickListener {
-            viewModel.sortTracks(PlaybackViewModel.TrackSortOrder.ARTIST, direction)
+        btnSortArtist.setOnClickListener {
+            order = PlaybackViewModel.TrackSortOrder.ARTIST
+            viewModel.sortTracks(order, direction)
             popupWindow.dismiss()
         }
-        popupView.findViewById<View>(R.id.btnSortAlbum).setOnClickListener {
-            viewModel.sortTracks(PlaybackViewModel.TrackSortOrder.ALBUM, direction)
+        btnSortAlbum.setOnClickListener {
+            order = PlaybackViewModel.TrackSortOrder.ALBUM
+            viewModel.sortTracks(order, direction)
             popupWindow.dismiss()
         }
-        popupView.findViewById<View>(R.id.btnSortRecentlyPlayed).setOnClickListener {
-            viewModel.sortTracks(PlaybackViewModel.TrackSortOrder.RECENTLY_PLAYED, direction)
+        btnSortRecentlyPlayed.setOnClickListener {
+            order = PlaybackViewModel.TrackSortOrder.RECENTLY_PLAYED
+            viewModel.sortTracks(order, direction)
             popupWindow.dismiss()
         }
 
-        popupWindow.elevation = 10f
-        popupWindow.overlapAnchor = false
-        popupWindow.showAsDropDown(btnSort!!, 0, 10, Gravity.END)
+        popupWindow.showAsDropDown(btnSort, 0, 10, Gravity.END)
+    }
+
+    private fun styleSortOptionItem(textView: TextView, isSelected: Boolean) {
+        val context = textView.context
+        if (isSelected) {
+            val primaryColor = ThemeUtils.getThemeColor(context, android.R.attr.colorPrimary)
+            val secondaryContainer = ThemeUtils.getThemeColor(context, com.google.android.material.R.attr.colorSecondaryContainer)
+
+            textView.setTextColor(primaryColor)
+            textView.setTypeface(null, Typeface.BOLD)
+
+            val checkDrawable = ContextCompat.getDrawable(context, R.drawable.ic_check)?.mutate()
+            checkDrawable?.setTint(primaryColor)
+            textView.setCompoundDrawablesWithIntrinsicBounds(null, null, checkDrawable, null)
+
+            val shape = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = 12f * context.resources.displayMetrics.density
+                setColor(secondaryContainer)
+            }
+            textView.background = shape
+        } else {
+            val onSurfaceColor = ThemeUtils.getThemeColor(context, com.google.android.material.R.attr.colorOnSurface)
+            textView.setTextColor(onSurfaceColor)
+            textView.setTypeface(null, Typeface.NORMAL)
+            textView.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null)
+            textView.background = null
+        }
+    }
+
+    private fun styleDirectionButton(button: ImageView, isActive: Boolean) {
+        val context = button.context
+        if (isActive) {
+            val primaryContainer = ThemeUtils.getThemeColor(context, com.google.android.material.R.attr.colorPrimaryContainer)
+            val onPrimaryContainer = ThemeUtils.getThemeColor(context, com.google.android.material.R.attr.colorOnPrimaryContainer)
+            button.alpha = 1.0f
+            button.backgroundTintList = ColorStateList.valueOf(primaryContainer)
+            button.imageTintList = ColorStateList.valueOf(onPrimaryContainer)
+        } else {
+            val onSurface = ThemeUtils.getThemeColor(context, com.google.android.material.R.attr.colorOnSurface)
+            button.alpha = 0.4f
+            button.backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
+            button.imageTintList = ColorStateList.valueOf(onSurface)
+        }
     }
 
     override fun onDestroyView() {

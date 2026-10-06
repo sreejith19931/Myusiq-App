@@ -76,7 +76,67 @@ class MaintenanceSettingsFragment : Fragment(R.layout.fragment_settings_maintena
                 .show()
         }
 
+        view.findViewById<View>(R.id.rowClearLyrics)?.setOnClickListener {
+            showClearLyricsOptionsDialog()
+        }
+
         view.findViewById<View>(R.id.rowResetApp).setOnClickListener { showResetConfirmationDialog() }
+    }
+
+    private fun showClearLyricsOptionsDialog() {
+        val options = arrayOf("Clear All Lyrics Files", "Select Song Lyrics to Remove")
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Clear Lyrics Files")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> confirmClearAllLyrics()
+                    1 -> showSelectLyricsToRemoveDialog()
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun confirmClearAllLyrics() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Clear All Lyrics?")
+            .setMessage("This will remove all saved lyrics files and custom lyrics overrides from local storage. Continue?")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Clear All") { _, _ ->
+                lifecycleScope.launch {
+                    viewModel.clearAllLyrics()
+                    Toast.makeText(requireContext(), "All local lyrics cleared", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .show()
+    }
+
+    private fun showSelectLyricsToRemoveDialog() {
+        lifecycleScope.launch {
+            val songsWithLyrics = viewModel.getSongsWithLyrics()
+            if (songsWithLyrics.isEmpty()) {
+                Toast.makeText(requireContext(), "No local lyrics files found", Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+
+            val items = songsWithLyrics.map { "${it.title} - ${it.artist}" }.toTypedArray()
+            val checked = BooleanArray(songsWithLyrics.size) { true }
+
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Select Lyrics to Remove")
+                .setMultiChoiceItems(items, checked) { _, which, isChecked ->
+                    checked[which] = isChecked
+                }
+                .setPositiveButton("Remove Selected") { _, _ ->
+                    val selected = songsWithLyrics.filterIndexed { index, _ -> checked[index] }
+                    if (selected.isNotEmpty()) {
+                        viewModel.deleteLyricsForSongs(selected)
+                        Toast.makeText(requireContext(), "Removed lyrics for ${selected.size} tracks", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
     }
 
     private fun showResetConfirmationDialog() {

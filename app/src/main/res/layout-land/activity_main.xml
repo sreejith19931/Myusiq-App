@@ -24,6 +24,16 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />
 
+    <include
+        android:id="@+id/layoutExitConfirm"
+        layout="@layout/layout_exit_confirm"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:id="@+id/rootMainLayout"
         android:layout_width="match_parent"
@@ -108,6 +118,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:visibility="gone"
+        app:menu="@menu/bottom_nav_menu"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 

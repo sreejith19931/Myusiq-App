@@ -4,6 +4,7 @@ import android.content.Context
 import com.music.rhythm.DatabaseProvider
 import com.music.rhythm.domain.models.SearchHistory
 import com.music.rhythm.domain.models.Song
+import com.music.rhythm.utils.TransliterationUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -22,10 +23,19 @@ class SearchUseCase(context: Context) {
 
     fun filterSongs(songs: List<Song>, query: String): List<Song> {
         if (query.isBlank()) return songs
+        val transliteratedQuery = TransliterationUtil.transliterate(query)
+        val hasTransliteration = TransliterationUtil.isAvailable()
+
         return songs.filter { song ->
             song.title.contains(query, ignoreCase = true) ||
             song.artist.contains(query, ignoreCase = true) ||
-            song.album.contains(query, ignoreCase = true)
+            song.album.contains(query, ignoreCase = true) ||
+            (hasTransliteration && (
+                TransliterationUtil.transliterate(song.title).contains(query, ignoreCase = true) ||
+                TransliterationUtil.transliterate(song.artist).contains(query, ignoreCase = true) ||
+                TransliterationUtil.transliterate(song.title).contains(transliteratedQuery, ignoreCase = true) ||
+                TransliterationUtil.transliterate(song.artist).contains(transliteratedQuery, ignoreCase = true)
+            ))
         }
     }
 }

@@ -16,7 +16,6 @@ import android.util.Log
 import androidx.core.graphics.ColorUtils
 import androidx.palette.graphics.Palette
 import com.bumptech.glide.Glide
-import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.music.rhythm.R
@@ -84,18 +83,19 @@ class AlbumsAdapter(
 
         val representativeSong = album.firstTrack
         if (representativeSong != null) {
-            val sArtworkUri = "content://media/external/audio/albumart".toUri()
-            val albumArtUri = ContentUris.withAppendedId(sArtworkUri, representativeSong.albumId)
-
             val context = holder.itemView.context
             if (!context.isActivityDestroyed()) {
+                val cachedArtFile = com.music.rhythm.utils.ArtworkUtils.getArtworkFile(context, representativeSong.id, representativeSong.path)
+                val sArtworkUri = "content://media/external/audio/albumart".toUri()
+                val albumArtUri = ContentUris.withAppendedId(sArtworkUri, representativeSong.albumId)
+                val modelToLoad: Any = cachedArtFile ?: albumArtUri
+
                 if (holder is AlbumListViewHolder) {
                     Glide.with(context)
                         .asBitmap()
-                        .load(albumArtUri)
+                        .load(modelToLoad)
                         .placeholder(R.drawable.ic_music_note_2)
                         .error(R.drawable.ic_music_note_2)
-                        .diskCacheStrategy(DiskCacheStrategy.ALL)
                         .into(
                             object : CustomTarget<Bitmap>() {
                                 override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
@@ -111,10 +111,9 @@ class AlbumsAdapter(
                         )
                 } else {
                     Glide.with(context)
-                        .load(albumArtUri)
+                        .load(modelToLoad)
                         .placeholder(R.drawable.ic_music_note_2)
                         .error(R.drawable.ic_music_note_2)
-                        .diskCacheStrategy(DiskCacheStrategy.ALL)
                         .into(holder.ivAlbumArt)
                 }
             }

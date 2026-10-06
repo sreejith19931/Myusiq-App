@@ -17,8 +17,8 @@ android {
         applicationId = "com.music.rhythm"
         minSdk = 26
         targetSdk = 37
-        versionCode = 8
-        versionName = "2.0.1"
+        versionCode = 9
+        versionName = "2.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -96,6 +96,10 @@ dependencies {
     implementation(libs.androidx.dynamicanimation.ktx)
     implementation(libs.jsoup)
     implementation(libs.jaudiotagger)
+    implementation(libs.okhttp)
+    implementation(libs.gson)
+    implementation(libs.coil)
+    implementation(libs.coroutines.android)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.core.splashscreen)

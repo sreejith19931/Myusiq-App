@@ -221,36 +221,49 @@ class TrackAdapter(
             val context = itemView.context
             if (!context.isActivityDestroyed()) {
                 val currentSignature = artworkSignature ?: 0L
-                val trackUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id)
-                
-                // Only use albumArtUri if it's a valid ID (> 0) to avoid "Unknown" album art contamination
-                val albumArtUri = if (song.albumId > 0) {
-                    ContentUris.withAppendedId("content://media/external/audio/albumart".toUri(), song.albumId)
-                } else null
-                
-                val albumRequest = albumArtUri?.let {
+                val cachedArtFile = com.music.rhythm.utils.ArtworkUtils.getArtworkFile(context, song.id, song.path)
+
+                if (cachedArtFile != null) {
                     Glide.with(context)
                         .asBitmap()
-                        .load(it)
+                        .load(cachedArtFile)
                         .signature(ObjectKey(currentSignature))
+                        .placeholder(R.drawable.ic_music_note_2)
                         .error(R.drawable.ic_music_note_2)
+                        .diskCacheStrategy(DiskCacheStrategy.NONE)
+                        .skipMemoryCache(true)
+                        .override(120, 120)
+                        .into(ivTrackArt)
+                } else {
+                    val trackUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id)
+                    val albumArtUri = if (song.albumId > 0) {
+                        ContentUris.withAppendedId("content://media/external/audio/albumart".toUri(), song.albumId)
+                    } else null
+
+                    val albumRequest = albumArtUri?.let {
+                        Glide.with(context)
+                            .asBitmap()
+                            .load(it)
+                            .signature(ObjectKey(currentSignature))
+                            .error(R.drawable.ic_music_note_2)
+                    }
+
+                    val fileRequest = Glide.with(context)
+                        .asBitmap()
+                        .load(File(song.path))
+                        .signature(ObjectKey(currentSignature))
+                        .error(albumRequest ?: Glide.with(context).asBitmap().load(R.drawable.ic_music_note_2))
+
+                    Glide.with(context)
+                        .asBitmap()
+                        .load(trackUri)
+                        .signature(ObjectKey(currentSignature))
+                        .placeholder(R.drawable.ic_music_note_2)
+                        .error(fileRequest)
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .override(120, 120)
+                        .into(ivTrackArt)
                 }
-
-                val fileRequest = Glide.with(context)
-                    .asBitmap()
-                    .load(File(song.path))
-                    .signature(ObjectKey(currentSignature))
-                    .error(albumRequest ?: Glide.with(context).asBitmap().load(R.drawable.ic_music_note_2))
-
-                Glide.with(context)
-                    .asBitmap()
-                    .load(trackUri)
-                    .signature(ObjectKey(currentSignature))
-                    .placeholder(R.drawable.ic_music_note_2)
-                    .error(fileRequest)
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .override(120, 120)
-                    .into(ivTrackArt)
             }
 
             ivTrackArt.transitionName = "track_art_${song.id}"

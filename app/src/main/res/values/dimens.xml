@@ -5,4 +5,14 @@
     <dimen name="nav_rail_width">72dp</dimen>
     <dimen name="player_peek_height">144dp</dimen> <!-- 72 + 72 -->
     <dimen name="exit_confirm_margin_top">0dp</dimen>
+
+    <!-- Responsive Typography Dimensions -->
+    <dimen name="text_size_headline_large">26sp</dimen>
+    <dimen name="text_size_headline_medium">22sp</dimen>
+    <dimen name="text_size_title_large">18sp</dimen>
+    <dimen name="text_size_title_medium">16sp</dimen>
+    <dimen name="text_size_body_medium">14sp</dimen>
+    <dimen name="text_size_body_small">12sp</dimen>
+    <dimen name="text_size_lyric_active">22sp</dimen>
+    <dimen name="text_size_lyric_inactive">18sp</dimen>
 </resources>

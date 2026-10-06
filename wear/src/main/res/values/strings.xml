@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Rhythm Watch</string>
+    <string name="now_playing">Now Playing</string>
+    <string name="queue">Queue</string>
+    <string name="no_track_playing">No Track Playing</string>
+    <string name="connect_to_phone">Connect to Phone</string>
+</resources>

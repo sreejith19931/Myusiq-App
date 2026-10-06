@@ -137,6 +137,9 @@
     <string name="lyrics_offset_minus">Decrease lyrics offset</string>
     <string name="lyrics_offset_plus">Increase lyrics offset</string>
     <string name="create_lyrics_poster">Create lyrics poster</string>
+    <string name="toggle_original_transliterated_lyrics">Toggle Original / Transliterated Lyrics</string>
+    <string name="showing_transliterated_lyrics">Showing Transliterated Lyrics</string>
+    <string name="showing_original_lyrics">Showing Original Lyrics</string>
     <string name="shuffle_all">Shuffle all</string>
     <string name="album_art">Album Art</string>
     <string name="favorite">Favorite</string>
@@ -224,6 +227,10 @@
     <string name="lyrics_applied">Lyrics applied!</string>
     <string name="lyrics_saved">Lyrics saved!</string>
     <string name="no_matches_found_lyrics">No matches found.</string>
+    <string name="add_lyrics_prompt_title">Add Lyrics?</string>
+    <string name="add_lyrics">Add Lyrics</string>
+    <string name="search_another">Search Another</string>
+    <string name="no_mood_tracks_found">No %s tracks found in your library.</string>
     <string name="library_loading">Library is still loading&#8230;</string>
     <string name="playing_mood_mix">Playing %s Mix 🎵</string>
     <string name="backup_created">Backup created successfully</string>
@@ -256,6 +263,7 @@
     <string name="mood_relax">Relax</string>
     <string name="mood_party">Party</string>
     <string name="mood_focus">Focus</string>
+    <string name="mood_romance">Romance</string>
     <string name="delete">Delete</string>
     <string name="library_janitor">Library Janitor</string>
     <string name="library_janitor_desc">Clean up duplicates and missing art</string>

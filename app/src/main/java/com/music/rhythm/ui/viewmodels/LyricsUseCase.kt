@@ -5,9 +5,12 @@ import android.media.MediaScannerConnection
 import android.util.Log
 import com.music.rhythm.data.MusicRepository
 import com.music.rhythm.domain.models.LyricsOverride
+import com.music.rhythm.utils.LrcFetcher
 import com.music.rhythm.utils.PlatformUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -21,10 +24,11 @@ class LyricsUseCase(
     private val musicRepository: MusicRepository,
     private val application: Application,
     private val scope: CoroutineScope,
+    private val lrcFetcher: LrcFetcher = LrcFetcher(),
 ) {
     suspend fun getLyricsForSong(path: String): String? {
         val normalizedPath = PlatformUtils.normalizePath(path)
-        return musicRepository.getLyricsForPath(normalizedPath)?.rawLyrics
+        val rawLyrics = musicRepository.getLyricsForPath(normalizedPath)?.rawLyrics
             ?: run {
                 // Try local file loading as fallback
                 val fileLyrics = withContext(Dispatchers.IO) {
@@ -62,6 +66,8 @@ class LyricsUseCase(
                     fileLyrics
                 } else null
             }
+
+        return rawLyrics
     }
 
     fun saveLyrics(path: String, lyrics: String) {
@@ -113,6 +119,11 @@ class LyricsUseCase(
                 
                 if (lrcFile.exists()) lrcFile.delete()
                 if (txtFile.exists()) txtFile.delete()
+
+                val sameLrc = File(musicFile.parentFile, "$baseName.lrc")
+                val sameTxt = File(musicFile.parentFile, "$baseName.txt")
+                if (sameLrc.exists()) sameLrc.delete()
+                if (sameTxt.exists()) sameTxt.delete()
                 
                 MediaScannerConnection.scanFile(application, arrayOf(lrcFile.absolutePath, txtFile.absolutePath), null, null)
             } catch (e: Exception) {
@@ -121,75 +132,205 @@ class LyricsUseCase(
         }
     }
 
-    suspend fun searchLyricsOnline(title: String, artist: String): List<LyricsResponse> {
-        return withContext(Dispatchers.IO) {
-            try {
-                val query = URLEncoder.encode("$artist $title", "UTF-8")
-                val url = URL("https://lrclib.net/api/search?q=$query")
-                val connection = url.openConnection() as HttpURLConnection
-                connection.requestMethod = "GET"
-                connection.connectTimeout = 5000
-                connection.readTimeout = 5000
+    suspend fun deleteAllLyrics(songs: List<com.music.rhythm.domain.models.Song>) {
+        musicRepository.deleteAllLyrics()
+        withContext(Dispatchers.IO) {
+            val allSongs = if (songs.isNotEmpty()) songs else musicRepository.getSongs(false)
+            allSongs.forEach { song ->
+                try {
+                    val musicFile = File(song.path)
+                    if (musicFile.exists()) {
+                        val parentFolder = musicFile.parentFile
+                        val lyricsDir = File(parentFolder, "lyrics")
+                        val baseName = musicFile.nameWithoutExtension.lowercase()
 
-                if (connection.responseCode == HttpURLConnection.HTTP_OK) {
-                    val response = connection.inputStream.bufferedReader().use { it.readText() }
-                    val jsonArray = JSONArray(response)
-                    val results = mutableListOf<LyricsResponse>()
-                    for (i in 0 until jsonArray.length()) {
-                        val obj = jsonArray.getJSONObject(i)
-                        val synced = obj.optString("syncedLyrics")
-                        val plain = obj.optString("plainLyrics")
-                        results.add(
-                            LyricsResponse(
-                                lyricContent = synced.ifBlank { plain },
-                                suggestedTitle = obj.optString("trackName"),
-                                suggestedArtist = obj.optString("artistName"),
-                                suggestedAlbum = obj.optString("albumName"),
-                                confidenceScore = 1.0f,
-                            ),
-                        )
+                        if (lyricsDir.exists()) {
+                            lyricsDir.listFiles()?.forEach { file ->
+                                if (file.nameWithoutExtension.lowercase() == baseName &&
+                                    (file.extension.equals("lrc", ignoreCase = true) || file.extension.equals("txt", ignoreCase = true))) {
+                                    file.delete()
+                                }
+                            }
+                        }
+
+                        parentFolder?.listFiles()?.forEach { file ->
+                            if (file.nameWithoutExtension.lowercase() == baseName &&
+                                (file.extension.equals("lrc", ignoreCase = true) || file.extension.equals("txt", ignoreCase = true))) {
+                                file.delete()
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("LyricsUseCase", "Error clearing lyrics for song: ${song.title}", e)
+                }
+            }
+        }
+    }
+
+    suspend fun getSongsWithLyrics(songs: List<com.music.rhythm.domain.models.Song>): List<com.music.rhythm.domain.models.Song> {
+        return withContext(Dispatchers.IO) {
+            val dbLyricsPaths = musicRepository.getAllLyricsOverridesSync().map { it.songPath.lowercase() }.toSet()
+            songs.filter { song ->
+                val normPath = PlatformUtils.normalizePath(song.path).lowercase()
+                if (dbLyricsPaths.contains(normPath)) return@filter true
+
+                try {
+                    val musicFile = File(song.path)
+                    if (musicFile.exists()) {
+                        val lyricsDir = File(musicFile.parentFile, "lyrics")
+                        val baseName = musicFile.nameWithoutExtension
+                        val lrcFile = File(lyricsDir, "$baseName.lrc")
+                        val txtFile = File(lyricsDir, "$baseName.txt")
+                        val sameLrc = File(musicFile.parentFile, "$baseName.lrc")
+                        val sameTxt = File(musicFile.parentFile, "$baseName.txt")
+                        return@filter lrcFile.exists() || txtFile.exists() || sameLrc.exists() || sameTxt.exists()
+                    }
+                } catch (_: Exception) {}
+                false
+            }
+        }
+    }
+
+    suspend fun searchLyricsOnline(title: String, artist: String): List<LyricsResponse> {
+        return coroutineScope {
+            val results = mutableListOf<LyricsResponse>()
+            
+            // 1. LRCLIB Search
+            val lrclibDeferred = async(Dispatchers.IO) {
+                val lrclibResults = mutableListOf<LyricsResponse>()
+                try {
+                    val query = URLEncoder.encode("$artist $title", "UTF-8")
+                    val url = URL("https://lrclib.net/api/search?q=$query")
+                    val connection = url.openConnection() as HttpURLConnection
+                    connection.requestMethod = "GET"
+                    connection.connectTimeout = 4000
+                    connection.readTimeout = 4000
+
+                    if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+                        val response = connection.inputStream.bufferedReader().use { it.readText() }
+                        val jsonArray = JSONArray(response)
+                        for (i in 0 until jsonArray.length()) {
+                            val obj = jsonArray.getJSONObject(i)
+                            val synced = obj.optString("syncedLyrics")
+                            val plain = obj.optString("plainLyrics")
+                            val content = synced.ifBlank { plain }
+                            if (content.isNotBlank()) {
+                                lrclibResults.add(
+                                    LyricsResponse(
+                                        lyricContent = content,
+                                        suggestedTitle = obj.optString("trackName").ifBlank { title },
+                                        suggestedArtist = obj.optString("artistName").ifBlank { artist },
+                                        suggestedAlbum = obj.optString("albumName"),
+                                        confidenceScore = 1.0f,
+                                    )
+                                )
+                            }
+                        }
                     }
                     connection.disconnect()
-                    return@withContext results
+                } catch (e: Exception) {
+                    Log.e("LyricsUseCase", "Error searching LRCLIB", e)
                 }
-                connection.disconnect()
-            } catch (e: Exception) {
-                Log.e("LyricsUseCase", "Error searching lyrics online", e)
+                lrclibResults
             }
-            emptyList()
+
+            // 2. Lyrist Search API
+            val lyristDeferred = async(Dispatchers.IO) {
+                val lyristResults = mutableListOf<LyricsResponse>()
+                try {
+                    val encodedTitle = URLEncoder.encode(title, "UTF-8")
+                    val encodedArtist = URLEncoder.encode(artist, "UTF-8")
+                    val url = URL("https://lyrist.vercel.app/api/$encodedTitle/$encodedArtist")
+                    val connection = url.openConnection() as HttpURLConnection
+                    connection.requestMethod = "GET"
+                    connection.connectTimeout = 4000
+                    connection.readTimeout = 4000
+
+                    if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+                        val response = connection.inputStream.bufferedReader().use { it.readText() }
+                        val obj = JSONObject(response)
+                        val lyrics = obj.optString("lyrics")
+                        if (lyrics.isNotBlank()) {
+                            lyristResults.add(
+                                LyricsResponse(
+                                    lyricContent = lyrics,
+                                    suggestedTitle = obj.optString("title").ifBlank { title },
+                                    suggestedArtist = obj.optString("artist").ifBlank { artist },
+                                    suggestedAlbum = obj.optString("album"),
+                                    artworkUrl = obj.optString("image").takeIf { it.isNotBlank() },
+                                    confidenceScore = 0.9f,
+                                )
+                            )
+                        }
+                    }
+                    connection.disconnect()
+                } catch (e: Exception) {
+                    Log.e("LyricsUseCase", "Error searching Lyrist", e)
+                }
+                lyristResults
+            }
+
+            // 3. ChartLyrics Search API
+            val chartLyricsDeferred = async(Dispatchers.IO) {
+                val chartResults = mutableListOf<LyricsResponse>()
+                try {
+                    val encodedArtist = URLEncoder.encode(artist, "UTF-8")
+                    val encodedTitle = URLEncoder.encode(title, "UTF-8")
+                    val url = URL("http://api.chartlyrics.com/apiv1.asmx/SearchLyricDirect?artist=$encodedArtist&song=$encodedTitle")
+                    val connection = url.openConnection() as HttpURLConnection
+                    connection.requestMethod = "GET"
+                    connection.connectTimeout = 4000
+                    connection.readTimeout = 4000
+
+                    if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+                        val xml = connection.inputStream.bufferedReader().use { it.readText() }
+                        val lyrics = xml.substringAfter("<Lyric>", "").substringBefore("</Lyric>").trim()
+                        val trackName = xml.substringAfter("<LyricSong>", "").substringBefore("</LyricSong>").trim()
+                        val artistName = xml.substringAfter("<LyricArtist>", "").substringBefore("</LyricArtist>").trim()
+                        
+                        if (lyrics.isNotBlank() && !lyrics.contains("Not found", ignoreCase = true)) {
+                            chartResults.add(
+                                LyricsResponse(
+                                    lyricContent = lyrics,
+                                    suggestedTitle = trackName.ifBlank { title },
+                                    suggestedArtist = artistName.ifBlank { artist },
+                                    suggestedAlbum = "",
+                                    confidenceScore = 0.8f,
+                                )
+                            )
+                        }
+                    }
+                    connection.disconnect()
+                } catch (e: Exception) {
+                    Log.e("LyricsUseCase", "Error searching ChartLyrics", e)
+                }
+                chartResults
+            }
+
+            val res1 = lrclibDeferred.await()
+            val res2 = lyristDeferred.await()
+            val res3 = chartLyricsDeferred.await()
+
+            results.addAll(res1)
+            results.addAll(res2)
+            results.addAll(res3)
+
+            results.distinctBy { it.lyricContent?.take(50) ?: it.suggestedTitle }
         }
     }
 
     suspend fun fetchLyricsOnline(title: String, artist: String): LyricsResponse? {
-        return withContext(Dispatchers.IO) {
-            try {
-                val query = URLEncoder.encode("track_name=$title&artist_name=$artist", "UTF-8")
-                val url = URL("https://lrclib.net/api/get?$query")
-                val connection = url.openConnection() as HttpURLConnection
-                connection.requestMethod = "GET"
-                connection.connectTimeout = 3000
-
-                if (connection.responseCode == HttpURLConnection.HTTP_OK) {
-                    val response = connection.inputStream.bufferedReader().use { it.readText() }
-                    val obj = JSONObject(response)
-                    val synced = obj.optString("syncedLyrics")
-                    val plain = obj.optString("plainLyrics")
-                    val content = synced.ifBlank { plain }
-                    connection.disconnect()
-                    if (content.isNotBlank()) {
-                        return@withContext LyricsResponse(
-                            lyricContent = content,
-                            suggestedTitle = obj.optString("trackName"),
-                            suggestedArtist = obj.optString("artistName"),
-                            suggestedAlbum = obj.optString("albumName"),
-                        )
-                    }
-                }
-                connection.disconnect()
-            } catch (e: Exception) {
-                Log.e("LyricsUseCase", "Error fetching lyrics online", e)
-            }
-            null
+        val fetchedSynced = lrcFetcher.fetchSyncedLyrics(artist, title)
+        if (!fetchedSynced.isNullOrBlank()) {
+            return LyricsResponse(
+                lyricContent = fetchedSynced,
+                suggestedTitle = title,
+                suggestedArtist = artist,
+                suggestedAlbum = "",
+                confidenceScore = 1.0f,
+            )
         }
+        val search = searchLyricsOnline(title, artist)
+        return search.firstOrNull()
     }
 }

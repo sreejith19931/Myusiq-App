@@ -198,6 +198,27 @@
                 android:padding="8dp">
 
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnLyricsTransliterate"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginEnd="8dp"
+                    android:backgroundTint="#22FFFFFF"
+                    android:padding="0dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:insetLeft="0dp"
+                    android:insetRight="0dp"
+                    android:contentDescription="@string/toggle_original_transliterated_lyrics"
+                    app:icon="@drawable/ic_translate"
+                    app:iconSize="20dp"
+                    app:iconTint="@android:color/white"
+                    app:iconGravity="textStart"
+                    android:gravity="center"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
+                    android:tooltipText="Original / Transliterated" />
+
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnLyricsEdit"
                     style="@style/Widget.Material3.Button.IconButton"
                     android:layout_width="40dp"
@@ -246,8 +267,9 @@
                 android:layout_gravity="bottom|center_horizontal"
                 android:layout_marginBottom="24dp"
                 app:cardCornerRadius="20dp"
-                app:cardElevation="4dp"
-                app:cardBackgroundColor="#44000000"
+                app:cardElevation="0dp"
+                android:elevation="0dp"
+                app:cardBackgroundColor="#22FFFFFF"
                 app:strokeWidth="1dp"
                 app:strokeColor="#33FFFFFF">
 
@@ -263,6 +285,9 @@
                         style="@style/Widget.Material3.Button.IconButton"
                         android:layout_width="36dp"
                         android:layout_height="36dp"
+                        android:backgroundTint="@android:color/transparent"
+                        android:enabled="false"
+                        android:alpha="0.38"
                         android:padding="0dp"
                         android:insetTop="0dp"
                         android:insetBottom="0dp"
@@ -271,8 +296,10 @@
                         android:contentDescription="@string/create_lyrics_poster"
                         app:icon="@drawable/ic_featured_playlist"
                         app:iconSize="20dp"
+                        app:iconTint="@android:color/white"
                         app:iconGravity="textStart"
                         android:gravity="center"
+                        app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
                         android:tooltipText="Create Lyrics Poster" />
 
                     <View android:layout_width="1dp" android:layout_height="24dp" android:background="#33FFFFFF" android:layout_marginHorizontal="4dp"/>
@@ -399,10 +426,14 @@
         android:background="@drawable/bg_lyric_overlay"
         android:elevation="6dp"
         android:gravity="center"
-        android:paddingHorizontal="16dp"
-        android:paddingVertical="8dp"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="12dp"
+        android:shadowColor="#FF000000"
+        android:shadowDx="0"
+        android:shadowDy="2"
+        android:shadowRadius="6"
         android:textColor="@android:color/white"
-        android:textSize="18sp"
+        android:textSize="@dimen/text_size_title_large"
         android:textStyle="bold"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="@id/layoutCardContainer"

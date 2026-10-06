@@ -10,7 +10,6 @@
 
     <style name="Theme_Rhythm" parent="Base.Theme_Rhythm">
         <item name="colorPrimary">@color/md_theme_default_primary</item>
-        <item name="bottomNavigationStyle">@style/Widget.Material3.BottomNavigationView.ActiveIndicator</item>
     </style>
 
     <style name="Theme.App.Starting" parent="Theme.SplashScreen">
@@ -19,67 +18,148 @@
         <item name="postSplashScreenTheme">@style/Theme_Rhythm</item>
     </style>
 
-    <!-- Dark Mode Palettes: Use Dark Backgrounds for contrast -->
+    <!-- Dark Mode Palettes: Use Dark Backgrounds with High-Contrast Light Text -->
     <style name="Theme.Palette.Red" parent="Theme_Rhythm">
         <item name="colorPrimary">@color/rainbow_red</item>
         <item name="colorSecondary">@color/rainbow_red</item>
-        <item name="colorSurface">#1A1110</item>
-        <item name="android:colorBackground">#1A1110</item>
-        <item name="colorOnSurface">#F4E0DF</item>
-        <item name="colorOnBackground">#F4E0DF</item>
+        <item name="colorSurface">@color/palette_bg_dark_red</item>
+        <item name="android:colorBackground">@color/palette_bg_dark_red</item>
+        <item name="colorOnSurface">@color/palette_on_surface_dark_red</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_dark_red</item>
+        <item name="colorOnBackground">@color/palette_on_surface_dark_red</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_dark_red</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_dark_red</item>
     </style>
 
     <style name="Theme.Palette.Orange" parent="Theme_Rhythm">
         <item name="colorPrimary">@color/rainbow_orange</item>
         <item name="colorSecondary">@color/rainbow_orange</item>
-        <item name="colorSurface">#1A1208</item>
-        <item name="android:colorBackground">#1A1208</item>
-        <item name="colorOnSurface">#F5E1D6</item>
-        <item name="colorOnBackground">#F5E1D6</item>
+        <item name="colorSurface">@color/palette_bg_dark_orange</item>
+        <item name="android:colorBackground">@color/palette_bg_dark_orange</item>
+        <item name="colorOnSurface">@color/palette_on_surface_dark_orange</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_dark_orange</item>
+        <item name="colorOnBackground">@color/palette_on_surface_dark_orange</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_dark_orange</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_dark_orange</item>
     </style>
 
     <style name="Theme.Palette.Yellow" parent="Theme_Rhythm">
         <item name="colorPrimary">@color/rainbow_yellow</item>
         <item name="colorSecondary">@color/rainbow_yellow</item>
-        <item name="colorSurface">#1A1805</item>
-        <item name="android:colorBackground">#1A1805</item>
-        <item name="colorOnSurface">#F5F3D1</item>
-        <item name="colorOnBackground">#F5F3D1</item>
+        <item name="colorSurface">@color/palette_bg_dark_yellow</item>
+        <item name="android:colorBackground">@color/palette_bg_dark_yellow</item>
+        <item name="colorOnSurface">@color/palette_on_surface_dark_yellow</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_dark_yellow</item>
+        <item name="colorOnBackground">@color/palette_on_surface_dark_yellow</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_dark_yellow</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_dark_yellow</item>
     </style>
 
     <style name="Theme.Palette.Green" parent="Theme_Rhythm">
         <item name="colorPrimary">@color/rainbow_green</item>
         <item name="colorSecondary">@color/rainbow_green</item>
-        <item name="colorSurface">#0A1A0C</item>
-        <item name="android:colorBackground">#0A1A0C</item>
-        <item name="colorOnSurface">#D5E8D9</item>
-        <item name="colorOnBackground">#D5E8D9</item>
+        <item name="colorSurface">@color/palette_bg_dark_green</item>
+        <item name="android:colorBackground">@color/palette_bg_dark_green</item>
+        <item name="colorOnSurface">@color/palette_on_surface_dark_green</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_dark_green</item>
+        <item name="colorOnBackground">@color/palette_on_surface_dark_green</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_dark_green</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_dark_green</item>
     </style>
 
     <style name="Theme.Palette.Blue" parent="Theme_Rhythm">
         <item name="colorPrimary">@color/rainbow_blue</item>
         <item name="colorSecondary">@color/rainbow_blue</item>
-        <item name="colorSurface">#08121A</item>
-        <item name="android:colorBackground">#08121A</item>
-        <item name="colorOnSurface">#D6E3F5</item>
-        <item name="colorOnBackground">#D6E3F5</item>
+        <item name="colorSurface">@color/palette_bg_dark_blue</item>
+        <item name="android:colorBackground">@color/palette_bg_dark_blue</item>
+        <item name="colorOnSurface">@color/palette_on_surface_dark_blue</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_dark_blue</item>
+        <item name="colorOnBackground">@color/palette_on_surface_dark_blue</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_dark_blue</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_dark_blue</item>
     </style>
 
     <style name="Theme.Palette.Indigo" parent="Theme_Rhythm">
         <item name="colorPrimary">@color/rainbow_indigo</item>
         <item name="colorSecondary">@color/rainbow_indigo</item>
-        <item name="colorSurface">#0B0D1A</item>
-        <item name="android:colorBackground">#0B0D1A</item>
-        <item name="colorOnSurface">#D7D9E8</item>
-        <item name="colorOnBackground">#D7D9E8</item>
+        <item name="colorSurface">@color/palette_bg_dark_indigo</item>
+        <item name="android:colorBackground">@color/palette_bg_dark_indigo</item>
+        <item name="colorOnSurface">@color/palette_on_surface_dark_indigo</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_dark_indigo</item>
+        <item name="colorOnBackground">@color/palette_on_surface_dark_indigo</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_dark_indigo</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_dark_indigo</item>
     </style>
 
     <style name="Theme.Palette.Violet" parent="Theme_Rhythm">
         <item name="colorPrimary">@color/rainbow_violet</item>
         <item name="colorSecondary">@color/rainbow_violet</item>
-        <item name="colorSurface">#150A1A</item>
-        <item name="android:colorBackground">#150A1A</item>
-        <item name="colorOnSurface">#E8D5F5</item>
-        <item name="colorOnBackground">#E8D5F5</item>
+        <item name="colorSurface">@color/palette_bg_dark_violet</item>
+        <item name="android:colorBackground">@color/palette_bg_dark_violet</item>
+        <item name="colorOnSurface">@color/palette_on_surface_dark_violet</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_dark_violet</item>
+        <item name="colorOnBackground">@color/palette_on_surface_dark_violet</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_dark_violet</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_dark_violet</item>
+    </style>
+
+    <style name="Theme.Palette.Midnight" parent="Theme_Rhythm">
+        <item name="colorPrimary">@color/midnight_accent</item>
+        <item name="colorSecondary">@color/midnight_accent</item>
+        <item name="colorSurface">@color/midnight_blue</item>
+        <item name="android:colorBackground">@color/midnight_blue</item>
+        <item name="colorOnSurface">@color/palette_on_surface_midnight</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_midnight</item>
+        <item name="colorOnBackground">@color/palette_on_surface_midnight</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_midnight</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_midnight</item>
+    </style>
+
+    <style name="Theme.Palette.Slate" parent="Theme_Rhythm">
+        <item name="colorPrimary">@color/slate_accent</item>
+        <item name="colorSecondary">@color/slate_accent</item>
+        <item name="colorSurface">@color/slate_dark</item>
+        <item name="android:colorBackground">@color/slate_dark</item>
+        <item name="colorOnSurface">@color/palette_on_surface_slate</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_slate</item>
+        <item name="colorOnBackground">@color/palette_on_surface_slate</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_slate</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_slate</item>
+    </style>
+
+    <style name="Theme.Palette.Forest" parent="Theme_Rhythm">
+        <item name="colorPrimary">@color/forest_accent</item>
+        <item name="colorSecondary">@color/forest_accent</item>
+        <item name="colorSurface">@color/forest_dark</item>
+        <item name="android:colorBackground">@color/forest_dark</item>
+        <item name="colorOnSurface">@color/palette_on_surface_forest</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_forest</item>
+        <item name="colorOnBackground">@color/palette_on_surface_forest</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_forest</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_forest</item>
+    </style>
+
+    <style name="Theme.Palette.Charcoal" parent="Theme_Rhythm">
+        <item name="colorPrimary">@color/charcoal_accent</item>
+        <item name="colorSecondary">@color/charcoal_accent</item>
+        <item name="colorSurface">@color/charcoal_dark</item>
+        <item name="android:colorBackground">@color/charcoal_dark</item>
+        <item name="colorOnSurface">@color/palette_on_surface_charcoal</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_charcoal</item>
+        <item name="colorOnBackground">@color/palette_on_surface_charcoal</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_charcoal</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_charcoal</item>
+    </style>
+
+    <style name="Theme.Palette.Royal" parent="Theme_Rhythm">
+        <item name="colorPrimary">@color/royal_accent</item>
+        <item name="colorSecondary">@color/royal_accent</item>
+        <item name="colorSurface">@color/royal_dark</item>
+        <item name="android:colorBackground">@color/royal_dark</item>
+        <item name="colorOnSurface">@color/palette_on_surface_royal</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_royal</item>
+        <item name="colorOnBackground">@color/palette_on_surface_royal</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_royal</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_royal</item>
     </style>
 </resources>

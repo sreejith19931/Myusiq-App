@@ -12,8 +12,63 @@ import java.io.FileNotFoundException
 object FileTagEditor {
 
     /**
-     * Updates ID3 tags and calculates the new physical file path.
-     * Returns the new desired absolute path of the file.
+     * Embeds ID3 metadata and album artwork directly into an audio file (MP3, FLAC, M4A, etc.) on storage using jaudiotagger.
+     *
+     * @param file Target audio file on storage
+     * @param title Track title
+     * @param artist Artist name
+     * @param album Album title
+     * @param year Release year
+     * @param genre Track genre
+     * @param artworkBytes Optional raw byte array of album artwork image (JPEG/PNG)
+     * @param artworkFile Optional artwork file
+     * @return true if successfully embedded and saved, false otherwise.
+     */
+    fun embedId3TagsAndArtwork(
+        file: File,
+        title: String? = null,
+        artist: String? = null,
+        album: String? = null,
+        year: String? = null,
+        genre: String? = null,
+        artworkBytes: ByteArray? = null,
+        artworkFile: File? = null,
+    ): Boolean {
+        if (!file.exists()) {
+            Log.e("FileTagEditor", "File does not exist: ${file.absolutePath}")
+            return false
+        }
+
+        return try {
+            val audioFile = AudioFileIO.read(file)
+            val tag = audioFile.tag ?: audioFile.createDefaultTag()
+
+            title?.let { tag.setField(FieldKey.TITLE, it) }
+            artist?.let { tag.setField(FieldKey.ARTIST, it) }
+            album?.let { tag.setField(FieldKey.ALBUM, it) }
+            year?.takeIf { it.isNotBlank() && it != "Unknown" }?.let { tag.setField(FieldKey.YEAR, it) }
+            genre?.takeIf { it.isNotBlank() && it != "Unknown" }?.let { tag.setField(FieldKey.GENRE, it) }
+
+            val bytesToEmbed = artworkBytes ?: artworkFile?.takeIf { it.exists() }?.readBytes()
+            if (bytesToEmbed != null && bytesToEmbed.isNotEmpty()) {
+                val artwork = ArtworkFactory.getNew()
+                artwork.binaryData = bytesToEmbed
+                tag.deleteArtworkField()
+                tag.setField(artwork)
+            }
+
+            audioFile.commit()
+            Log.d("FileTagEditor", "ID3 tags and artwork successfully embedded into ${file.name}")
+            true
+        } catch (e: Exception) {
+            Log.e("FileTagEditor", "Error embedding ID3 tags into ${file.absolutePath}", e)
+            false
+        }
+    }
+
+    /**
+     * Updates ID3 tags and calculates the new physical file path via MediaStore Uri / direct file access.
+     * Returns the absolute path of the file.
      */
     fun updateFileTags(
         context: Context,
@@ -28,8 +83,34 @@ object FileTagEditor {
     ): String {
         try {
             val originalFile = File(filePath)
-            val extension = originalFile.extension
 
+            // Attempt direct embedding if file is writable
+            var artworkBytes: ByteArray? = null
+            if (newArtworkUri != null) {
+                try {
+                    context.contentResolver.openInputStream(newArtworkUri)?.use { inputStream ->
+                        artworkBytes = inputStream.readBytes()
+                    }
+                } catch (e: Exception) {
+                    Log.e("FileTagEditor", "Error reading artwork URI: $newArtworkUri", e)
+                }
+            }
+
+            if (originalFile.exists() && originalFile.canWrite()) {
+                val directSuccess = embedId3TagsAndArtwork(
+                    file = originalFile,
+                    title = title,
+                    artist = artist,
+                    album = album,
+                    year = year,
+                    genre = genre,
+                    artworkBytes = artworkBytes
+                )
+                if (directSuccess) return filePath
+            }
+
+            // Fallback to ContentResolver copy loop for MediaStore scoped storage URIs
+            val extension = originalFile.extension
             val cacheFile = File(context.cacheDir, "tag_edit_${System.currentTimeMillis()}.$extension")
 
             try {
@@ -61,20 +142,11 @@ object FileTagEditor {
                 if (year.isNotBlank() && year != "Unknown") tag.setField(FieldKey.YEAR, year)
                 if (genre.isNotBlank() && genre != "Unknown") tag.setField(FieldKey.GENRE, genre)
 
-                if (newArtworkUri != null) {
-                    try {
-                        context.contentResolver.openInputStream(newArtworkUri)?.use { inputStream ->
-                            val bytes = inputStream.readBytes()
-                            if (bytes.isNotEmpty()) {
-                                val artwork = ArtworkFactory.getNew()
-                                artwork.binaryData = bytes
-                                tag.deleteArtworkField()
-                                tag.setField(artwork)
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Log.e("FileTagEditor", "Error reading artwork URI: $newArtworkUri", e)
-                    }
+                if (artworkBytes != null && artworkBytes.isNotEmpty()) {
+                    val artwork = ArtworkFactory.getNew()
+                    artwork.binaryData = artworkBytes
+                    tag.deleteArtworkField()
+                    tag.setField(artwork)
                 }
 
                 audioFile.commit()

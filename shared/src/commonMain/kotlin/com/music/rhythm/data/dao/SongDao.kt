@@ -30,6 +30,9 @@ interface SongDao {
     @Query("DELETE FROM lyrics_overrides WHERE songPath = :path")
     suspend fun deleteLyrics(path: String)
 
+    @Query("DELETE FROM lyrics_overrides")
+    suspend fun deleteAllLyricsOverrides()
+
     @Query("SELECT * FROM lyrics_overrides")
     suspend fun getAllLyricsOverridesSync(): List<LyricsOverride>
 

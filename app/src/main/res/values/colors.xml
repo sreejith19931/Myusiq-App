@@ -40,4 +40,41 @@
     <color name="royal_dark">#2E1065</color>
     <color name="royal_accent">#A78BFA</color>
     <color name="replay_overlay_bg">#B3000000</color>
+
+    <!-- Palette Theme Text & On-Surface Colors -->
+    <color name="palette_on_surface_light">#1C1B1F</color>
+    <color name="palette_on_surface_variant_light">#49454F</color>
+    <color name="palette_on_surface_dark_red">#F4E0DF</color>
+    <color name="palette_on_surface_variant_dark_red">#D3B1B0</color>
+    <color name="palette_on_surface_dark_orange">#F5E1D6</color>
+    <color name="palette_on_surface_variant_dark_orange">#D8B4A1</color>
+    <color name="palette_on_surface_dark_yellow">#F5F3D1</color>
+    <color name="palette_on_surface_variant_dark_yellow">#D8D6A4</color>
+    <color name="palette_on_surface_dark_green">#D5E8D9</color>
+    <color name="palette_on_surface_variant_dark_green">#A2C4A9</color>
+    <color name="palette_on_surface_dark_blue">#D6E3F5</color>
+    <color name="palette_on_surface_variant_dark_blue">#A0B8DA</color>
+    <color name="palette_on_surface_dark_indigo">#D7D9E8</color>
+    <color name="palette_on_surface_variant_dark_indigo">#A4A7C5</color>
+    <color name="palette_on_surface_dark_violet">#E8D5F5</color>
+    <color name="palette_on_surface_variant_dark_violet">#C3A2DA</color>
+
+    <color name="palette_on_surface_midnight">#FFFFFF</color>
+    <color name="palette_on_surface_variant_midnight">#94A3B8</color>
+    <color name="palette_on_surface_slate">#F8FAFC</color>
+    <color name="palette_on_surface_variant_slate">#94A3B8</color>
+    <color name="palette_on_surface_forest">#ECFDF5</color>
+    <color name="palette_on_surface_variant_forest">#A7F3D0</color>
+    <color name="palette_on_surface_charcoal">#FAFAFA</color>
+    <color name="palette_on_surface_variant_charcoal">#A1A1AA</color>
+    <color name="palette_on_surface_royal">#F5F3FF</color>
+    <color name="palette_on_surface_variant_royal">#DDD6FE</color>
+
+    <color name="palette_bg_dark_red">#1A1110</color>
+    <color name="palette_bg_dark_orange">#1A1208</color>
+    <color name="palette_bg_dark_yellow">#1A1805</color>
+    <color name="palette_bg_dark_green">#0A1A0C</color>
+    <color name="palette_bg_dark_blue">#08121A</color>
+    <color name="palette_bg_dark_indigo">#0B0D1A</color>
+    <color name="palette_bg_dark_violet">#150A1A</color>
 </resources>

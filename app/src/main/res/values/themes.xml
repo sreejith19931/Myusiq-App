@@ -10,7 +10,6 @@
 
     <style name="Theme_Rhythm" parent="Base.Theme_Rhythm">
         <item name="colorPrimary">@color/md_theme_default_primary</item>
-        <item name="bottomNavigationStyle">@style/Widget.Material3.BottomNavigationView.ActiveIndicator</item>
     </style>
 
     <style name="Theme.App.Starting" parent="Theme.SplashScreen">
@@ -30,6 +29,12 @@
         <item name="colorTertiary">@color/rainbow_red</item>
         <item name="colorSurfaceVariant">@color/surface_red</item>
         <item name="android:colorBackground">@color/surface_red</item>
+        <item name="colorOnSurface">@color/palette_on_surface_light</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_light</item>
+        <item name="colorOnBackground">@color/palette_on_surface_light</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_light</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_light</item>
+        <item name="colorOnPrimary">@color/white</item>
     </style>
 
     <style name="Theme.Palette.Orange" parent="Theme_Rhythm">
@@ -43,6 +48,12 @@
         <item name="colorTertiary">@color/rainbow_orange</item>
         <item name="colorSurfaceVariant">@color/surface_orange</item>
         <item name="android:colorBackground">@color/surface_orange</item>
+        <item name="colorOnSurface">@color/palette_on_surface_light</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_light</item>
+        <item name="colorOnBackground">@color/palette_on_surface_light</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_light</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_light</item>
+        <item name="colorOnPrimary">@color/white</item>
     </style>
 
     <style name="Theme.Palette.Yellow" parent="Theme_Rhythm">
@@ -56,6 +67,12 @@
         <item name="colorTertiary">@color/rainbow_yellow</item>
         <item name="colorSurfaceVariant">@color/surface_yellow</item>
         <item name="android:colorBackground">@color/surface_yellow</item>
+        <item name="colorOnSurface">@color/palette_on_surface_light</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_light</item>
+        <item name="colorOnBackground">@color/palette_on_surface_light</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_light</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_light</item>
+        <item name="colorOnPrimary">@color/palette_on_surface_light</item>
     </style>
 
     <style name="Theme.Palette.Green" parent="Theme_Rhythm">
@@ -69,6 +86,12 @@
         <item name="colorTertiary">@color/rainbow_green</item>
         <item name="colorSurfaceVariant">@color/surface_green</item>
         <item name="android:colorBackground">@color/surface_green</item>
+        <item name="colorOnSurface">@color/palette_on_surface_light</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_light</item>
+        <item name="colorOnBackground">@color/palette_on_surface_light</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_light</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_light</item>
+        <item name="colorOnPrimary">@color/white</item>
     </style>
 
     <style name="Theme.Palette.Blue" parent="Theme_Rhythm">
@@ -82,6 +105,12 @@
         <item name="colorTertiary">@color/rainbow_blue</item>
         <item name="colorSurfaceVariant">@color/surface_blue</item>
         <item name="android:colorBackground">@color/surface_blue</item>
+        <item name="colorOnSurface">@color/palette_on_surface_light</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_light</item>
+        <item name="colorOnBackground">@color/palette_on_surface_light</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_light</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_light</item>
+        <item name="colorOnPrimary">@color/white</item>
     </style>
 
     <style name="Theme.Palette.Indigo" parent="Theme_Rhythm">
@@ -95,6 +124,12 @@
         <item name="colorTertiary">@color/rainbow_indigo</item>
         <item name="colorSurfaceVariant">@color/surface_indigo</item>
         <item name="android:colorBackground">@color/surface_indigo</item>
+        <item name="colorOnSurface">@color/palette_on_surface_light</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_light</item>
+        <item name="colorOnBackground">@color/palette_on_surface_light</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_light</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_light</item>
+        <item name="colorOnPrimary">@color/white</item>
     </style>
 
     <style name="Theme.Palette.Violet" parent="Theme_Rhythm">
@@ -108,6 +143,12 @@
         <item name="colorTertiary">@color/rainbow_violet</item>
         <item name="colorSurfaceVariant">@color/surface_violet</item>
         <item name="android:colorBackground">@color/surface_violet</item>
+        <item name="colorOnSurface">@color/palette_on_surface_light</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_light</item>
+        <item name="colorOnBackground">@color/palette_on_surface_light</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_light</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_light</item>
+        <item name="colorOnPrimary">@color/white</item>
     </style>
 
     <!-- Professional Palettes -->
@@ -116,8 +157,11 @@
         <item name="colorSecondary">@color/midnight_accent</item>
         <item name="colorSurface">@color/midnight_blue</item>
         <item name="android:colorBackground">@color/midnight_blue</item>
-        <item name="colorOnSurface">#FFFFFF</item>
-        <item name="colorOnBackground">#FFFFFF</item>
+        <item name="colorOnSurface">@color/palette_on_surface_midnight</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_midnight</item>
+        <item name="colorOnBackground">@color/palette_on_surface_midnight</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_midnight</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_midnight</item>
     </style>
 
     <style name="Theme.Palette.Slate" parent="Theme_Rhythm">
@@ -125,8 +169,11 @@
         <item name="colorSecondary">@color/slate_accent</item>
         <item name="colorSurface">@color/slate_dark</item>
         <item name="android:colorBackground">@color/slate_dark</item>
-        <item name="colorOnSurface">#F8FAFC</item>
-        <item name="colorOnBackground">#F8FAFC</item>
+        <item name="colorOnSurface">@color/palette_on_surface_slate</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_slate</item>
+        <item name="colorOnBackground">@color/palette_on_surface_slate</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_slate</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_slate</item>
     </style>
 
     <style name="Theme.Palette.Forest" parent="Theme_Rhythm">
@@ -134,8 +181,11 @@
         <item name="colorSecondary">@color/forest_accent</item>
         <item name="colorSurface">@color/forest_dark</item>
         <item name="android:colorBackground">@color/forest_dark</item>
-        <item name="colorOnSurface">#ECFDF5</item>
-        <item name="colorOnBackground">#ECFDF5</item>
+        <item name="colorOnSurface">@color/palette_on_surface_forest</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_forest</item>
+        <item name="colorOnBackground">@color/palette_on_surface_forest</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_forest</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_forest</item>
     </style>
 
     <style name="Theme.Palette.Charcoal" parent="Theme_Rhythm">
@@ -143,8 +193,11 @@
         <item name="colorSecondary">@color/charcoal_accent</item>
         <item name="colorSurface">@color/charcoal_dark</item>
         <item name="android:colorBackground">@color/charcoal_dark</item>
-        <item name="colorOnSurface">#FAFAFA</item>
-        <item name="colorOnBackground">#FAFAFA</item>
+        <item name="colorOnSurface">@color/palette_on_surface_charcoal</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_charcoal</item>
+        <item name="colorOnBackground">@color/palette_on_surface_charcoal</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_charcoal</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_charcoal</item>
     </style>
 
     <style name="Theme.Palette.Royal" parent="Theme_Rhythm">
@@ -152,12 +205,11 @@
         <item name="colorSecondary">@color/royal_accent</item>
         <item name="colorSurface">@color/royal_dark</item>
         <item name="android:colorBackground">@color/royal_dark</item>
-        <item name="colorOnSurface">#F5F3FF</item>
-        <item name="colorOnBackground">#F5F3FF</item>
+        <item name="colorOnSurface">@color/palette_on_surface_royal</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_royal</item>
+        <item name="colorOnBackground">@color/palette_on_surface_royal</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_royal</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_royal</item>
     </style>
 
-    <style name="Widget.Material3.BottomNavigationView.ActiveIndicator" parent="">
-        <item name="android:width">0dp</item>
-        <item name="android:height">0dp</item>
-    </style>
 </resources>

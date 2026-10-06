@@ -39,6 +39,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     app:chipSpacingHorizontal="8dp"
+                    app:singleSelection="true"
+                    app:selectionRequired="false"
                     app:singleLine="true">
 
                     <com.google.android.material.chip.Chip
@@ -76,6 +78,15 @@
                         android:text="Focus"
                         android:textAppearance="?attr/textAppearanceLabelLarge"
                         app:chipIcon="@drawable/ic_speed" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipRomance"
+                        style="@style/Widget.Material3.Chip.Suggestion"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/mood_romance"
+                        android:textAppearance="?attr/textAppearanceLabelLarge"
+                        app:chipIcon="@drawable/ic_heart_filled" />
 
                 </com.google.android.material.chip.ChipGroup>
             </HorizontalScrollView>

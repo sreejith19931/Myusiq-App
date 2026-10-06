@@ -84,6 +84,8 @@ class MusicRepository(
     suspend fun getLyricsForPath(path: String) = songDao.getLyricsForPath(path)
     suspend fun upsertLyrics(lyrics: LyricsOverride) = songDao.upsertLyrics(lyrics)
     suspend fun deleteLyrics(path: String) = songDao.deleteLyrics(path)
+    suspend fun deleteAllLyrics() = songDao.deleteAllLyricsOverrides()
+    suspend fun getAllLyricsOverridesSync() = songDao.getAllLyricsOverridesSync()
     suspend fun updateLyricsPath(oldPath: String, newPath: String) = songDao.updateLyricsPath(oldPath, newPath)
     suspend fun upsertTrack(track: TrackEntity) = playlistDao.insertTrack(track)
     fun getFavoriteTracks() = playlistDao.getFavoriteTracks()

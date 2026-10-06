@@ -2,20 +2,29 @@ package com.music.rhythm.ui
 
 import android.annotation.SuppressLint
 import android.content.ContentUris
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Size
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -30,6 +39,13 @@ import com.music.rhythm.ui.viewmodels.PlaybackViewModel
 import com.music.rhythm.ui.viewmodels.PendingTrackEdit
 import com.music.rhythm.utils.*
 import com.music.rhythm.R
+
+data class JanitorUpdateItem(
+    val song: Song,
+    val currentArtworkUri: Uri?,
+    val proposedEdit: PendingTrackEdit,
+    var isSelected: Boolean = true
+)
 
 class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
     private val viewModel: PlaybackViewModel by activityViewModels()
@@ -96,7 +112,7 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
     private fun executeAutoFix() {
         val context = requireContext().applicationContext
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-            val updates = mutableListOf<PendingTrackEdit>()
+            val candidateItems = mutableListOf<JanitorUpdateItem>()
             
             missingArtSongs.forEachIndexed { index, song ->
                 withContext(Dispatchers.Main) {
@@ -107,11 +123,9 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
                 
                 val metadata = CloudMetadataResolver.resolve(song.title, song.artist)
                 if (metadata != null) {
-                    val artworkUri = if (metadata.artworkUrl != null) {
-                        viewModel.downloadImageToCache(context, metadata.artworkUrl)
-                    } else null
+                    val artworkUri = metadata.artworkUrl?.let { viewModel.downloadImageToCache(context, it) }
 
-                    updates.add(PendingTrackEdit(
+                    val proposedEdit = PendingTrackEdit(
                         songId = song.id,
                         title = song.title,
                         artist = song.artist,
@@ -120,16 +134,26 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
                         genre = metadata.genre ?: "",
                         artworkUri = artworkUri,
                         path = song.path
-                    ))
+                    )
+                    
+                    val currentArtUri = try {
+                        ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id)
+                    } catch (_: Exception) { null }
+
+                    candidateItems.add(JanitorUpdateItem(song, currentArtUri, proposedEdit))
                 }
-                delay(800.milliseconds)
+                delay(600.milliseconds)
             }
 
             withContext(Dispatchers.Main) {
                 if (isAdded) {
-                    if (updates.isNotEmpty()) {
-                        viewModel.requestBulkMetadataUpdate(requireContext(), updates)
-                        Toast.makeText(context, "Applying matches for ${updates.size} tracks...", Toast.LENGTH_LONG).show()
+                    tvArtStatus.text = "Scan complete. Review proposed artwork updates."
+                    if (candidateItems.isNotEmpty()) {
+                        showJanitorReviewDialog(
+                            candidateItems = candidateItems,
+                            dialogTitle = "Review Missing Artwork Updates",
+                            dialogSub = "Compare current info/art with found cloud matches and select which tracks to update."
+                        )
                     } else {
                         Toast.makeText(context, "No cloud matches found for missing artwork.", Toast.LENGTH_SHORT).show()
                     }
@@ -148,18 +172,137 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
             .setNegativeButton("Cancel", null)
             .setPositiveButton("Start") { _, _ ->
                 btnRepairUnknown.isEnabled = false
-                viewModel.repairUnknownMetadata(requireContext(), unknownSongs,
-                    onProgress = { current, total, title ->
-                        tvRepairStatus.text = getString(R.string.repair_status_format, current, total, title)
-                    },
-                    onComplete = { count ->
-                        Toast.makeText(requireContext(), "Successfully repaired $count tracks!", Toast.LENGTH_LONG).show()
-                        btnRepairUnknown.isEnabled = true
-                        performScan()
-                    }
-                )
+                executeRepairUnknown()
             }
             .show()
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun executeRepairUnknown() {
+        val context = requireContext().applicationContext
+        val unknownArtist = getString(R.string.unknown_artist)
+        
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+            val candidateItems = mutableListOf<JanitorUpdateItem>()
+            
+            unknownSongs.forEachIndexed { index, song ->
+                withContext(Dispatchers.Main) {
+                    if (isAdded) {
+                        tvRepairStatus.text = "Searching cloud ${index + 1} of ${unknownSongs.size}: ${song.title}"
+                    }
+                }
+                
+                val (extractedArtist, extractedTitle) = YouTubeTitleCleaner.cleanAndSplit(song.title)
+                val cleanTitle = extractedTitle.ifBlank { YouTubeTitleCleaner.cleanTitle(song.title) }
+                val cleanArtist = if (song.artist == unknownArtist || song.artist.isBlank()) {
+                    if (extractedArtist != "Unknown Artist") extractedArtist else ""
+                } else song.artist
+
+                val metadata = CloudMetadataResolver.resolve(cleanTitle, cleanArtist)
+                if (metadata != null) {
+                    val artworkUri = metadata.artworkUrl?.let { viewModel.downloadImageToCache(context, it) }
+                    val proposedEdit = PendingTrackEdit(
+                        songId = song.id,
+                        title = cleanTitle,
+                        artist = cleanArtist,
+                        album = metadata.album ?: song.album,
+                        year = metadata.year ?: "",
+                        genre = metadata.genre ?: "",
+                        artworkUri = artworkUri,
+                        path = song.path
+                    )
+                    
+                    val currentArtUri = try {
+                        ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id)
+                    } catch (_: Exception) { null }
+
+                    candidateItems.add(JanitorUpdateItem(song, currentArtUri, proposedEdit))
+                }
+                delay(600.milliseconds)
+            }
+
+            withContext(Dispatchers.Main) {
+                if (isAdded) {
+                    tvRepairStatus.text = "Scan complete. Review proposed metadata repairs."
+                    btnRepairUnknown.isEnabled = true
+                    if (candidateItems.isNotEmpty()) {
+                        showJanitorReviewDialog(
+                            candidateItems = candidateItems,
+                            dialogTitle = "Review Metadata Repairs",
+                            dialogSub = "Compare current info/art with found official info and select which tracks to update."
+                        )
+                    } else {
+                        Toast.makeText(context, "No cloud matches found for repair.", Toast.LENGTH_SHORT).show()
+                    }
+                    performScan()
+                }
+            }
+        }
+    }
+
+    private fun showJanitorReviewDialog(
+        candidateItems: List<JanitorUpdateItem>,
+        dialogTitle: String,
+        dialogSub: String
+    ) {
+        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_janitor_review, null)
+        
+        dialogView.findViewById<TextView>(R.id.tvJanitorDialogTitle).text = dialogTitle
+        dialogView.findViewById<TextView>(R.id.tvJanitorDialogSub).text = dialogSub
+
+        val cbSelectAll = dialogView.findViewById<MaterialCheckBox>(R.id.cbSelectAll)
+        val rvJanitorReview = dialogView.findViewById<RecyclerView>(R.id.rvJanitorReview)
+        val btnCancelReview = dialogView.findViewById<MaterialButton>(R.id.btnCancelReview)
+        val btnApplySelected = dialogView.findViewById<MaterialButton>(R.id.btnApplySelected)
+
+        var dialog: AlertDialog? = null
+
+        fun updateApplyButtonText() {
+            val selectedCount = candidateItems.count { it.isSelected }
+            btnApplySelected.text = "Apply Selected ($selectedCount)"
+            btnApplySelected.isEnabled = selectedCount > 0
+        }
+
+        val adapter = JanitorReviewAdapter(candidateItems) {
+            updateApplyButtonText()
+            cbSelectAll.setOnCheckedChangeListener(null)
+            cbSelectAll.isChecked = candidateItems.all { it.isSelected }
+            cbSelectAll.setOnCheckedChangeListener { _, isChecked ->
+                candidateItems.forEach { it.isSelected = isChecked }
+                rvJanitorReview.adapter?.notifyDataSetChanged()
+                updateApplyButtonText()
+            }
+        }
+
+        rvJanitorReview.layoutManager = LinearLayoutManager(requireContext())
+        rvJanitorReview.adapter = adapter
+
+        cbSelectAll.isChecked = candidateItems.all { it.isSelected }
+        cbSelectAll.setOnCheckedChangeListener { _, isChecked ->
+            candidateItems.forEach { it.isSelected = isChecked }
+            adapter.notifyDataSetChanged()
+            updateApplyButtonText()
+        }
+
+        updateApplyButtonText()
+
+        btnCancelReview.setOnClickListener { dialog?.dismiss() }
+
+        btnApplySelected.setOnClickListener {
+            val selectedEdits = candidateItems.filter { it.isSelected }.map { it.proposedEdit }
+            if (selectedEdits.isNotEmpty()) {
+                viewModel.requestBulkMetadataUpdate(requireContext(), selectedEdits)
+                Toast.makeText(requireContext(), "Applying changes for ${selectedEdits.size} tracks...", Toast.LENGTH_LONG).show()
+            }
+            dialog?.dismiss()
+            performScan()
+        }
+
+        dialog = MaterialAlertDialogBuilder(requireContext())
+            .setView(dialogView)
+            .create()
+
+        dialog.show()
     }
 
     @SuppressLint("SetTextI18n")
@@ -272,4 +415,66 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
             }
         }
     }
+}
+
+class JanitorReviewAdapter(
+    private val items: List<JanitorUpdateItem>,
+    private val onItemSelectionChanged: () -> Unit
+) : RecyclerView.Adapter<JanitorReviewAdapter.ViewHolder>() {
+
+    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val cbSelectTrack: MaterialCheckBox = view.findViewById(R.id.cbSelectTrack)
+        val tvTrackPath: TextView = view.findViewById(R.id.tvTrackPath)
+        val ivCurrentArt: ImageView = view.findViewById(R.id.ivCurrentArt)
+        val tvCurrentTitle: TextView = view.findViewById(R.id.tvCurrentTitle)
+        val tvCurrentArtist: TextView = view.findViewById(R.id.tvCurrentArtist)
+        val tvCurrentAlbum: TextView = view.findViewById(R.id.tvCurrentAlbum)
+        val ivFoundArt: ImageView = view.findViewById(R.id.ivFoundArt)
+        val tvFoundTitle: TextView = view.findViewById(R.id.tvFoundTitle)
+        val tvFoundArtist: TextView = view.findViewById(R.id.tvFoundArtist)
+        val tvFoundAlbum: TextView = view.findViewById(R.id.tvFoundAlbum)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_janitor_update_review, parent, false)
+        return ViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val item = items[position]
+        val context = holder.itemView.context
+
+        holder.cbSelectTrack.setOnCheckedChangeListener(null)
+        holder.cbSelectTrack.isChecked = item.isSelected
+        holder.cbSelectTrack.setOnCheckedChangeListener { _, isChecked ->
+            item.isSelected = isChecked
+            onItemSelectionChanged()
+        }
+
+        holder.tvTrackPath.text = File(item.song.path).name
+
+        // Current Info
+        holder.tvCurrentTitle.text = item.song.title
+        holder.tvCurrentArtist.text = item.song.artist
+        holder.tvCurrentAlbum.text = item.song.album
+
+        if (item.currentArtworkUri != null) {
+            Glide.with(context).load(item.currentArtworkUri).placeholder(R.drawable.ic_music_note_2).error(R.drawable.ic_music_note_2).into(holder.ivCurrentArt)
+        } else {
+            Glide.with(context).load(R.drawable.ic_music_note_2).into(holder.ivCurrentArt)
+        }
+
+        // Found Info
+        holder.tvFoundTitle.text = item.proposedEdit.title
+        holder.tvFoundArtist.text = item.proposedEdit.artist
+        holder.tvFoundAlbum.text = item.proposedEdit.album
+
+        if (item.proposedEdit.artworkUri != null) {
+            Glide.with(context).load(item.proposedEdit.artworkUri).placeholder(R.drawable.ic_music_note_2).error(R.drawable.ic_music_note_2).into(holder.ivFoundArt)
+        } else {
+            Glide.with(context).load(R.drawable.ic_music_note_2).into(holder.ivFoundArt)
+        }
+    }
+
+    override fun getItemCount(): Int = items.size
 }

@@ -93,11 +93,15 @@ class MetadataUpdateUseCase(
                 listener.onUpdateStarted()
             }
             
-            // 1. Update physical file tags
+            // 1. Update physical file tags and local artwork cache
             if (data.path.isNotEmpty()) {
                 try {
                     FileTagEditor.updateFileTags(context, data.path, uri, data.title, data.artist, data.album, data.year, data.genre, data.artworkUri)
                     
+                    data.artworkUri?.let { artUri ->
+                        com.music.rhythm.utils.ArtworkUtils.saveArtworkCache(context, data.songId, data.path, artUri)
+                    }
+
                     // 1b. Save to local override table to prevent reverting UI
                     musicRepository.upsertOverride(SongOverride(
                         path = PlatformUtils.normalizePath(data.path),
@@ -179,9 +183,12 @@ class MetadataUpdateUseCase(
                     onProgress(index + 1, songs.size, song.title)
                 }
                 
-                // Clean title if it contains junk like ".mp3", "youtube", etc.
-                val cleanTitle = song.title.replace(Regex("(?i)\\.mp3|\\.m4a|\\.wav|youtube|dl|y2mate"), "").trim()
-                val cleanArtist = if (song.artist == unknownArtist) "" else song.artist
+                // Clean title using YouTubeTitleCleaner to remove junk
+                val (extractedArtist, extractedTitle) = com.music.rhythm.utils.YouTubeTitleCleaner.cleanAndSplit(song.title)
+                val cleanTitle = extractedTitle.ifBlank { com.music.rhythm.utils.YouTubeTitleCleaner.cleanTitle(song.title) }
+                val cleanArtist = if (song.artist == unknownArtist || song.artist.isBlank()) {
+                    if (extractedArtist != "Unknown Artist") extractedArtist else ""
+                } else song.artist
 
                 val metadata = CloudMetadataResolver.resolve(cleanTitle, cleanArtist)
                 if (metadata != null) {
