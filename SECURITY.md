@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-We only provide security updates for the latest stable version of Rhythm.
+We only provide security updates for the latest stable version of Myusiq.
 
 | Version | Supported          |
 | ------- | ------------------ |
@@ -11,7 +11,7 @@ We only provide security updates for the latest stable version of Rhythm.
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability within Rhythm, please do **not** open a public issue. Instead, report it privately.
+If you discover a security vulnerability within Myusiq, please do **not** open a public issue. Instead, report it privately.
 
 You can report vulnerabilities by:
 - Sending an email to [your-email@example.com](mailto:your-email@example.com)

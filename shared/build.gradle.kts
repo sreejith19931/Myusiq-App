@@ -5,7 +5,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = "com.music.rhythm.shared"
+        namespace = "com.music.myusiq.shared"
         compileSdk = 37
         minSdk = 24
     }

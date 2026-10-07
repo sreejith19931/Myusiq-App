@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
@@ -8,23 +10,45 @@ kotlin {
 }
 
 android {
-    namespace = "com.music.rhythm.wear"
+    namespace = "com.music.myusiq.wear"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.music.rhythm.wear"
+        applicationId = "com.music.myusiq.wear"
         minSdk = 26
         targetSdk = 37
-        versionCode = 8
-        versionName = "2.0.1"
+        versionCode = 10000
+        versionName = "1.0.0"
+    }
+
+    signingConfigs {
+        val keystorePropertiesFile = rootProject.file("keystore.properties")
+        if (keystorePropertiesFile.exists()) {
+            val keystoreProperties = Properties()
+            keystoreProperties.load(keystorePropertiesFile.inputStream())
+            create("release") {
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+            }
+        } else {
+            create("release") {
+                storeFile = file("release-key.jks")
+                storePassword = "YOUR_STORE_PASSWORD"
+                keyAlias = "YOUR_KEY_ALIAS"
+                keyPassword = "YOUR_KEY_PASSWORD"
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -46,4 +70,5 @@ dependencies {
     implementation(libs.androidx.wear.compose.foundation)
     implementation(libs.play.services.wearable)
     implementation(libs.androidx.media3.session)
+    implementation(libs.androidx.palette.ktx)
 }

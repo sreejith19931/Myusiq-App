@@ -145,7 +145,7 @@
         app:layout_constraintStart_toEndOf="@id/guidelineCenter"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <com.music.rhythm.ui.components.AnimatedWaveSeekBar
+    <com.music.myusiq.ui.components.AnimatedWaveSeekBar
         android:id="@+id/waveformSeekBar"
         android:layout_width="0dp"
         android:layout_height="48dp"

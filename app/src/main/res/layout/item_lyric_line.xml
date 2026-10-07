@@ -42,7 +42,7 @@
             android:alpha="0.3" />
     </LinearLayout>
 
-    <com.music.rhythm.ui.components.LyricLineView
+    <com.music.myusiq.ui.components.LyricLineView
         android:id="@+id/tvLyricLine"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

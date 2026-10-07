@@ -27,7 +27,7 @@
             app:columnCount="2"
             app:alignmentMode="alignBounds">
 
-            <com.music.rhythm.ui.components.SettingsHubItem
+            <com.music.myusiq.ui.components.SettingsHubItem
                 android:id="@+id/hubAudio"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -36,7 +36,7 @@
                 app:hubTitle="Playback &amp; Audio"
                 app:hubSubtitle="Equalizer, Crossfade, Gapless" />
 
-            <com.music.rhythm.ui.components.SettingsHubItem
+            <com.music.myusiq.ui.components.SettingsHubItem
                 android:id="@+id/hubAppearance"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -45,7 +45,7 @@
                 app:hubTitle="Look &amp; Feel"
                 app:hubSubtitle="Themes, Colors, Visualizers" />
 
-            <com.music.rhythm.ui.components.SettingsHubItem
+            <com.music.myusiq.ui.components.SettingsHubItem
                 android:id="@+id/hubLyrics"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -54,7 +54,7 @@
                 app:hubTitle="Lyrics Settings"
                 app:hubSubtitle="Overlay, Minimalist mode" />
 
-            <com.music.rhythm.ui.components.SettingsHubItem
+            <com.music.myusiq.ui.components.SettingsHubItem
                 android:id="@+id/hubLibrary"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -63,7 +63,7 @@
                 app:hubTitle="Library &amp; Storage"
                 app:hubSubtitle="Rescan, Filters, Folder management" />
 
-            <com.music.rhythm.ui.components.SettingsHubItem
+            <com.music.myusiq.ui.components.SettingsHubItem
                 android:id="@+id/hubMaintenance"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -73,13 +73,13 @@
                 app:hubSubtitle="Data Export, Restore, Reset"
                 app:hubIconTint="?attr/colorError" />
 
-            <com.music.rhythm.ui.components.SettingsHubItem
+            <com.music.myusiq.ui.components.SettingsHubItem
                 android:id="@+id/hubAbout"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 app:layout_columnWeight="1"
                 app:hubIcon="@drawable/ic_play"
-                app:hubTitle="About Rhythm"
+                app:hubTitle="About Myusiq"
                 app:hubSubtitle="Version info, updates, and more" />
 
         </androidx.gridlayout.widget.GridLayout>

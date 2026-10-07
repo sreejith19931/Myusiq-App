@@ -6,17 +6,17 @@
     app:startDestination="@id/dest_tracks">
     <fragment
         android:id="@+id/dest_tracks"
-        android:name="com.music.rhythm.TracksFragment"
+        android:name="com.music.myusiq.ui.TracksFragment"
         android:label="Tracks"
         tools:layout="@layout/fragment_tracks"/>
     <fragment
         android:id="@+id/dest_playlists"
-        android:name="com.music.rhythm.PlaylistsFragment"
+        android:name="com.music.myusiq.ui.PlaylistsFragment"
         android:label="Playlists"
         tools:layout="@layout/fragment_playlists" />
     <fragment
         android:id="@+id/dest_playlist_details"
-        android:name="com.music.rhythm.PlaylistDetailsFragment"
+        android:name="com.music.myusiq.ui.PlaylistDetailsFragment"
         android:label="Playlist Details"
         tools:layout="@layout/fragment_tracks">
         <argument
@@ -28,62 +28,62 @@
     </fragment>
     <fragment
         android:id="@+id/dest_queue"
-        android:name="com.music.rhythm.QueueFragment"
+        android:name="com.music.myusiq.ui.QueueFragment"
         android:label="Queue"
         tools:layout="@layout/fragment_queue" />
 
     <fragment
         android:id="@+id/dest_player"
-        android:name="com.music.rhythm.PlayerFragment"
+        android:name="com.music.myusiq.ui.PlayerFragment"
         android:label="Player"
         tools:layout="@layout/fragment_player" />
 
     <fragment
         android:id="@+id/dest_folders"
-        android:name="com.music.rhythm.FoldersFragment"
+        android:name="com.music.myusiq.ui.FoldersFragment"
         android:label="Folders"
         tools:layout="@layout/fragment_folders" />
 
     <fragment
         android:id="@+id/dest_settings"
-        android:name="com.music.rhythm.SettingsFragment"
+        android:name="com.music.myusiq.ui.SettingsFragment"
         android:label="Settings"
         tools:layout="@layout/fragment_settings" />
 
     <fragment
         android:id="@+id/dest_settings_audio"
-        android:name="com.music.rhythm.AudioSettingsFragment"
+        android:name="com.music.myusiq.ui.AudioSettingsFragment"
         android:label="Playback &amp; Audio" />
 
     <fragment
         android:id="@+id/dest_settings_appearance"
-        android:name="com.music.rhythm.AppearanceSettingsFragment"
+        android:name="com.music.myusiq.ui.AppearanceSettingsFragment"
         android:label="Look &amp; Feel" />
 
     <fragment
         android:id="@+id/dest_settings_lyrics"
-        android:name="com.music.rhythm.LyricsSettingsFragment"
+        android:name="com.music.myusiq.ui.LyricsSettingsFragment"
         android:label="Lyrics Experience" />
 
     <fragment
         android:id="@+id/dest_settings_library"
-        android:name="com.music.rhythm.LibrarySettingsFragment"
+        android:name="com.music.myusiq.ui.LibrarySettingsFragment"
         android:label="Library &amp; Storage" />
 
     <fragment
         android:id="@+id/dest_settings_maintenance"
-        android:name="com.music.rhythm.MaintenanceSettingsFragment"
+        android:name="com.music.myusiq.ui.MaintenanceSettingsFragment"
         android:label="Backup &amp; Maintenance" />
 
     <fragment
         android:id="@+id/dest_library_janitor"
-        android:name="com.music.rhythm.LibraryJanitorFragment"
+        android:name="com.music.myusiq.ui.LibraryJanitorFragment"
         android:label="Library Janitor"
         tools:layout="@layout/fragment_library_janitor" />
 
     <fragment
         android:id="@+id/dest_about"
-        android:name="com.music.rhythm.AboutFragment"
-        android:label="About Rhythm"
+        android:name="com.music.myusiq.ui.AboutFragment"
+        android:label="About Myusiq"
         tools:layout="@layout/fragment_about" />
 </navigation>

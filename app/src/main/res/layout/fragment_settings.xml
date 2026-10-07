@@ -28,7 +28,7 @@
             android:orientation="vertical"
             android:padding="4dp">
 
-            <com.music.rhythm.ui.components.SettingsHubItem
+            <com.music.myusiq.ui.components.SettingsHubItem
                 android:id="@+id/hubAudio"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -38,7 +38,7 @@
 
             <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorOutlineVariant" android:layout_marginHorizontal="20dp"/>
 
-            <com.music.rhythm.ui.components.SettingsHubItem
+            <com.music.myusiq.ui.components.SettingsHubItem
                 android:id="@+id/hubAppearance"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -48,7 +48,7 @@
 
             <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorOutlineVariant" android:layout_marginHorizontal="20dp"/>
 
-            <com.music.rhythm.ui.components.SettingsHubItem
+            <com.music.myusiq.ui.components.SettingsHubItem
                 android:id="@+id/hubLyrics"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -58,7 +58,7 @@
 
             <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorOutlineVariant" android:layout_marginHorizontal="20dp"/>
 
-            <com.music.rhythm.ui.components.SettingsHubItem
+            <com.music.myusiq.ui.components.SettingsHubItem
                 android:id="@+id/hubLibrary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -68,7 +68,7 @@
 
             <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorOutlineVariant" android:layout_marginHorizontal="20dp"/>
 
-            <com.music.rhythm.ui.components.SettingsHubItem
+            <com.music.myusiq.ui.components.SettingsHubItem
                 android:id="@+id/hubMaintenance"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -79,12 +79,12 @@
 
             <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorOutlineVariant" android:layout_marginHorizontal="20dp"/>
 
-            <com.music.rhythm.ui.components.SettingsHubItem
+            <com.music.myusiq.ui.components.SettingsHubItem
                 android:id="@+id/hubAbout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:hubIcon="@drawable/ic_play"
-                app:hubTitle="About Rhythm"
+                app:hubTitle="About Myusiq"
                 app:hubSubtitle="Version info, updates, and more" />
 
         </LinearLayout>

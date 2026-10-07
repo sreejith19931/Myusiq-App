@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.0] - 2026-10-06
+
+### Added
+- **Official Rebranding to Myusiq**: Complete project and app rebrand from Rhythm to Myusiq across code, themes, widgets, navigation, build configurations, and website.
+- **Unified Versioning**: Initial release v1.0.0 (versionCode 10000) for seamless in-place updates across future GitHub releases.
+
 ## [2.1.0] - 2026-10-06
 
 ### Added
@@ -45,4 +51,4 @@ All notable changes to this project will be documented in this file.
   - **Setup Wizard**: Interactive onboarding process for permissions, folder selection, and personalization.
   - **Library Janitor**: Tools to clean up missing files and manage library health.
   - **Deep Customization**: Extensive settings for appearance, audio behavior, and library management.
-- **CI/CD Pipeline**: Integrated GitHub Actions for automated builds, testing, and APK distribution to the Rhythm-app repository.
+- **CI/CD Pipeline**: Integrated GitHub Actions for automated builds, testing, and APK distribution to the Myusiq-app repository.

@@ -29,13 +29,13 @@
 -dontwarn javax.imageio.**
 
 # Keep domain models to prevent issues with Room or serialization
--keep class com.music.rhythm.Song { *; }
--keep class com.music.rhythm.TrackEntity { *; }
--keep class com.music.rhythm.Playlist { *; }
--keep class com.music.rhythm.PlaylistWithTracks { *; }
--keep class com.music.rhythm.PlaylistTrackCrossRef { *; }
--keep class com.music.rhythm.SongOverride { *; }
--keep class com.music.rhythm.LyricsOverride { *; }
+-keep class com.music.myusiq.Song { *; }
+-keep class com.music.myusiq.TrackEntity { *; }
+-keep class com.music.myusiq.Playlist { *; }
+-keep class com.music.myusiq.PlaylistWithTracks { *; }
+-keep class com.music.myusiq.PlaylistTrackCrossRef { *; }
+-keep class com.music.myusiq.SongOverride { *; }
+-keep class com.music.myusiq.LyricsOverride { *; }
 
 # Palette rules
 -keep class androidx.palette.graphics.** { *; }

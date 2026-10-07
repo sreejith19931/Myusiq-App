@@ -88,7 +88,7 @@
                             android:id="@+id/tvAboutPackage"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="com.music.rhythm"
+                            android:text="com.music.myusiq"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:layout_marginBottom="16dp" />
 

@@ -1,6 +1,6 @@
-# Contributing to Rhythm
+# Contributing to Myusiq
 
-Thank you for your interest in contributing to Rhythm! We welcome contributions from everyone.
+Thank you for your interest in contributing to Myusiq! We welcome contributions from everyone.
 
 ## How to Contribute
 

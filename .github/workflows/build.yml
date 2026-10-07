@@ -37,14 +37,17 @@ jobs:
       if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v')
       run: |
         VERSION_NAME=${GITHUB_REF_NAME}
-        cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/Rhythm-${VERSION_NAME}.apk
+        cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/Myusiq-${VERSION_NAME}.apk
+        if [ -f wear/build/outputs/apk/debug/wear-debug.apk ]; then
+          cp wear/build/outputs/apk/debug/wear-debug.apk app/build/outputs/apk/debug/Myusiq-Wear-${VERSION_NAME}.apk
+        fi
 
     - name: Upload APK
       if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v')
       uses: actions/upload-artifact@v4
       with:
         name: app-release-apk
-        path: app/build/outputs/apk/debug/Rhythm-*.apk
+        path: app/build/outputs/apk/debug/Myusiq-*.apk
 
   release:
     needs: build
@@ -69,7 +72,7 @@ jobs:
         run: |
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
-          git clone https://x-access-token:${API_TOKEN_GITHUB}@github.com/sreejith19931/Rhythm-App.git public-repo
+          git clone https://x-access-token:${API_TOKEN_GITHUB}@github.com/sreejith19931/Myusiq-App.git public-repo
           cp README.md public-repo/
           cp CHANGELOG.md public-repo/
           mkdir -p public-repo/images
@@ -77,7 +80,7 @@ jobs:
           cd public-repo
           git add .
           git commit -m "Update README, Changelog and Screenshots for ${GITHUB_REF_NAME}" || echo "No changes to commit"
-          git push https://x-access-token:${API_TOKEN_GITHUB}@github.com/sreejith19931/Rhythm-App.git main
+          git push https://x-access-token:${API_TOKEN_GITHUB}@github.com/sreejith19931/Myusiq-App.git main
 
       - name: Sync to Website Repo
         env:
@@ -88,17 +91,17 @@ jobs:
           
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
-          git clone https://x-access-token:${API_TOKEN_GITHUB}@github.com/rhythmmusicplayer/rhythmmusicplayer.github.io.git website-repo
+          git clone https://x-access-token:${API_TOKEN_GITHUB}@github.com/rhythmmusicplayer/myusiq.github.io.git website-repo
           cp -r docs/* website-repo/
           cd website-repo
           git add .
           git commit -m "deploy: update website for release ${GITHUB_REF_NAME}" || echo "No changes to commit"
-          git push https://x-access-token:${API_TOKEN_GITHUB}@github.com/rhythmmusicplayer/rhythmmusicplayer.github.io.git main
+          git push https://x-access-token:${API_TOKEN_GITHUB}@github.com/rhythmmusicplayer/myusiq.github.io.git main
 
       - name: Create Release on Public Repo
         uses: softprops/action-gh-release@v2
         with:
-          repository: sreejith19931/Rhythm-App
+          repository: sreejith19931/Myusiq-App
           token: ${{ secrets.RELEASE_TOKEN }}
           tag_name: ${{ github.ref_name }}
           target_commitish: main

@@ -10,15 +10,15 @@ kotlin {
 }
 
 android {
-    namespace = "com.music.rhythm"
+    namespace = "com.music.myusiq"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.music.rhythm"
+        applicationId = "com.music.myusiq"
         minSdk = 26
         targetSdk = 37
-        versionCode = 9
-        versionName = "2.1.0"
+        versionCode = 10000
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

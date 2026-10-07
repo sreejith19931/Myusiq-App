@@ -137,7 +137,7 @@
                 android:visibility="gone"
                 tools:visibility="visible">
 
-                <com.music.rhythm.ui.components.WritingLoadingView
+                <com.music.myusiq.ui.components.WritingLoadingView
                     android:layout_width="40dp"
                     android:layout_height="40dp" />
 
@@ -482,7 +482,7 @@
         app:layout_constraintBottom_toTopOf="@id/waveformSeekBar"/>
 
 
-    <com.music.rhythm.ui.components.AnimatedWaveSeekBar
+    <com.music.myusiq.ui.components.AnimatedWaveSeekBar
         android:id="@+id/waveformSeekBar"
         android:layout_width="match_parent"
         android:layout_height="64dp"

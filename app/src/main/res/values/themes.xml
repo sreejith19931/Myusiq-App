@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Base.Theme_Rhythm" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme_Myusiq" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowTranslucentStatus">false</item>
@@ -8,17 +8,17 @@
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
 
-    <style name="Theme_Rhythm" parent="Base.Theme_Rhythm">
+    <style name="Theme_Myusiq" parent="Base.Theme_Myusiq">
         <item name="colorPrimary">@color/md_theme_default_primary</item>
     </style>
 
     <style name="Theme.App.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
         <item name="windowSplashScreenBackground">#FFFFFF</item>
-        <item name="postSplashScreenTheme">@style/Theme_Rhythm</item>
+        <item name="postSplashScreenTheme">@style/Theme_Myusiq</item>
     </style>
 
-    <style name="Theme.Palette.Red" parent="Theme_Rhythm">
+    <style name="Theme.Palette.Red" parent="Theme_Myusiq">
         <item name="colorPrimary">@color/rainbow_red</item>
         <item name="colorSecondary">@color/rainbow_red</item>
         <item name="colorSurface">@color/surface_red</item>
@@ -37,7 +37,7 @@
         <item name="colorOnPrimary">@color/white</item>
     </style>
 
-    <style name="Theme.Palette.Orange" parent="Theme_Rhythm">
+    <style name="Theme.Palette.Orange" parent="Theme_Myusiq">
         <item name="colorPrimary">@color/rainbow_orange</item>
         <item name="colorSecondary">@color/rainbow_orange</item>
         <item name="colorSurface">@color/surface_orange</item>
@@ -56,7 +56,7 @@
         <item name="colorOnPrimary">@color/white</item>
     </style>
 
-    <style name="Theme.Palette.Yellow" parent="Theme_Rhythm">
+    <style name="Theme.Palette.Yellow" parent="Theme_Myusiq">
         <item name="colorPrimary">@color/rainbow_yellow</item>
         <item name="colorSecondary">@color/rainbow_yellow</item>
         <item name="colorSurface">@color/surface_yellow</item>
@@ -75,7 +75,7 @@
         <item name="colorOnPrimary">@color/palette_on_surface_light</item>
     </style>
 
-    <style name="Theme.Palette.Green" parent="Theme_Rhythm">
+    <style name="Theme.Palette.Green" parent="Theme_Myusiq">
         <item name="colorPrimary">@color/rainbow_green</item>
         <item name="colorSecondary">@color/rainbow_green</item>
         <item name="colorSurface">@color/surface_green</item>
@@ -94,7 +94,7 @@
         <item name="colorOnPrimary">@color/white</item>
     </style>
 
-    <style name="Theme.Palette.Blue" parent="Theme_Rhythm">
+    <style name="Theme.Palette.Blue" parent="Theme_Myusiq">
         <item name="colorPrimary">@color/rainbow_blue</item>
         <item name="colorSecondary">@color/rainbow_blue</item>
         <item name="colorSurface">@color/surface_blue</item>
@@ -113,7 +113,7 @@
         <item name="colorOnPrimary">@color/white</item>
     </style>
 
-    <style name="Theme.Palette.Indigo" parent="Theme_Rhythm">
+    <style name="Theme.Palette.Indigo" parent="Theme_Myusiq">
         <item name="colorPrimary">@color/rainbow_indigo</item>
         <item name="colorSecondary">@color/rainbow_indigo</item>
         <item name="colorSurface">@color/surface_indigo</item>
@@ -132,7 +132,7 @@
         <item name="colorOnPrimary">@color/white</item>
     </style>
 
-    <style name="Theme.Palette.Violet" parent="Theme_Rhythm">
+    <style name="Theme.Palette.Violet" parent="Theme_Myusiq">
         <item name="colorPrimary">@color/rainbow_violet</item>
         <item name="colorSecondary">@color/rainbow_violet</item>
         <item name="colorSurface">@color/surface_violet</item>
@@ -152,7 +152,7 @@
     </style>
 
     <!-- Professional Palettes -->
-    <style name="Theme.Palette.Midnight" parent="Theme_Rhythm">
+    <style name="Theme.Palette.Midnight" parent="Theme_Myusiq">
         <item name="colorPrimary">@color/midnight_accent</item>
         <item name="colorSecondary">@color/midnight_accent</item>
         <item name="colorSurface">@color/midnight_blue</item>
@@ -164,7 +164,7 @@
         <item name="android:textColorSecondary">@color/palette_on_surface_variant_midnight</item>
     </style>
 
-    <style name="Theme.Palette.Slate" parent="Theme_Rhythm">
+    <style name="Theme.Palette.Slate" parent="Theme_Myusiq">
         <item name="colorPrimary">@color/slate_accent</item>
         <item name="colorSecondary">@color/slate_accent</item>
         <item name="colorSurface">@color/slate_dark</item>
@@ -176,7 +176,7 @@
         <item name="android:textColorSecondary">@color/palette_on_surface_variant_slate</item>
     </style>
 
-    <style name="Theme.Palette.Forest" parent="Theme_Rhythm">
+    <style name="Theme.Palette.Forest" parent="Theme_Myusiq">
         <item name="colorPrimary">@color/forest_accent</item>
         <item name="colorSecondary">@color/forest_accent</item>
         <item name="colorSurface">@color/forest_dark</item>
@@ -188,7 +188,7 @@
         <item name="android:textColorSecondary">@color/palette_on_surface_variant_forest</item>
     </style>
 
-    <style name="Theme.Palette.Charcoal" parent="Theme_Rhythm">
+    <style name="Theme.Palette.Charcoal" parent="Theme_Myusiq">
         <item name="colorPrimary">@color/charcoal_accent</item>
         <item name="colorSecondary">@color/charcoal_accent</item>
         <item name="colorSurface">@color/charcoal_dark</item>
@@ -200,7 +200,7 @@
         <item name="android:textColorSecondary">@color/palette_on_surface_variant_charcoal</item>
     </style>
 
-    <style name="Theme.Palette.Royal" parent="Theme_Rhythm">
+    <style name="Theme.Palette.Royal" parent="Theme_Myusiq">
         <item name="colorPrimary">@color/royal_accent</item>
         <item name="colorSecondary">@color/royal_accent</item>
         <item name="colorSurface">@color/royal_dark</item>

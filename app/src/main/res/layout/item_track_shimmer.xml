@@ -15,7 +15,7 @@
         android:paddingVertical="5dp"
         android:paddingHorizontal="1dp">
 
-        <com.music.rhythm.ui.components.AnimatedLoadingBars
+        <com.music.myusiq.ui.components.AnimatedLoadingBars
             android:id="@+id/ivTrackArtShimmer"
             android:layout_width="40dp"
             android:layout_height="40dp"
