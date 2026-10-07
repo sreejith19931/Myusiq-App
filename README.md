@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp" width="128" height="128" alt="Rhythm Logo" />
+  <img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp" width="128" height="128" alt="Myusiq Logo" />
 </p>
 
-# Rhythm - Android Music Player
+# Myusiq - Android Music Player
 
 <p align="center">
   <strong>A simple, elegant, and open-source music player for Android, built with modern practices.</strong>
@@ -11,15 +11,15 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Android-brightgreen.svg" alt="Platform" />
   <img src="https://img.shields.io/badge/API-26%2B-blue.svg" alt="API Level" />
-  <a href="https://rhythmmusicplayer.github.io"><img src="https://img.shields.io/badge/Website-rhythmmusicplayer.github.io-orange.svg" alt="Website" /></a>
-  <img src="https://img.shields.io/github/license/sreejith19931/Rhythm" alt="License" />
-  <img src="https://img.shields.io/github/repo-size/sreejith19931/Rhythm" alt="Repo Size" />
-  <img src="https://img.shields.io/github/issues-pr/sreejith19931/Rhythm" alt="PRs Welcome" />
+  <a href="https://rhythmmusicplayer.github.io/myusiq.github.io"><img src="https://img.shields.io/badge/Website-rhythmmusicplayer.github.io-orange.svg" alt="Website" /></a>
+  <img src="https://img.shields.io/github/license/sreejith19931/Myusiq" alt="License" />
+  <img src="https://img.shields.io/github/repo-size/sreejith19931/Myusiq" alt="Repo Size" />
+  <img src="https://img.shields.io/github/issues-pr/sreejith19931/Myusiq" alt="PRs Welcome" />
 </p>
 
 ---
 
-Rhythm is designed for users who want a distraction-free, high-quality audio experience. It combines a minimalist interface with powerful features like dynamic theming, a professional equalizer, and a built-in audio trimmer.
+Myusiq is designed for users who want a distraction-free, high-quality audio experience. It combines a minimalist interface with powerful features like dynamic theming, a professional equalizer, and a built-in audio trimmer.
 
 ## 🌟 Visual Showcase
 
@@ -99,7 +99,7 @@ Keep your collection organized and healthy with ease.
 
 ### Download
 Official releases and the companion website can be found at:
-**[rhythmmusicplayer.github.io](https://rhythmmusicplayer.github.io)**
+**[rhythmmusicplayer.github.io/myusiq.github.io](https://rhythmmusicplayer.github.io/myusiq.github.io)**
 
 *Release builds coming soon.* In the meantime, you can build from source.
 
@@ -107,7 +107,7 @@ Official releases and the companion website can be found at:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/sreejith19931/Rhythm.git
+   git clone https://github.com/sreejith19931/Myusiq.git
    ```
 2. Open the project in **Android Studio Koala** or newer.
 3. Ensure you have **Android SDK 37** installed.
