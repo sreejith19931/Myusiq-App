@@ -2,13 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.0.1] - 2024-10-06
+## [1.0.1] - 2026-10-08
 
 ### Added
 - **Release Key Integration**: Configured release keystore and signing configs for automated GitHub releases and seamless in-place app updates.
 - **CI/CD Build Pipeline**: Updated GitHub Actions build workflow to generate production release APKs automatically.
 
-## [1.0.0] - 2024-10-05
+## [1.0.0] - 2026-10-06
 
 ### Added
 - **Official Rebranding to Myusiq**: Complete project and app rebrand from Rhythm to Myusiq across code, themes, widgets, navigation, build configurations, and website.
@@ -17,7 +17,7 @@ All notable changes to this project will be documented in this file.
 - **Interactive Janitor Review Pop-up**: Added side-by-side comparison pop-ups for Auto-Fix Missing Artwork and Repair Missing Info displaying CURRENT vs PROPOSED info with checkboxes.
 - **Lyrics Management & Transliteration**: Added lyrics management with transliteration loaded on-demand.
 
-## [0.9.5] - 2024-09-20
+## [0.9.5] - 2026-09-20
 
 ### Added
 - **Core Playback Engine**: Robust local audio playback powered by Media3 and ExoPlayer.
