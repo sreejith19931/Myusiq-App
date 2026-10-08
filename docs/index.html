@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Myusiq | The Ultimate Android Music Experience</title>
+    <title>Myusiq | Modern Open-Source Music Player for Android</title>
 
     <link rel="icon" type="image/svg+xml" href="images/app_logo.svg">
 
     <!-- OpenGraph / Social Metadata -->
-    <meta property="og:title" content="Myusiq | Elegant Music Player for Android">
-    <meta property="og:description" content="Experience high-fidelity audio with a UI that breathes. Open-source, modern, and built for your music collection.">
+    <meta property="og:title" content="Myusiq | Modern Open-Source Music Player for Android">
+    <meta property="og:description" content="Experience studio-grade audio with Material You dynamic theming. 100% offline, privacy-first, and open-source.">
     <meta property="og:image" content="images/app_logo.svg">
     <meta property="og:url" content="https://myusiq.vercel.app">
     <meta name="twitter:card" content="summary_large_image">
@@ -21,189 +21,236 @@
 </head>
 <body>
 
-    <div id="scroll-progress"></div>
-
+    <!-- Navbar -->
     <nav id="navbar">
         <div class="container nav-container">
             <a href="#" class="nav-logo">
                 <img src="images/app_logo.svg" alt="Myusiq Logo">
-                <span style="font-family: 'Syne', sans-serif; font-weight: 700;">Myusiq</span>
+                <span class="brand-font">Myusiq</span>
             </a>
             <div style="display: flex; gap: 12px; align-items: center;">
-                <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle Theme">
+                <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle Light/Dark Theme">
                     <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
                     <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
                 </button>
-                <a href="mailto:myusiqmusicplayer@gmail.com?subject=Myusiq%20Bug%20Report%20%26%20Feedback" class="btn" style="padding: 10px 24px; font-size: 1rem; border: 1px solid var(--outline); background: transparent; color: var(--on-surface); display: inline-flex; align-items: center; justify-content: center; text-align: center;">Report Bug</a>
-                <a href="#download" class="btn btn-primary" style="padding: 10px 24px; font-size: 1rem; display: inline-flex; align-items: center; justify-content: center; text-align: center;">Get APK</a>
+                <a href="mailto:myusiqmusicplayer@gmail.com?subject=Myusiq%20Support%20%26%20Feedback" class="btn btn-outlined">Report Bug</a>
+                <a href="#download" class="btn btn-primary">Get APK (v1.0.1)</a>
             </div>
         </div>
     </nav>
 
+    <!-- Hero Section -->
     <header class="hero">
-        <div class="container hero-content reveal active">
-            <div class="app-icon-float-wrap">
-                <img src="images/app_logo.svg" alt="Myusiq App Icon" class="app-icon-hero">
-            </div>
-            <h1>Myusiq</h1>
-            <p class="tagline">An elegant, open-source music player designed for modern Android. Experience audio that breathes.</p>
+        <div class="container hero-grid reveal active">
+            <div class="hero-text">
+                <h1>The Music Player Built for Audiophiles & Privacy Purists</h1>
+                <p>Experience studio-grade audio with dynamic Material You theming that adapts to your album art. 100% open-source, ad-free, and offline.</p>
+                <div class="hero-actions">
+                    <a href="https://github.com/sreejith19931/Myusiq-App/releases" class="btn btn-primary">
+                        📥 Download APK (v1.0.1)
+                    </a>
+                    <a href="https://github.com/sreejith19931/Myusiq" target="_blank" rel="noopener" class="btn btn-outlined">
+                        ⭐ GitHub Source
+                    </a>
+                </div>
 
-            <div class="theme-test-wrapper" style="margin-top: 24px;">
-                <button id="toggle-theme-picker" class="btn" style="padding: 10px 22px; font-size: 0.95rem; border: 1px solid var(--outline); background: var(--surface-container); color: var(--on-surface); cursor: pointer; border-radius: 24px; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 8px;" onclick="toggleThemePicker()">
-                    🎨 Test Dynamic Themes
-                </button>
-                <div id="theme-widget" class="theme-widget" style="display: none; margin-top: 16px;">
-                    <p style="margin-bottom: 12px; font-weight: 500; font-family: 'Space Grotesk', sans-serif;">Select Theme Palette</p>
-                    <div class="color-dot active" style="background: #A78BFA;" onclick="changeTheme('#A78BFA', '#2E1065', this)"></div>
-                    <div class="color-dot" style="background: #38BDF8;" onclick="changeTheme('#38BDF8', '#0F172A', this)"></div>
-                    <div class="color-dot" style="background: #43A047;" onclick="changeTheme('#43A047', '#1B5E20', this)"></div>
-                    <div class="color-dot" style="background: #E53935;" onclick="changeTheme('#E53935', '#B71C1C', this)"></div>
-                    <div class="color-dot" style="background: #FB8C00;" onclick="changeTheme('#FB8C00', '#E65100', this)"></div>
+                <!-- Theme Sandbox Toggle -->
+                <div class="theme-test-wrapper">
+                    <button id="toggle-theme-picker" class="btn btn-outlined" onclick="toggleThemePicker()">
+                        🎨 Test Dynamic Themes
+                    </button>
+                    <div id="theme-widget" class="theme-widget" style="display: none; margin-top: 16px;">
+                        <p style="margin-bottom: 12px; font-weight: 500; font-family: 'Space Grotesk', sans-serif;">Select Theme Palette</p>
+                        <div class="color-dot active" style="background: #A78BFA;" onclick="changeTheme('#A78BFA', '#2E1065', this)"></div>
+                        <div class="color-dot" style="background: #38BDF8;" onclick="changeTheme('#38BDF8', '#0F172A', this)"></div>
+                        <div class="color-dot" style="background: #43A047;" onclick="changeTheme('#43A047', '#1B5E20', this)"></div>
+                        <div class="color-dot" style="background: #E53935;" onclick="changeTheme('#E53935', '#B71C1C', this)"></div>
+                        <div class="color-dot" style="background: #FB8C00;" onclick="changeTheme('#FB8C00', '#E65100', this)"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hero Phone Mockup -->
+            <div class="hero-visual">
+                <div class="phone-frame">
+                    <div class="phone-notch"></div>
+                    <img src="images/app_logo.svg" alt="Myusiq Player Screen" class="phone-screen" style="padding: 60px; background: radial-gradient(circle, var(--primary-container) 0%, #000 100%);">
                 </div>
             </div>
         </div>
-        <a href="#intro" class="scroll-indicator" style="text-decoration: none;">↓</a>
     </header>
 
-    <section id="intro">
+    <!-- Interactive Features Section -->
+    <section id="features" class="features-section">
         <div class="container">
-            <div class="value-props">
-                <div class="value-card-wrap reveal stagger-1">
-                    <div class="value-card">
-                        <h3>Pure Performance</h3>
-                        <p>Built with Jetpack Compose and Media3 for lightning-fast responsiveness and flawless playback.</p>
-                    </div>
-                </div>
-                <div class="value-card-wrap reveal stagger-2">
-                    <div class="value-card">
-                        <h3>Total Privacy</h3>
-                        <p>No ads, no tracking, and no internet required. Your music belongs to you, and Myusiq keeps it that way.</p>
-                    </div>
-                </div>
+            <div class="section-header reveal">
+                <span class="section-badge">Crafted for Excellence</span>
+                <h2 class="section-title">Designed with Discerning Audio Detail</h2>
+                <p class="section-subtitle">Every feature in Myusiq is engineered for high performance, local library health, and total control.</p>
             </div>
-        </div>
-    </section>
-
-    <section id="features">
-        <div class="container">
-            <h2 class="section-title reveal">Experience the Detail</h2>
-            <p class="section-subtitle reveal">Myusiq isn't just a player; it's a toolkit for the discerning listener.</p>
 
             <div class="features-grid">
-                <div class="feature-card-wrap reveal stagger-1">
-                    <div class="feature-card">
-                        <span class="icon">🎨</span>
-                        <h3>Material You</h3>
-                        <p>The entire interface transforms to complement the colors of your album artwork, creating a truly immersive visual experience.</p>
+                <!-- Card 1: Material You -->
+                <div class="glass-card feature-card reveal">
+                    <span class="icon">🎨</span>
+                    <h3>Material You Expressive</h3>
+                    <p>The interface extracts dynamic color swatches from your active album art, transforming backgrounds, buttons, and animations live.</p>
+                </div>
+
+                <!-- Card 2: Interactive Studio EQ -->
+                <div class="glass-card feature-card reveal">
+                    <span class="icon">🎚️</span>
+                    <h3>Studio 5-Band Equalizer</h3>
+                    <p>Precision audio shaping with custom frequency sliders, bass boost, and visual frequency response curves.</p>
+                    <div class="eq-container">
+                        <svg class="eq-svg-wrap" viewBox="0 0 340 120">
+                            <path id="eq-path" d="M 0 60 C 15 60, 15 60, 30 60 C 65 60, 65 60, 100 60 C 135 60, 135 60, 170 60 C 205 60, 205 60, 240 60 C 275 60, 295 60, 310 60 C 325 60, 325 60, 340 60" fill="none" stroke="var(--primary)" stroke-width="4" stroke-linecap="round"></path>
+                        </svg>
+                        <div class="eq-controls">
+                            <div class="eq-band">
+                                <input type="range" class="eq-slider" min="-10" max="10" value="0" aria-label="Equalizer 60 Hz Band Slider">
+                                <span class="eq-badge" id="eq-val-0">0 dB</span>
+                            </div>
+                            <div class="eq-band">
+                                <input type="range" class="eq-slider" min="-10" max="10" value="0" aria-label="Equalizer 230 Hz Band Slider">
+                                <span class="eq-badge" id="eq-val-1">0 dB</span>
+                            </div>
+                            <div class="eq-band">
+                                <input type="range" class="eq-slider" min="-10" max="10" value="0" aria-label="Equalizer 910 Hz Band Slider">
+                                <span class="eq-badge" id="eq-val-2">0 dB</span>
+                            </div>
+                            <div class="eq-band">
+                                <input type="range" class="eq-slider" min="-10" max="10" value="0" aria-label="Equalizer 4 kHz Band Slider">
+                                <span class="eq-badge" id="eq-val-3">0 dB</span>
+                            </div>
+                            <div class="eq-band">
+                                <input type="range" class="eq-slider" min="-10" max="10" value="0" aria-label="Equalizer 14 kHz Band Slider">
+                                <span class="eq-badge" id="eq-val-4">0 dB</span>
+                            </div>
+                        </div>
+                        <div class="preset-btns">
+                            <button class="preset-btn active" data-preset="flat" onclick="applyEqPreset('flat')">Flat</button>
+                            <button class="preset-btn" data-preset="bass" onclick="applyEqPreset('bass')">Bass Boost</button>
+                            <button class="preset-btn" data-preset="vocal" onclick="applyEqPreset('vocal')">Vocal Clarity</button>
+                            <button class="preset-btn" data-preset="electronic" onclick="applyEqPreset('electronic')">Electronic</button>
+                        </div>
                     </div>
                 </div>
-                <div class="feature-card-wrap reveal stagger-2">
-                    <div class="feature-card">
-                        <span class="icon">🎚️</span>
-                        <h3>Studio-Grade EQ</h3>
-                        <p>A precision 5-band equalizer with custom presets, environmental reverb, and bass boost. Fine-tune your audio perfectly.</p>
+
+                <!-- Card 3: Library Janitor Interactive -->
+                <div class="glass-card feature-card reveal">
+                    <span class="icon">🧹</span>
+                    <h3>Library Janitor & Auto-Fix</h3>
+                    <p>Detect missing artwork, repair corrupted track metadata, group multi-artist albums, and clear cached lyrics with side-by-side review choices.</p>
+                    <div class="janitor-demo-card">
+                        <div id="janitor-demo" class="janitor-track-info">
+                            <div class="janitor-art">🎵</div>
+                            <div>
+                                <h4 id="janitor-title" style="font-size: 1rem; margin-bottom: 4px;">Track_01_Unknown.mp3</h4>
+                                <p id="janitor-artist" style="font-size: 0.85rem; color: var(--on-surface-variant);">Unknown Artist • Missing Artwork</p>
+                            </div>
+                        </div>
+                        <button id="janitor-toggle-btn" class="btn" style="width: 100%; font-size: 0.85rem; padding: 10px; border-radius: 12px; background: var(--surface-container-high);" onclick="toggleJanitorView()">
+                            ✨ Auto-Fix & Fetch Album Art
+                        </button>
                     </div>
                 </div>
-                <div class="feature-card-wrap reveal stagger-3">
-                    <div class="feature-card">
-                        <span class="icon">✂️</span>
-                        <h3>Precision Trimmer</h3>
-                        <p>Found the perfect hook? Create high-quality ringtones or notification clips directly from your local library.</p>
-                    </div>
+
+                <!-- Card 4: Driving Mode -->
+                <div class="glass-card feature-card reveal">
+                    <span class="icon">🚗</span>
+                    <h3>Driving Mode</h3>
+                    <p>High-contrast, large-touch controls engineered for safe, distraction-free playback while on the road.</p>
                 </div>
-                <div class="feature-card-wrap reveal stagger-4">
-                    <div class="feature-card">
-                        <span class="icon">🚗</span>
-                        <h3>Optimized Driving</h3>
-                        <p>A dedicated interface with large, tactile controls and high-contrast visuals designed for safe, distraction-free use.</p>
-                    </div>
+
+                <!-- Card 5: Wear OS Companion -->
+                <div class="glass-card feature-card reveal">
+                    <span class="icon">⌚</span>
+                    <h3>Wear OS Companion</h3>
+                    <p>Control playback, adjust volume, and view dynamic artwork directly from your smartwatch.</p>
                 </div>
-                <div class="feature-card-wrap reveal stagger-5">
-                    <div class="feature-card">
-                        <span class="icon">🧹</span>
-                        <h3>Library Janitor</h3>
-                        <p>Automatically repair missing metadata and fetch high-resolution album art. Keep your collection organized and looking best.</p>
-                    </div>
-                </div>
-                <div class="feature-card-wrap reveal stagger-6">
-                    <div class="feature-card">
-                        <span class="icon">📜</span>
-                        <h3>Seamless Lyrics</h3>
-                        <p>Dive deeper into your music with integrated support for both synced and static lyrics. Never miss a word.</p>
-                    </div>
+
+                <!-- Card 6: Privacy Purist Guarantee -->
+                <div class="glass-card feature-card reveal">
+                    <span class="icon">🔒</span>
+                    <h3>Zero Tracking Privacy</h3>
+                    <p>No ads, no analytics, no cloud requirements. Your local music library stays strictly private on your device.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <section id="faq" class="faq-section">
+    <!-- Screenshot Gallery -->
+    <section id="gallery" class="gallery-section">
         <div class="container">
-            <h2 class="section-title reveal">Frequently Asked Questions</h2>
-            <div class="faq-accordion reveal">
-                <div class="faq-item">
-                    <div class="faq-question">Does Myusiq collect any user data? <span class="faq-icon">+</span></div>
-                    <div class="faq-answer"><p>No, Myusiq operates entirely offline with zero trackers, ads, or internet requirements. Your music data stays completely private on your device.</p></div>
+            <div class="section-header reveal">
+                <span class="section-badge">Visual Showcase</span>
+                <h2 class="section-title">Explore the Interface</h2>
+                <p class="section-subtitle">Click any screenshot to view full resolution.</p>
+            </div>
+
+            <div class="gallery-tabs reveal">
+                <button class="gallery-tab active" onclick="filterGallery('all', this)">All Views</button>
+                <button class="gallery-tab" onclick="filterGallery('player', this)">Now Playing</button>
+                <button class="gallery-tab" onclick="filterGallery('library', this)">Library</button>
+                <button class="gallery-tab" onclick="filterGallery('eq', this)">Equalizer</button>
+            </div>
+
+            <div class="gallery-grid reveal">
+                <div class="screenshot-card" data-category="player" onclick="openLightbox('images/app_logo.svg', 'Myusiq - Now Playing Player Interface')">
+                    <img src="images/app_logo.svg" alt="Now Playing Screen" style="padding: 40px; background: var(--surface-container-high);">
                 </div>
-                <div class="faq-item">
-                    <div class="faq-question">How does the Dynamic Theming work? <span class="faq-icon">+</span></div>
-                    <div class="faq-answer"><p>Myusiq extracts core color tones dynamically from your active song's album art, morphing the application interfaces fluidly to match the visual vibe of the track.</p></div>
+                <div class="screenshot-card" data-category="library" onclick="openLightbox('images/app_logo.svg', 'Myusiq - Album & Library View')">
+                    <img src="images/app_logo.svg" alt="Library Screen" style="padding: 40px; background: var(--surface-container-high);">
                 </div>
-                <div class="faq-item">
-                    <div class="faq-question">What does the Library Janitor feature do? <span class="faq-icon">+</span></div>
-                    <div class="faq-answer"><p>The Library Janitor helps clean up your local audio library by scanning and scrubbing duplicate tracks, fixing messy metadata tags, and fetching missing album art profiles.</p></div>
-                </div>
-                <div class="faq-item">
-                    <div class="faq-question">How do I create ringtones or notification clips? <span class="faq-icon">+</span></div>
-                    <div class="faq-answer"><p>You can use the built-in Precision Trimmer to select any song from your library, trim your favorite hook down to the exact millisecond, and save it as a system audio clip instantly.</p></div>
-                </div>
-                <div class="faq-item">
-                    <div class="faq-question">What is Driving Mode? <span class="faq-icon">+</span></div>
-                    <div class="faq-answer"><p>Driving Mode introduces a simplified, distraction-free playback interface with large tactile controls and high-contrast styling layouts optimized for safe road use.</p></div>
+                <div class="screenshot-card" data-category="eq" onclick="openLightbox('images/app_logo.svg', 'Myusiq - 5-Band Equalizer & Audio FX')">
+                    <img src="images/app_logo.svg" alt="Equalizer Screen" style="padding: 40px; background: var(--surface-container-high);">
                 </div>
             </div>
         </div>
     </section>
 
-
-
-    <section id="teaser" class="teaser-section" style="padding: 60px 0; background: transparent; text-align: center;">
+    <!-- Timeline / Roadmap Section (Auto-populated by scripts/update_roadmap.py) -->
+        <section id="timeline" class="timeline-section">
         <div class="container">
-            <h2 class="section-title reveal">See Myusiq in Action</h2>
-            <p class="section-subtitle reveal">A quick teaser of the immersive and dynamic music experience.</p>
-
-            <div class="mockup-container reveal" style="max-width: 320px; margin: 40px auto; border: 12px solid #222; border-radius: 36px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); overflow: hidden; background: #000;">
-                <img src="images/app_teaser.gif" alt="Myusiq App Teaser" style="width: 100%; display: block; border-radius: 24px;">
+            <div class="section-header reveal">
+                <span class="section-badge">Roadmap & History</span>
+                <h2 class="section-title">What's New in Myusiq</h2>
+                <p class="section-subtitle">Track the latest user features, design updates, and audio enhancements.</p>
             </div>
-        </div>
-    </section>
-
-                            <section id="timeline" class="timeline-section">
-        <div class="container">
-            <h2 class="section-title reveal">Changelog</h2>
             <div class="timeline reveal">
                 <div class="timeline-item">
-                    <div class="timeline-content">
-                        <h3 style="font-size: 1.5rem; font-weight: 800; color: var(--on-surface); margin-bottom: 8px;">v1.0.1</h3>
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content glass-card">
+                        <div class="timeline-header">
+                            <span class="version-badge">v1.0.1</span>
+                            <span class="date">Oct 06, 2026</span>
+                        </div>
                         <ul class="changelog-list">
                             <li><strong>Release Key Integration</strong>: Configured release keystore and signing configs for automated GitHub releases and seamless in-place app updates.</li>
                             <li><strong>CI/CD Build Pipeline</strong>: Updated GitHub Actions build workflow to generate production release APKs automatically.</li>
                         </ul>
-                        <span class="date">October 2026</span>
                     </div>
                 </div>
                 <div class="timeline-item">
-                    <div class="timeline-content">
-                        <h3 style="font-size: 1.5rem; font-weight: 800; color: var(--on-surface); margin-bottom: 8px;">v1.0.0</h3>
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content glass-card">
+                        <div class="timeline-header">
+                            <span class="version-badge">v1.0.0</span>
+                            <span class="date">Oct 06, 2026</span>
+                        </div>
                         <ul class="changelog-list">
-                            <li><strong>Official Rebranding to Myusiq</strong>: Complete project and app rebrand from Rhythm to Myusiq across code, themes, widgets, navigation, build configurations, and website.</li>
                             <li><strong>Unified Versioning</strong>: Initial release v1.0.0 (versionCode 10000) for seamless in-place updates across future GitHub releases.</li>
                         </ul>
-                        <span class="date">October 2026</span>
                     </div>
                 </div>
                 <div class="timeline-item">
-                    <div class="timeline-content">
-                        <h3 style="font-size: 1.5rem; font-weight: 800; color: var(--on-surface); margin-bottom: 8px;">v2.1.0</h3>
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content glass-card">
+                        <div class="timeline-header">
+                            <span class="version-badge">v2.1.0</span>
+                            <span class="date">Oct 06, 2026</span>
+                        </div>
                         <ul class="changelog-list">
                             <li><strong>Album Grouping & Normalization</strong>: Resolved duplicate album cards for multi-artist albums by grouping tracks strictly by normalized album key. Automatically displays "Various Artists" for tracks with different artists.</li>
                             <li><strong>Persistent Library Sorting</strong>: Added album sorting options (Alphabetical, Artist, Track Count, Recently Added) and track sorting options (Alphabetical, Recently Added, File Size, Popularity, Artist, Album, Recently Played) with Ascending/Descending toggles. Selected options are saved to <code>SharedPreferences</code> and restored across app restarts.</li>
@@ -211,236 +258,78 @@
                             <li><strong>Artwork Caching & Dynamic Refresh</strong>: Integrated <code>ArtworkUtils</code> persistent local artwork caching and updated <code>_artworkRefreshSignatures</code> timestamps to force Glide cache invalidation and render new artwork instantly across all screens.</li>
                             <li><strong>Lyrics Management & Transliteration</strong>: Added "Clear Lyrics Files" in Backup & Maintenance settings with "Clear All" and "Select Song Lyrics to Remove" options. Raw original lyrics are loaded as default; transliteration is applied on-demand when user taps the Transliterate button. Instant lyrics cleanup on track transitions.</li>
                         </ul>
-                        <span class="date">October 2026</span>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content glass-card">
+                        <div class="timeline-header">
+                            <span class="version-badge">v2.0.2</span>
+                            <span class="date">Sep 15, 2026</span>
+                        </div>
+                        <ul class="changelog-list">
+                            <li><strong>User Support</strong>: Integrated frictionless email reporting with diagnostic templates in-app and on the website.</li>
+                        </ul>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <section id="gallery" class="gallery-section">
+    <!-- Download & Installation Guide -->
+    <section id="download" class="features-section" style="background: var(--surface-container);">
         <div class="container">
-            <h2 class="section-title reveal">A Visual Journey</h2>
-            <p class="section-subtitle reveal">Modern design language meets functional simplicity.</p>
-            <div class="gallery-container reveal">
-                <div class="gallery-arrow left" onclick="scrollGallery(-1)" aria-label="Previous screenshot">‹</div>
-                <div class="screenshots" id="screenshot-slider">
-                    <img src="images/screenshot_tracks.png" alt="Track List" loading="lazy">
-                    <img src="images/screenshot_player.png" alt="Now Playing" loading="lazy">
-                    <img src="images/screenshot_driving.png" alt="Driving Mode" loading="lazy">
-                    <img src="images/screenshot_equalizer.png" alt="Equalizer Controls" loading="lazy">
-                    <img src="images/screenshot_trimmer.png" alt="Audio Trimmer" loading="lazy">
-                    <img src="images/screenshot_folders.png" alt="Folder Navigation" loading="lazy">
-                </div>
-                <div class="gallery-arrow right" onclick="scrollGallery(1)" aria-label="Next screenshot">›</div>
+            <div class="section-header reveal">
+                <span class="section-badge">Get Started</span>
+                <h2 class="section-title">Ready to Experience Myusiq?</h2>
+                <p class="section-subtitle">Download the APK directly or build from source on GitHub.</p>
             </div>
-            <p class="reveal stagger-1" style="text-align: center; margin-top: 32px; color: var(--on-surface-variant); font-weight: 500;">← Scroll to explore the interface →</p>
+
+            <div class="glass-card reveal" style="max-width: 800px; margin: 0 auto; text-align: center;">
+                <h3 style="font-size: 2rem; margin-bottom: 16px;">Download Latest Release (v1.0.1)</h3>
+                <p style="color: var(--on-surface-variant); margin-bottom: 32px;">Compatible with Android 8.0 (API 26) and above. Includes phone and Wear OS APKs.</p>
+                <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 32px;">
+                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/tag/v1.0.1" class="btn btn-primary">
+                        📥 Download Myusiq-v1.0.1.apk
+                    </a>
+                    <a href="https://github.com/sreejith19931/Myusiq-App/releases" target="_blank" rel="noopener" class="btn btn-outlined">
+                        📦 All GitHub Releases
+                    </a>
+                </div>
+
+                <div style="background: var(--surface); border-radius: 16px; padding: 20px; text-align: left; border: 1px solid var(--outline);">
+                    <h4 style="font-size: 1.1rem; margin-bottom: 12px; color: var(--primary);">📲 Installation Instructions:</h4>
+                    <ol style="padding-left: 20px; color: var(--on-surface-variant); font-size: 0.95rem; line-height: 1.8;">
+                        <li>Download the <code>Myusiq-v1.0.1.apk</code> file to your Android device.</li>
+                        <li>Tap the downloaded file and allow <em>"Install from Unknown Sources"</em> if prompted by your browser.</li>
+                        <li>Follow the setup wizard in Myusiq to grant audio permissions and select your music folders.</li>
+                    </ol>
+                </div>
+            </div>
         </div>
     </section>
 
+    <!-- Lightbox Modal -->
+    <div id="lightbox-modal" onclick="closeLightbox()">
+        <span class="lightbox-close">&times;</span>
+        <img id="lightbox-img" src="" alt="Full Screen Screenshot">
+    </div>
 
-
-    <section id="download" class="cta-section">
-        <div class="container cta-content reveal">
-            <h2 class="section-title" style="margin-bottom: 32px;">Ready for Myusiq?</h2>
-            <p class="tagline" style="margin-bottom: 48px;">Join the community and experience your local music collection like never before.</p>
-            <a href="https://github.com/sreejith19931/Myusiq-App/releases" class="btn btn-primary">Download APK Now</a>
-        </div>
-    </section>
-
-    <footer>
-        <div class="container reveal">
-            <img src="images/app_logo.svg" alt="Myusiq" style="width: 80px; margin-bottom: 16px;">
-            <h3 style="color: var(--primary); font-size: 2.5rem; margin-bottom: 10px;">Myusiq</h3>
-            <p style="font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; opacity: 0.8;">Designed and built by Team Myusiq</p>
-            <div class="footer-links">
-                <a href="https://github.com/sreejith19931/Myusiq-App">GitHub</a>
-                <a href="mailto:myusiqmusicplayer@gmail.com?subject=Myusiq%20Support%20%26%20Feedback">Contact Support</a>
-                <a href="https://opensource.org/licenses/MIT">MIT License</a>
+    <!-- Footer -->
+    <footer style="padding: 60px 0 30px 0; border-top: 1px solid var(--outline-variant);">
+        <div class="container" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <img src="images/app_logo.svg" alt="Myusiq Logo" style="width: 32px; height: 32px;">
+                <span class="brand-font" style="font-size: 1.2rem; font-weight: 800;">Myusiq</span>
+                <span style="font-size: 0.85rem; color: var(--on-surface-variant); margin-left: 12px;">© 2026 Myusiq Project • Released under MIT License</span>
+            </div>
+            <div style="display: flex; gap: 20px; font-size: 0.95rem;">
+                <a href="https://github.com/sreejith19931/Myusiq-App" target="_blank" rel="noopener" style="color: var(--on-surface-variant);">GitHub</a>
+                <a href="mailto:myusiqmusicplayer@gmail.com?subject=Myusiq%20Feedback" style="color: var(--on-surface-variant);">Support</a>
             </div>
         </div>
     </footer>
 
-    <a href="#" id="back-to-top">↑</a>
-
-    <div id="lightbox" class="lightbox">
-        <span class="close-lightbox">&times;</span>
-        <img class="lightbox-content" id="lightbox-img" alt="Enlarged screenshot">
-        <div id="lightbox-caption"></div>
-    </div>
-
-    <script>
-        // Feature 6: Theme Toggle Logic
-        const themeToggle = document.getElementById('theme-toggle');
-        const htmlElement = document.documentElement;
-
-        // Check for saved theme or default to dark
-        const savedTheme = localStorage.getItem('theme') || 'dark';
-        htmlElement.setAttribute('data-theme', savedTheme);
-
-        themeToggle.addEventListener('click', () => {
-            const currentTheme = htmlElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            htmlElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-        });
-
-        // Feature 4: FAQ Accordion
-        document.querySelectorAll('.faq-question').forEach(question => {
-            question.addEventListener('click', () => {
-                const item = question.parentElement;
-                item.classList.toggle('active');
-            });
-        });
-
-        // Feature 7: Lightbox Logic
-        const lightbox = document.getElementById('lightbox');
-        const lightboxImg = document.getElementById('lightbox-img');
-        const lightboxCaption = document.getElementById('lightbox-caption');
-        const closeLightbox = document.querySelector('.close-lightbox');
-
-        document.querySelectorAll('.screenshots img').forEach(img => {
-            img.addEventListener('click', () => {
-                lightbox.style.display = 'block';
-                lightboxImg.src = img.src;
-                lightboxCaption.innerHTML = img.alt;
-            });
-        });
-
-        closeLightbox.addEventListener('click', () => {
-            lightbox.style.display = 'none';
-        });
-
-        lightbox.addEventListener('click', (e) => {
-            if (e.target === lightbox) {
-                lightbox.style.display = 'none';
-            }
-        });
-
-        // Scroll Logic
-        window.addEventListener('scroll', () => {
-            const nav = document.getElementById('navbar');
-            const btt = document.getElementById('back-to-top');
-            const progress = document.getElementById('scroll-progress');
-            const heroIcon = document.querySelector('.app-icon-hero');
-
-            // Scroll Progress
-            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
-            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-            const scrolled = (winScroll / height) * 100;
-            if (progress) progress.style.width = scrolled + "%";
-
-            // Navbar & Back to Top
-            if (window.scrollY > 50) nav.classList.add('scrolled');
-            else nav.classList.remove('scrolled');
-
-            if (window.scrollY > 400) btt.classList.add('visible');
-            else btt.classList.remove('visible');
-
-            // Parallax Hero Icon
-            if (heroIcon) {
-                const scrollPos = window.scrollY;
-                const scale = 1 - Math.min(scrollPos / 1200, 0.25);
-                const opacity = 1 - Math.min(scrollPos / 600, 0.6);
-                heroIcon.style.transform = `scale(${scale})`;
-                heroIcon.style.opacity = opacity;
-            }
-        });
-
-        // Intersection Observer for Reveal
-        const observerOptions = { threshold: 0.15 };
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('active');
-                }
-            });
-        }, observerOptions);
-
-        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-
-        // Gallery scroll
-        function scrollGallery(direction) {
-            const slider = document.getElementById('screenshot-slider');
-            slider.scrollBy({ left: 500 * direction, behavior: 'smooth' });
-        }
-
-        // Theme changer
-        const themes = [
-            {primary: '#A78BFA', container: '#2E1065'},
-            {primary: '#38BDF8', container: '#0F172A'},
-            {primary: '#43A047', container: '#1B5E20'},
-            {primary: '#E53935', container: '#B71C1C'},
-            {primary: '#FB8C00', container: '#E65100'}
-        ];
-        let currentThemeIndex = 0;
-        let autoCycleInterval;
-
-        function changeTheme(primary, container, el, manual = true) {
-            document.documentElement.style.setProperty('--primary', primary);
-            document.documentElement.style.setProperty('--primary-container', container);
-
-            const widget = document.querySelector('.theme-widget');
-            if (manual) {
-                if (autoCycleInterval) clearInterval(autoCycleInterval);
-                if (widget) {
-                    widget.style.transform = 'scale(1.05)';
-                    setTimeout(() => { widget.style.transform = 'scale(1)'; }, 200);
-                }
-            }
-
-            document.querySelectorAll('.color-dot').forEach(dot => dot.classList.remove('active'));
-            if (el) el.classList.add('active');
-            else {
-                const dots = document.querySelectorAll('.color-dot');
-                if (dots[currentThemeIndex]) dots[currentThemeIndex].classList.add('active');
-            }
-        }
-
-        let isPickerOpen = false;
-
-        function toggleThemePicker() {
-            const widget = document.getElementById('theme-widget');
-            const btn = document.getElementById('toggle-theme-picker');
-            isPickerOpen = !isPickerOpen;
-            if (isPickerOpen) {
-                widget.style.display = 'block';
-                btn.innerHTML = '🎨 Hide Theme Picker';
-                btn.style.borderColor = 'var(--primary)';
-            } else {
-                widget.style.display = 'none';
-                btn.innerHTML = '🎨 Test Dynamic Themes';
-                btn.style.borderColor = 'var(--outline)';
-                changeTheme('#A78BFA', '#2E1065', document.querySelectorAll('.color-dot')[0]);
-            }
-        }
-
-        // Hero Mouse Parallax
-        const hero = document.querySelector('.hero');
-        const heroIcon = document.querySelector('.app-icon-hero');
-
-        if (hero && heroIcon) {
-            hero.addEventListener('mousemove', (e) => {
-                const { clientX, clientY } = e;
-                const { innerWidth, innerHeight } = window;
-                const x = (clientX / innerWidth - 0.5) * 30;
-                const y = (clientY / innerHeight - 0.5) * 30;
-                heroIcon.style.transform = `translateY(${y}px) rotateX(${-y/2}deg) rotateY(${x/2}deg)`;
-            });
-
-            hero.addEventListener('mouseleave', () => {
-                heroIcon.style.transform = `translateY(0) rotateX(0) rotateY(0)`;
-            });
-        }
-
-        // Handle page load
-        window.addEventListener('load', () => {
-            document.querySelectorAll('.reveal').forEach(el => {
-                if (el.getBoundingClientRect().top < window.innerHeight) {
-                    el.classList.add('active');
-                }
-            });
-        });
-    </script>
+    <script src="main.js"></script>
 </body>
 </html>
