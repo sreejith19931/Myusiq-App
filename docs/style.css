@@ -200,7 +200,8 @@ a {
 .light-mode .theme-toggle-btn .moon-icon { display: block; }
 
 /* Buttons */
-.btn {
+.btn, button, input, select {
+    font-family: 'Space Grotesk', sans-serif !important;
     display: inline-flex;
     align-items: center;
     justify-content: center;

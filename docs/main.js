@@ -146,16 +146,38 @@ let isJanitorFixed = false;
 function toggleJanitorView() {
     const viewContainer = document.getElementById('janitor-demo');
     const toggleBtn = document.getElementById('janitor-toggle-btn');
+    const titleEl = document.getElementById('janitor-title');
+    const artistEl = document.getElementById('janitor-artist');
+    const artEl = document.querySelector('.janitor-art');
+
     if (!viewContainer || !toggleBtn) return;
 
     isJanitorFixed = !isJanitorFixed;
     if (isJanitorFixed) {
         viewContainer.classList.add('repaired');
-        toggleBtn.innerText = '↺ Show Original Untagged Audio';
+        if (titleEl) titleEl.innerText = 'Midnight City (Remastered)';
+        if (artistEl) {
+            artistEl.innerText = 'M83 • Hurry Up, We\'re Dreaming (High-Res Art Fetched)';
+            artistEl.style.color = 'var(--primary)';
+        }
+        if (artEl) {
+            artEl.innerHTML = '🎨';
+            artEl.style.background = 'linear-gradient(135deg, var(--primary), var(--secondary))';
+        }
+        toggleBtn.innerText = '↺ Show Original Untagged Track';
         toggleBtn.style.background = 'var(--primary)';
         toggleBtn.style.color = 'var(--on-primary)';
     } else {
         viewContainer.classList.remove('repaired');
+        if (titleEl) titleEl.innerText = 'Track_01_Unknown.mp3';
+        if (artistEl) {
+            artistEl.innerText = 'Unknown Artist • Missing Artwork';
+            artistEl.style.color = 'var(--on-surface-variant)';
+        }
+        if (artEl) {
+            artEl.innerHTML = '🎵';
+            artEl.style.background = 'var(--outline)';
+        }
         toggleBtn.innerText = '✨ Auto-Fix & Fetch Album Art';
         toggleBtn.style.background = 'var(--surface-container-high)';
         toggleBtn.style.color = 'var(--on-surface)';
