@@ -48,13 +48,18 @@
             <h1>Myusiq</h1>
             <p class="tagline">An elegant, open-source music player designed for modern Android. Experience audio that breathes.</p>
 
-            <div class="theme-widget">
-                <p style="margin-bottom: 12px; font-weight: 500; font-family: 'Space Grotesk', sans-serif;">Preview Dynamic Themes</p>
-                <div class="color-dot active" style="background: #A78BFA;" onclick="changeTheme('#A78BFA', '#2E1065', this)"></div>
-                <div class="color-dot" style="background: #38BDF8;" onclick="changeTheme('#38BDF8', '#0F172A', this)"></div>
-                <div class="color-dot" style="background: #43A047;" onclick="changeTheme('#43A047', '#1B5E20', this)"></div>
-                <div class="color-dot" style="background: #E53935;" onclick="changeTheme('#E53935', '#B71C1C', this)"></div>
-                <div class="color-dot" style="background: #FB8C00;" onclick="changeTheme('#FB8C00', '#E65100', this)"></div>
+            <div class="theme-test-wrapper" style="margin-top: 24px;">
+                <button id="toggle-theme-picker" class="btn" style="padding: 10px 22px; font-size: 0.95rem; border: 1px solid var(--outline); background: var(--surface-container); color: var(--on-surface); cursor: pointer; border-radius: 24px; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 8px;" onclick="toggleThemePicker()">
+                    🎨 Test Dynamic Themes
+                </button>
+                <div id="theme-widget" class="theme-widget" style="display: none; margin-top: 16px;">
+                    <p style="margin-bottom: 12px; font-weight: 500; font-family: 'Space Grotesk', sans-serif;">Select Theme Palette</p>
+                    <div class="color-dot active" style="background: #A78BFA;" onclick="changeTheme('#A78BFA', '#2E1065', this)"></div>
+                    <div class="color-dot" style="background: #38BDF8;" onclick="changeTheme('#38BDF8', '#0F172A', this)"></div>
+                    <div class="color-dot" style="background: #43A047;" onclick="changeTheme('#43A047', '#1B5E20', this)"></div>
+                    <div class="color-dot" style="background: #E53935;" onclick="changeTheme('#E53935', '#B71C1C', this)"></div>
+                    <div class="color-dot" style="background: #FB8C00;" onclick="changeTheme('#FB8C00', '#E65100', this)"></div>
+                </div>
             </div>
         </div>
         <a href="#intro" class="scroll-indicator" style="text-decoration: none;">↓</a>
@@ -392,19 +397,22 @@
             }
         }
 
-        function startAutoCycle() {
-            autoCycleInterval = setInterval(() => {
-                currentThemeIndex = (currentThemeIndex + 1) % themes.length;
-                const theme = themes[currentThemeIndex];
-                changeTheme(theme.primary, theme.container, null, false);
-            }, 1000);
+        let isPickerOpen = false;
 
-            setTimeout(() => {
-                if (autoCycleInterval) clearInterval(autoCycleInterval);
-                currentThemeIndex = 0;
-                const theme = themes[0];
-                changeTheme(theme.primary, theme.container, null, false);
-            }, 4000);
+        function toggleThemePicker() {
+            const widget = document.getElementById('theme-widget');
+            const btn = document.getElementById('toggle-theme-picker');
+            isPickerOpen = !isPickerOpen;
+            if (isPickerOpen) {
+                widget.style.display = 'block';
+                btn.innerHTML = '🎨 Hide Theme Picker';
+                btn.style.borderColor = 'var(--primary)';
+            } else {
+                widget.style.display = 'none';
+                btn.innerHTML = '🎨 Test Dynamic Themes';
+                btn.style.borderColor = 'var(--outline)';
+                changeTheme('#A78BFA', '#2E1065', document.querySelectorAll('.color-dot')[0]);
+            }
         }
 
         // Hero Mouse Parallax
@@ -432,7 +440,6 @@
                     el.classList.add('active');
                 }
             });
-            startAutoCycle();
         });
     </script>
 </body>
