@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.1] - 2026-10-06
+
+### Added
+- **Release Key Integration**: Configured release keystore and signing configs for automated GitHub releases and seamless in-place app updates.
+- **CI/CD Build Pipeline**: Updated GitHub Actions build workflow to generate production release APKs automatically.
+
 ## [1.0.0] - 2026-10-06
 
 ### Added

@@ -172,10 +172,30 @@
         </div>
     </section>
 
-                        <section id="timeline" class="timeline-section">
+                            <section id="timeline" class="timeline-section">
         <div class="container">
             <h2 class="section-title reveal">Changelog</h2>
             <div class="timeline reveal">
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <h3 style="font-size: 1.5rem; font-weight: 800; color: var(--on-surface); margin-bottom: 8px;">v1.0.1</h3>
+                        <ul class="changelog-list">
+                            <li><strong>Release Key Integration</strong>: Configured release keystore and signing configs for automated GitHub releases and seamless in-place app updates.</li>
+                            <li><strong>CI/CD Build Pipeline</strong>: Updated GitHub Actions build workflow to generate production release APKs automatically.</li>
+                        </ul>
+                        <span class="date">October 2026</span>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <h3 style="font-size: 1.5rem; font-weight: 800; color: var(--on-surface); margin-bottom: 8px;">v1.0.0</h3>
+                        <ul class="changelog-list">
+                            <li><strong>Official Rebranding to Myusiq</strong>: Complete project and app rebrand from Rhythm to Myusiq across code, themes, widgets, navigation, build configurations, and website.</li>
+                            <li><strong>Unified Versioning</strong>: Initial release v1.0.0 (versionCode 10000) for seamless in-place updates across future GitHub releases.</li>
+                        </ul>
+                        <span class="date">October 2026</span>
+                    </div>
+                </div>
                 <div class="timeline-item">
                     <div class="timeline-content">
                         <h3 style="font-size: 1.5rem; font-weight: 800; color: var(--on-surface); margin-bottom: 8px;">v2.1.0</h3>
@@ -187,29 +207,6 @@
                             <li><strong>Lyrics Management & Transliteration</strong>: Added "Clear Lyrics Files" in Backup & Maintenance settings with "Clear All" and "Select Song Lyrics to Remove" options. Raw original lyrics are loaded as default; transliteration is applied on-demand when user taps the Transliterate button. Instant lyrics cleanup on track transitions.</li>
                         </ul>
                         <span class="date">October 2026</span>
-                    </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-content">
-                        <h3 style="font-size: 1.5rem; font-weight: 800; color: var(--on-surface); margin-bottom: 8px;">v2.0.2</h3>
-                        <ul class="changelog-list">
-                            <li><strong>Website Automation</strong>: Implemented Python script to automatically update the website roadmap from changelog entries.</li>
-                            <li><strong>CI/CD Optimization</strong>: Improved release workflow with explicit token-based authentication for multiple repositories.</li>
-                            <li><strong>User Support</strong>: Integrated frictionless email reporting with diagnostic templates in-app and on the website.</li>
-                        </ul>
-                        <span class="date">September 2026</span>
-                    </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-content">
-                        <h3 style="font-size: 1.5rem; font-weight: 800; color: var(--on-surface); margin-bottom: 8px;">v2.0.1</h3>
-                        <ul class="changelog-list">
-                            <li><strong>Database Integrity</strong>: Fixed a <code>java.lang.IllegalStateException</code> where Room could not verify data integrity after schema changes.</li>
-                            <li>Incremented <code>AppDatabase</code> version to <code>11</code>.</li>
-                            <li>Enabled <code>fallbackToDestructiveMigration</code> in <code>DatabaseProvider</code> to automatically recreate the database when schema mismatches occur during development.</li>
-                            <li><strong>Version Alignment</strong>: Synced <code>versionCode</code> and <code>versionName</code> in build configuration for the new patch release.</li>
-                        </ul>
-                        <span class="date">September 2026</span>
                     </div>
                 </div>
             </div>
