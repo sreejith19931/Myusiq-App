@@ -23,6 +23,24 @@ def format_markdown_to_html(text):
     text = re.sub(r'`(.*?)`', r'<code>\1</code>', text)
     return text
 
+def parse_release_date(date_str):
+    if not date_str:
+        return datetime.now().strftime('%b %d, %Y')
+
+    date_str = date_str.strip()
+    try:
+        # Try YYYY-MM-DD
+        date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+        return date_obj.strftime('%b %d, %Y')
+    except ValueError:
+        try:
+            # Try YYYY/MM/DD
+            date_obj = datetime.strptime(date_str, '%Y/%m/%d')
+            return date_obj.strftime('%b %d, %Y')
+        except ValueError:
+            # Fallback to current date if parsing fails
+            return datetime.now().strftime('%b %d, %Y')
+
 def update_roadmap():
     changelog_path = 'CHANGELOG.md'
     index_path = 'docs/index.html'
@@ -34,15 +52,15 @@ def update_roadmap():
     with open(changelog_path, 'r', encoding='utf-8') as f:
         changelog_content = f.read()
 
-    # Match version blocks like ## [2.1.0] - 2026-10-06
-    version_pattern = r'## \[(.*?)\] - (\d{4}-\d{2}-\d{2})\n\n(.*?)(?=\n## |$)'
+    # Match version blocks like ## [1.0.1] - 2026-10-08 or ## [1.0.1]
+    version_pattern = r'## \[(.*?)\](?: - (.*?))?\n\n(.*?)(?=\n## |$)'
     matches = re.findall(version_pattern, changelog_content, re.DOTALL)
 
     if not matches:
         print("No versions found in changelog.")
         return
 
-    # Take the latest releases for the timeline
+    # Take the latest 4 releases for the timeline
     latest_releases = matches[:4]
 
     new_timeline_html = '    <section id="timeline" class="timeline-section">\n'
@@ -54,7 +72,7 @@ def update_roadmap():
     new_timeline_html += '            </div>\n'
     new_timeline_html += '            <div class="timeline reveal">\n'
 
-    for version, date, desc in latest_releases:
+    for version, date_raw, desc in latest_releases:
         # Extract markdown bullet lines
         raw_lines = [line.strip('- ').strip() for line in desc.strip().split('\n') if line.strip() and not line.startswith('###')]
 
@@ -73,9 +91,7 @@ def update_roadmap():
             html_line = format_markdown_to_html(line)
             bullets_html += f'                            <li>{html_line}</li>\n'
 
-        # Format date to Month Year
-        date_obj = datetime.strptime(date, '%Y-%m-%d')
-        formatted_date = date_obj.strftime('%b %d, %Y')
+        formatted_date = parse_release_date(date_raw)
 
         new_timeline_html += f'                <div class="timeline-item">\n'
         new_timeline_html += f'                    <div class="timeline-dot"></div>\n'
@@ -103,7 +119,7 @@ def update_roadmap():
     with open(index_path, 'w', encoding='utf-8') as f:
         f.write(updated_index)
 
-    print("Changelog updated successfully in index.html (feature-focused)")
+    print("Changelog updated successfully in index.html (feature-focused with date validation)")
 
 if __name__ == "__main__":
     update_roadmap()
