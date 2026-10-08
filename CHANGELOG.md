@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.0.2] - 2026-10-10
+## [1.0.2] - 2026-10-08
 
 ### Added & Fixed
 - **Physical ID3 Tag & Artwork Persistence**: Embedded ID3v2 tags and cover art directly into audio files on disk and added persistent public backups.
