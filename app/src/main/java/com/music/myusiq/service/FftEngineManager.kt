@@ -19,7 +19,7 @@ class FftEngineManager(
             return
         }
         val sharedPreferences = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-        val isFeatureEnabled = sharedPreferences.getBoolean("fft_visualizer_enabled", true)
+        val isFeatureEnabled = sharedPreferences.getBoolean("fft_visualizer_enabled", false)
         val hasPermission = context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
         
         if (!isFeatureEnabled || !hasPermission) {

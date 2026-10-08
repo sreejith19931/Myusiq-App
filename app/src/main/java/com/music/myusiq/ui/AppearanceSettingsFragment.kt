@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
@@ -32,6 +33,11 @@ class AppearanceSettingsFragment : Fragment(R.layout.fragment_settings_appearanc
     ) { isPermissionGranted ->
         if (isPermissionGranted) {
             updateFftVisualizerPref(true)
+            viewModel.notifySettingsChanged()
+        } else {
+            updateFftVisualizerPref(false)
+            view?.findViewById<MaterialSwitch>(R.id.switchFftVisualizer)?.isChecked = false
+            Toast.makeText(requireContext(), R.string.audio_permission_required_for_waveform, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -115,7 +121,7 @@ class AppearanceSettingsFragment : Fragment(R.layout.fragment_settings_appearanc
 
             // FFT
             val sharedPreferences = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-            switchFftVisualizer.isChecked = sharedPreferences.getBoolean("fft_visualizer_enabled", true)
+            switchFftVisualizer.isChecked = sharedPreferences.getBoolean("fft_visualizer_enabled", false)
 
             isInitialSetup = false
         }

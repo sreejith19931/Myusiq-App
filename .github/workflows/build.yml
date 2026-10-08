@@ -10,6 +10,9 @@ on:
   release:
     types: [created]
 
+env:
+  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.parallel=true -Dorg.gradle.caching=true"
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -34,21 +37,18 @@ jobs:
       run: |
         python -c "import base64, os; s = os.environ['RELEASE_KEYSTORE_BASE64'].replace('\n', '').replace('\r', '').replace(' ', ''); s += '=' * ((4 - len(s) % 4) % 4); open('release.jks', 'wb').write(base64.b64decode(s))"
 
-    - name: Build Release APKs
+    - name: Build Release APKs & Run Unit Tests
       if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v')
       env:
         RELEASE_STORE_FILE: ${{ github.workspace }}/release.jks
         RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
         RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
         RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-      run: ./gradlew assembleRelease --no-daemon
+      run: ./gradlew assembleRelease test --build-cache --parallel
 
-    - name: Build Debug APK
+    - name: Build Debug APK & Run Unit Tests
       if: github.event_name != 'release' && !startsWith(github.ref, 'refs/tags/v')
-      run: ./gradlew assembleDebug --no-daemon
-
-    - name: Run unit tests
-      run: ./gradlew test --no-daemon
+      run: ./gradlew assembleDebug test --build-cache --parallel
 
     - name: Prepare APKs for Release
       if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v')
@@ -80,7 +80,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Download APK
         uses: actions/download-artifact@v4
@@ -94,7 +94,7 @@ jobs:
         run: |
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
-          git clone https://x-access-token:${API_TOKEN_GITHUB}@github.com/sreejith19931/Myusiq-App.git public-repo
+          git clone --depth 1 https://x-access-token:${API_TOKEN_GITHUB}@github.com/sreejith19931/Myusiq-App.git public-repo
           cp README.md public-repo/
           cp CHANGELOG.md public-repo/
           mkdir -p public-repo/images
@@ -108,12 +108,11 @@ jobs:
         env:
           API_TOKEN_GITHUB: ${{ secrets.RELEASE_TOKEN }}
         run: |
-          # Update index.html using the changelog parser
           python scripts/update_roadmap.py
           
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
-          git clone https://x-access-token:${API_TOKEN_GITHUB}@github.com/rhythmmusicplayer/myusiq.github.io.git website-repo
+          git clone --depth 1 https://x-access-token:${API_TOKEN_GITHUB}@github.com/rhythmmusicplayer/myusiq.github.io.git website-repo
           cp -r docs/* website-repo/
           cd website-repo
           git add .

@@ -336,8 +336,15 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
                         MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                         song.id
                     )
-                    var hasArt = (viewModel.artworkRefreshSignatures.value[PlatformUtils.normalizePath(song.path)] ?: 0L) > 0
-                    
+                    var hasArt = false
+
+                    // 1. Check local artwork cache, persistent backup, and physical embedded picture
+                    val artFile = ArtworkUtils.getArtworkFile(appContext, song.id, song.path)
+                    if (artFile != null && artFile.exists() && artFile.length() > 0) {
+                        hasArt = true
+                    }
+
+                    // 2. Fall back to MediaStore system thumbnail if local image file wasn't found
                     if (!hasArt) {
                         try {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -345,7 +352,7 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
                                 hasArt = true
                             }
                         } catch (_: Exception) {
-                            // Thumbnails can fail for many reasons, don't flood logs but note it
+                            // Thumbnails fail if no artwork is embedded or present
                         }
                     }
                     !hasArt

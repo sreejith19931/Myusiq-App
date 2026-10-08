@@ -130,16 +130,21 @@ class MetadataUpdateUseCase(
                     val newBase = File(newFilePath).nameWithoutExtension
                     if (oldBase.isNotBlank() && newBase.isNotBlank() && !oldBase.equals(newBase, ignoreCase = true)) {
                         val lyricsDir = File(parentDir, "lyrics")
+                        if (!lyricsDir.exists()) lyricsDir.mkdirs()
                         val appLyricsDir = File(context.getExternalFilesDir(null), "lyrics")
                         listOf(lyricsDir, parentDir, appLyricsDir).forEach { dir ->
                             if (dir != null && dir.exists()) {
                                 listOf("lrc", "txt").forEach { ext ->
                                     val oldLrc = File(dir, "$oldBase.$ext")
                                     if (oldLrc.exists()) {
-                                        val newLrc = File(dir, "$newBase.$ext")
                                         try {
                                             val lyricsText = oldLrc.readText()
+                                            // Write migrated file ONLY into lyrics subfolder
+                                            val newLrc = File(lyricsDir, "$newBase.lrc")
                                             newLrc.writeText(lyricsText)
+                                            if (appLyricsDir != null && appLyricsDir.exists()) {
+                                                File(appLyricsDir, "$newBase.lrc").writeText(lyricsText)
+                                            }
                                             FileTagEditor.embedLyrics(File(newFilePath), lyricsText)
                                         } catch (_: Exception) {}
                                         try {
@@ -151,6 +156,8 @@ class MetadataUpdateUseCase(
                         }
                     }
 
+                    com.music.myusiq.utils.ArtworkUtils.copyArtworkCache(context, data.songId, data.path, data.songId, newFilePath)
+
                     data.artworkUri?.let { artUri ->
                         com.music.myusiq.utils.ArtworkUtils.saveArtworkCache(context, data.songId, data.path, artUri)
                         com.music.myusiq.utils.ArtworkUtils.saveArtworkCache(context, data.songId, newFilePath, artUri)
@@ -160,24 +167,28 @@ class MetadataUpdateUseCase(
                     val normOldPath = PlatformUtils.normalizePath(data.path)
                     val normNewPath = PlatformUtils.normalizePath(newFilePath)
 
-                    musicRepository.upsertOverride(SongOverride(
+                    val overrideNew = SongOverride(
                         path = normNewPath,
                         title = data.title,
                         artist = data.artist,
                         album = data.album,
                         year = data.year,
                         genre = data.genre
-                    ))
+                    )
+                    musicRepository.upsertOverride(overrideNew)
+                    com.music.myusiq.utils.MetadataBackupUtils.saveOverrideToBackup(context, overrideNew)
 
                     if (normOldPath != normNewPath) {
-                        musicRepository.upsertOverride(SongOverride(
+                        val overrideOld = SongOverride(
                             path = normOldPath,
                             title = data.title,
                             artist = data.artist,
                             album = data.album,
                             year = data.year,
                             genre = data.genre
-                        ))
+                        )
+                        musicRepository.upsertOverride(overrideOld)
+                        com.music.myusiq.utils.MetadataBackupUtils.saveOverrideToBackup(context, overrideOld)
                     }
                 } catch (e: Exception) {
                     Log.e("MetadataUpdateUseCase", "Tag update failed", e)

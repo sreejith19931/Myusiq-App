@@ -214,7 +214,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         permissionManager.onStoragePermissionGranted = {
             viewModel.loadSongs()
             permissionManager.checkNotificationPermission()
-            permissionManager.checkAndRequestAudioPermission()
         }
         permissionManager.checkAndRequestStoragePermission()
 

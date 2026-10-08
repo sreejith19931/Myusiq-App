@@ -142,21 +142,17 @@ class LyricsUseCase(
                         if (appLyricsDir != null) deleteFileSafely(File(appLyricsDir, "$baseName$ext"))
                     }
 
-                    // 1. Write .lrc file in 'lyrics' subfolder
+                    // 1. Write .lrc file in 'lyrics' subfolder ONLY
                     val lrcFile = File(lyricsDir, "$baseName.lrc")
                     try { lrcFile.writeText(lyrics) } catch (_: Exception) {}
 
-                    // 2. Write .lrc file in same folder as music file
-                    val sameLrcFile = File(parentFolder, "$baseName.lrc")
-                    try { sameLrcFile.writeText(lyrics) } catch (_: Exception) {}
-
-                    // 3. Write backup copy in app external files dir
+                    // 2. Write backup copy in app external files dir
                     if (appLyricsDir != null) {
                         val backupLrcFile = File(appLyricsDir, "$baseName.lrc")
                         try { backupLrcFile.writeText(lyrics) } catch (_: Exception) {}
                     }
 
-                    // 4. Embed lyrics directly into the physical audio file ID3 tag
+                    // 3. Embed lyrics directly into the physical audio file ID3 tag
                     try {
                         com.music.myusiq.utils.FileTagEditor.embedLyrics(musicFile, lyrics)
                     } catch (e: Exception) {
@@ -165,7 +161,7 @@ class LyricsUseCase(
 
                     MediaScannerConnection.scanFile(
                         application,
-                        arrayOf(lrcFile.absolutePath, sameLrcFile.absolutePath),
+                        arrayOf(lrcFile.absolutePath),
                         null,
                         null
                     )

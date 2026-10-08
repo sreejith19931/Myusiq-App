@@ -41,7 +41,7 @@ object FileTagEditor {
 
         return try {
             val audioFile = AudioFileIO.read(file)
-            val tag = audioFile.tag ?: audioFile.createDefaultTag()
+            val tag = audioFile.tag ?: audioFile.createDefaultTag().also { audioFile.tag = it }
 
             title?.let { tag.setField(FieldKey.TITLE, it) }
             artist?.let { tag.setField(FieldKey.ARTIST, it) }
@@ -57,6 +57,7 @@ object FileTagEditor {
                 tag.setField(artwork)
             }
 
+            audioFile.tag = tag
             audioFile.commit()
             Log.d("FileTagEditor", "ID3 tags and artwork successfully embedded into ${file.name}")
             true
@@ -73,12 +74,13 @@ object FileTagEditor {
         if (!file.exists()) return false
         return try {
             val audioFile = AudioFileIO.read(file)
-            val tag = audioFile.tag ?: audioFile.createDefaultTag()
+            val tag = audioFile.tag ?: audioFile.createDefaultTag().also { audioFile.tag = it }
             if (lyrics.isNotBlank()) {
                 tag.setField(FieldKey.LYRICS, lyrics)
             } else {
                 tag.deleteField(FieldKey.LYRICS)
             }
+            audioFile.tag = tag
             audioFile.commit()
             Log.d("FileTagEditor", "Lyrics embedded successfully into ${file.name}")
             true
@@ -157,6 +159,27 @@ object FileTagEditor {
                 if (directSuccess) return filePath
             }
 
+            // Attempt write using ParcelFileDescriptor via proc fd
+            try {
+                context.contentResolver.openFileDescriptor(trackUri, "rw")?.use { pfd ->
+                    val fdFile = File("/proc/self/fd/${pfd.fd}")
+                    val fdSuccess = embedId3TagsAndArtwork(
+                        file = fdFile,
+                        title = title,
+                        artist = artist,
+                        album = album,
+                        year = year,
+                        genre = genre,
+                        artworkBytes = artworkBytes
+                    )
+                    if (fdSuccess) {
+                        Log.d("FileTagEditor", "Proc fd tag embedding succeeded for $filePath")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.d("FileTagEditor", "Proc fd embed attempt failed: ${e.message}")
+            }
+
             // Fallback to ContentResolver copy loop for MediaStore scoped storage URIs
             val extension = originalFile.extension
             val cacheFile = File(context.cacheDir, "tag_edit_${System.currentTimeMillis()}.$extension")
@@ -182,7 +205,7 @@ object FileTagEditor {
                     Log.e("FileTagEditor", "JAudioTagger failed to read cache file: ${e.message}", e)
                     return filePath 
                 }
-                val tag = audioFile.tag ?: audioFile.createDefaultTag()
+                val tag = audioFile.tag ?: audioFile.createDefaultTag().also { audioFile.tag = it }
 
                 tag.setField(FieldKey.TITLE, title)
                 tag.setField(FieldKey.ARTIST, artist)
@@ -197,13 +220,15 @@ object FileTagEditor {
                     tag.setField(artwork)
                 }
 
+                audioFile.tag = tag
                 audioFile.commit()
                 Log.d("FileTagEditor", "Tags committed to cache file successfully")
 
-                context.contentResolver.openOutputStream(trackUri, "wt")?.use { output ->
+                context.contentResolver.openOutputStream(trackUri, "rwt")?.use { output ->
                     cacheFile.inputStream().use { input ->
                         input.copyTo(output)
                     }
+                    output.flush()
                 } ?: run {
                     Log.e("FileTagEditor", "Failed to open output stream for URI: $trackUri")
                     return filePath

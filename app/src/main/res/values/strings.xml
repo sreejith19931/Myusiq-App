@@ -312,4 +312,16 @@
     <string name="version_format">Version %s</string>
     <string name="report_bug">Report a Bug / Issue</string>
     <string name="report_bug_desc">Let us know if you run into any trouble</string>
+
+    <!-- Permissions and Waveform Strings -->
+    <string name="audio_permission_required_for_waveform">Audio recording permission is required for Real-Time Audio Waveform.</string>
+    <string name="android_11_google_permission_notice">Note: From Android 11+, Google requires multiple permissions for full app functionality.</string>
+    <string name="perm_media_title">Audio &amp; Media Access</string>
+    <string name="perm_media_desc">Discover and play local music files on your device</string>
+    <string name="perm_notif_title">Notifications</string>
+    <string name="perm_notif_desc">Display player controls and playback status</string>
+    <string name="perm_bt_title">Bluetooth Connection</string>
+    <string name="perm_bt_desc">Connect to Bluetooth audio devices and headsets</string>
+    <string name="perm_status_granted">Granted</string>
+    <string name="perm_status_pending">Not Granted</string>
 </resources>

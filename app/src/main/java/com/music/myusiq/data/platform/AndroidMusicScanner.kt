@@ -55,28 +55,37 @@ class AndroidMusicScanner(private val context: Context) : MusicScanner {
                     val duration = cursor.getInt(durationColumn)
                     val albumId = cursor.getLong(albumIdColumn)
                     var album = cursor.getString(albumColumn) ?: ""
-                    val genre = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    var genre = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                         cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.GENRE)) ?: ""
                     } else ""
                     val dateAdded = cursor.getLong(dateAddedColumn)
                     val size = cursor.getLong(sizeColumn)
 
-                    // Fall back to physical ID3 metadata if MediaStore yields generic or empty tags
-                    if (artist.isBlank() || artist.equals("<unknown>", ignoreCase = true) ||
-                        artist.equals("Unknown Artist", ignoreCase = true) || title.isBlank() ||
-                        album.isBlank() || album.equals("<unknown>", ignoreCase = true)
-                    ) {
+                    // Check physical ID3 metadata directly from the file only if MediaStore metadata is generic or missing
+                    val isGenericArtist = artist.isBlank() || artist.equals("<unknown>", ignoreCase = true) || artist.equals("unknown artist", ignoreCase = true)
+                    val isGenericTitle = title.isBlank() || title.endsWith(".mp3", ignoreCase = true) || title.equals("track", ignoreCase = true)
+                    if (isGenericArtist || isGenericTitle || album.isBlank() || album.equals("<unknown>", ignoreCase = true)) {
                         try {
-                            val retriever = android.media.MediaMetadataRetriever()
-                            retriever.setDataSource(path)
-                            val fileTitle = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_TITLE)
-                            val fileArtist = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ARTIST)
-                            val fileAlbum = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ALBUM)
-                            retriever.release()
+                            val file = java.io.File(path)
+                            if (file.exists() && file.length() > 0) {
+                                val fileNameTitle = file.nameWithoutExtension
+                                val retriever = android.media.MediaMetadataRetriever()
+                                retriever.setDataSource(path)
+                                val fileTitle = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_TITLE)
+                                val fileArtist = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ARTIST)
+                                val fileAlbum = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ALBUM)
+                                val fileGenre = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_GENRE)
+                                retriever.release()
 
-                            if (!fileTitle.isNullOrBlank()) title = fileTitle
-                            if (!fileArtist.isNullOrBlank()) artist = fileArtist
-                            if (!fileAlbum.isNullOrBlank()) album = fileAlbum
+                                if (!fileTitle.isNullOrBlank()) {
+                                    title = fileTitle
+                                } else if (isGenericTitle && fileNameTitle.isNotBlank()) {
+                                    title = fileNameTitle
+                                }
+                                if (!fileArtist.isNullOrBlank()) artist = fileArtist
+                                if (!fileAlbum.isNullOrBlank()) album = fileAlbum
+                                if (!fileGenre.isNullOrBlank()) genre = fileGenre
+                            }
                         } catch (_: Exception) {}
                     }
 

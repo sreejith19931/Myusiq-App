@@ -36,6 +36,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -165,6 +166,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     private var controllerFuture: ListenableFuture<MediaController>? = null
     private var progressJob: Job? = null
     private var sleepTimerJob: Job? = null
+    private var restoreJob: Job? = null
     private var isUserChangingTrack = false
     private var isPerformingManualUpdate = false
     private var mediaStoreObserver: ContentObserver? = null
@@ -236,6 +238,13 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     private val _artworkRefreshSignatures = MutableStateFlow<Map<String, Long>>(emptyMap())
     val artworkRefreshSignatures: StateFlow<Map<String, Long>> = _artworkRefreshSignatures.asStateFlow()
+
+    fun notifyArtworkUpdated(songPath: String) {
+        if (songPath.isBlank()) return
+        val normPath = PlatformUtils.normalizePath(songPath)
+        val newTimestamp = System.currentTimeMillis()
+        _artworkRefreshSignatures.value = _artworkRefreshSignatures.value + (normPath to newTimestamp)
+    }
 
     private val _pendingWriteIntent = MutableStateFlow<IntentSenderRequest?>(null)
     val pendingWriteIntent: StateFlow<IntentSenderRequest?> = _pendingWriteIntent.asStateFlow()
@@ -485,9 +494,9 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                 } else song
             }
             
-            val normPath = PlatformUtils.normalizePath(data.path)
-            val newTimestamp = System.currentTimeMillis()
-            _artworkRefreshSignatures.value = _artworkRefreshSignatures.value + (normPath to newTimestamp)
+            if (data.artworkUri != null) {
+                notifyArtworkUpdated(data.path)
+            }
 
             // Ensure currentSortedList is also updated by re-sorting, which also calls refreshLibraryDisplay()
             sortTracks(currentSortOrder, currentSortDirection)
@@ -811,6 +820,13 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     fun playSong(list: List<Song>, index: Int, playImmediately: Boolean = true, shouldExpand: Boolean = false) {
         Log.d("PlaybackViewModel", "playSong called: index=$index, listSize=${list.size}, playImmediately=$playImmediately")
         
+        if (playImmediately) {
+            restoreJob?.cancel()
+            restoreJob = null
+        }
+
+        val previousQueue = _currentQueue.value
+
         // 1. Update UI state flows immediately for maximum responsiveness
         _currentQueue.value = list
         _currentPlayingSong.value = if (index in list.indices) list[index] else null
@@ -825,11 +841,12 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             return
         }
 
-        // 2. Optimization: If queue is already this list, just seek
-        val currentQueueIds = (0 until controller.mediaItemCount).map { controller.getMediaItemAt(it).mediaId }
-        val newQueueIds = list.map { it.id.toString() }
+        // 2. Optimization: Check if the new list matches the previous queue and controller item count
+        val isSameQueue = controller.mediaItemCount == list.size &&
+                          previousQueue.size == list.size &&
+                          previousQueue.indices.all { previousQueue[it].id == list[it].id }
         
-        if (currentQueueIds == newQueueIds) {
+        if (isSameQueue) {
             if (controller.currentMediaItemIndex != index) {
                 controller.seekTo(index, C.TIME_UNSET)
             }
@@ -951,13 +968,15 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     private fun restoreLastPlayedTrack() {
         val controller = mediaController ?: return
         if (controller.mediaItemCount > 0) return
-        viewModelScope.launch {
-            // Wait for library to be loaded, but with a timeout
+        restoreJob?.cancel()
+        restoreJob = viewModelScope.launch {
+            // Wait for library to be loaded, with short polling delay
             var timeout = 0
             while (!isSongsLoaded && timeout < 20) { 
-                delay(500)
+                delay(100.milliseconds)
                 timeout++
             }
+            if (!isActive) return@launch
             
             val savedQueuePaths = persistence.getSavedQueuePaths()
             val lastPath = persistence.lastSongPath.firstOrNull()
@@ -1196,6 +1215,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         if (!force && isSongsLoaded && originalTrackList.isNotEmpty()) return
         _isLibraryLoading.value = true
         try {
+            com.music.myusiq.utils.MetadataBackupUtils.restoreOverridesIfEmpty(getApplication(), musicRepository)
             val p = getApplication<Application>().getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
             val s = musicRepository.getSongs(p.getBoolean("filter_short_audio", true))
             originalTrackList = s
