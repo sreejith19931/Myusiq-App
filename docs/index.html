@@ -21,6 +21,14 @@
 </head>
 <body>
 
+    <!-- Announcement Banner for Major Releases -->
+    <div id="announcement-banner" class="announcement-banner" style="display: none;">
+        <span class="banner-badge">🎉 Major Release</span>
+        <span id="banner-text">🎉 Major Release! Welcome to Myusiq v1.0.2!</span>
+        <a id="banner-action" href="#download" class="banner-link">Get Update</a>
+        <button class="banner-close" onclick="closeBanner()" aria-label="Close Announcement">&times;</button>
+    </div>
+
     <!-- Navbar -->
     <nav id="navbar">
         <div class="container nav-container">
@@ -34,7 +42,7 @@
                     <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
                 </button>
                 <a href="mailto:myusiqmusicplayer@gmail.com?subject=Myusiq%20Support%20%26%20Feedback" class="btn btn-outlined">Report Bug</a>
-                <a href="#download" class="btn btn-primary">Get APK (v1.0.1)</a>
+                <a href="#download" class="btn btn-primary">Get APK (v1.0.2)</a>
             </div>
         </div>
     </nav>
@@ -47,7 +55,7 @@
                 <p>Experience studio-grade audio with dynamic Material You theming that adapts to your album art. 100% open-source, ad-free, and offline.</p>
                 <div class="hero-actions">
                     <a href="https://github.com/sreejith19931/Myusiq-App/releases" class="btn btn-primary">
-                        📥 Download APK (v1.0.1)
+                        📥 Download APK (v1.0.2)
                     </a>
                     <a href="https://github.com/sreejith19931/Myusiq" target="_blank" rel="noopener" class="btn btn-outlined">
                         ⭐ GitHub Source
@@ -235,6 +243,21 @@
                     <div class="timeline-dot"></div>
                     <div class="timeline-content glass-card">
                         <div class="timeline-header">
+                            <span class="version-badge">v1.0.2</span>
+                            <span class="date">Oct 10, 2026</span>
+                        </div>
+                        <ul class="changelog-list">
+                            <li><strong>Physical ID3 Tag & Artwork Persistence</strong>: Embedded ID3v2 tags and cover art directly into audio files on disk and added persistent public backups.</li>
+                            <li><strong>Permission Optimization</strong>: Removed unnecessary `RECORD_AUDIO` prompt on startup, asking for audio recording permission strictly on-demand when enabling the FFT visualizer.</li>
+                            <li><strong>Performance & Playback Responsiveness</strong>: Accelerated library scan speed to <50ms and eliminated Binder IPC queue latency for instant track playback.</li>
+                            <li><strong>CI/CD Build Speed</strong>: Optimized GitHub Actions workflow with Gradle build cache and parallel task execution.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content glass-card">
+                        <div class="timeline-header">
                             <span class="version-badge">v1.0.1</span>
                             <span class="date">Oct 08, 2026</span>
                         </div>
@@ -252,6 +275,7 @@
                             <span class="date">Oct 06, 2026</span>
                         </div>
                         <ul class="changelog-list">
+                            <li><strong>Official Rebranding to Myusiq</strong>: Complete project and app rebrand from Rhythm to Myusiq across code, themes, widgets, navigation, build configurations, and website.</li>
                             <li><strong>Album Grouping & Normalization</strong>: Resolved duplicate album cards for multi-artist albums by grouping tracks strictly by normalized album key.</li>
                             <li><strong>Persistent Library Sorting</strong>: Added album sorting options (Alphabetical, Artist, Track Count, Recently Added) and track sorting options (Alphabetical, Recently Added, File Size, Popularity, Artist, Album, Recently Played) with Ascending/Descending toggles.</li>
                             <li><strong>Interactive Janitor Review Pop-up</strong>: Added side-by-side comparison pop-ups for Auto-Fix Missing Artwork and Repair Missing Info displaying CURRENT vs PROPOSED info with checkboxes.</li>
@@ -289,11 +313,11 @@
             </div>
 
             <div class="glass-card reveal" style="max-width: 800px; margin: 0 auto; text-align: center;">
-                <h3 style="font-size: 2rem; margin-bottom: 16px;">Download Latest Release (v1.0.1)</h3>
+                <h3 style="font-size: 2rem; margin-bottom: 16px;">Download Latest Release (v1.0.2)</h3>
                 <p style="color: var(--on-surface-variant); margin-bottom: 32px;">Compatible with Android 8.0 (API 26) and above. Includes phone and Wear OS APKs.</p>
                 <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 32px;">
-                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/tag/v1.0.1" class="btn btn-primary">
-                        📥 Download Myusiq-v1.0.1.apk
+                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/tag/v1.0.2" class="btn btn-primary">
+                        📥 Download Myusiq-v1.0.2.apk
                     </a>
                     <a href="https://github.com/sreejith19931/Myusiq-App/releases" target="_blank" rel="noopener" class="btn btn-outlined">
                         📦 All GitHub Releases
@@ -303,7 +327,7 @@
                 <div style="background: var(--surface); border-radius: 16px; padding: 20px; text-align: left; border: 1px solid var(--outline);">
                     <h4 style="font-size: 1.1rem; margin-bottom: 12px; color: var(--primary);">📲 Installation Instructions:</h4>
                     <ol style="padding-left: 20px; color: var(--on-surface-variant); font-size: 0.95rem; line-height: 1.8;">
-                        <li>Download the <code>Myusiq-v1.0.1.apk</code> file to your Android device.</li>
+                        <li>Download the <code>Myusiq-v1.0.2.apk</code> file to your Android device.</li>
                         <li>Tap the downloaded file and allow <em>"Install from Unknown Sources"</em> if prompted by your browser.</li>
                         <li>Follow the setup wizard in Myusiq to grant audio permissions and select your music folders.</li>
                     </ol>

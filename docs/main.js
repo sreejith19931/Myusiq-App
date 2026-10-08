@@ -4,6 +4,11 @@
  * Screenshot Lightbox, Scroll Animations & Dark/Light Mode.
  */
 
+function closeBanner() {
+    const banner = document.getElementById('announcement-banner');
+    if (banner) banner.style.display = 'none';
+}
+
 // --- 1. Theme Sandbox & Dark/Light Mode ---
 const defaultThemes = [
     { name: "Purple Ambient", primary: "#A78BFA", container: "#2E1065" },

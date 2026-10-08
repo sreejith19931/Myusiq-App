@@ -58,6 +58,57 @@ html {
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
 }
 
+/* --- Major Version Announcement Banner --- */
+.announcement-banner {
+    background: linear-gradient(90deg, #6D28D9 0%, #A78BFA 50%, #38BDF8 100%);
+    color: #FFFFFF;
+    padding: 10px 20px;
+    text-align: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 600;
+    position: relative;
+    z-index: 1001;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 20px rgba(109, 40, 217, 0.4);
+}
+
+.announcement-banner .banner-badge {
+    background: rgba(255, 255, 255, 0.25);
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    backdrop-filter: blur(4px);
+}
+
+.announcement-banner .banner-link {
+    color: #FFFFFF;
+    text-decoration: underline;
+    font-weight: 700;
+    margin-left: 6px;
+}
+
+.announcement-banner .banner-close {
+    background: none;
+    border: none;
+    color: #FFFFFF;
+    font-size: 1.3rem;
+    cursor: pointer;
+    margin-left: auto;
+    opacity: 0.8;
+    line-height: 1;
+}
+
+.announcement-banner .banner-close:hover {
+    opacity: 1;
+}
+
 body {
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 400;
