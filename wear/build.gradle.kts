@@ -23,21 +23,29 @@ android {
 
     signingConfigs {
         val keystorePropertiesFile = rootProject.file("keystore.properties")
+        val keystoreProperties = Properties()
         if (keystorePropertiesFile.exists()) {
-            val keystoreProperties = Properties()
             keystoreProperties.load(keystorePropertiesFile.inputStream())
-            create("release") {
-                storeFile = file(keystoreProperties["storeFile"] as String)
-                storePassword = keystoreProperties["storePassword"] as String
-                keyAlias = keystoreProperties["keyAlias"] as String
-                keyPassword = keystoreProperties["keyPassword"] as String
-            }
-        } else {
-            create("release") {
-                storeFile = file("release-key.jks")
-                storePassword = "YOUR_STORE_PASSWORD"
-                keyAlias = "YOUR_KEY_ALIAS"
-                keyPassword = "YOUR_KEY_PASSWORD"
+        }
+
+        val storeFilePath = System.getenv("RELEASE_STORE_FILE")
+            ?: keystoreProperties.getProperty("storeFile")
+            ?: "release.jks"
+        val storePass = System.getenv("RELEASE_STORE_PASSWORD")
+            ?: keystoreProperties.getProperty("storePassword")
+        val alias = System.getenv("RELEASE_KEY_ALIAS")
+            ?: keystoreProperties.getProperty("keyAlias")
+        val keyPass = System.getenv("RELEASE_KEY_PASSWORD")
+            ?: keystoreProperties.getProperty("keyPassword")
+
+        create("release") {
+            if (storePass != null && alias != null && keyPass != null && file(storeFilePath).exists()) {
+                storeFile = file(storeFilePath)
+                storePassword = storePass
+                keyAlias = alias
+                keyPassword = keyPass
+            } else {
+                initWith(getByName("debug"))
             }
         }
     }

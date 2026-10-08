@@ -319,7 +319,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     fun saveLyrics(path: String, lyrics: String) = lyricsUseCase.saveLyrics(path, lyrics)
 
-    fun deleteLyrics(path: String) = lyricsUseCase.deleteLyrics(path)
+    suspend fun deleteLyrics(path: String) = lyricsUseCase.deleteLyrics(path)
 
     suspend fun clearAllLyrics() {
         val songs = if (originalTrackList.isNotEmpty()) originalTrackList else musicRepository.getSongs(false)
@@ -331,9 +331,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         return lyricsUseCase.getSongsWithLyrics(songs)
     }
 
-    fun deleteLyricsForSongs(songs: List<Song>) {
-        songs.forEach { deleteLyrics(it.path) }
-    }
+    suspend fun deleteLyricsForSongs(songs: List<Song>) = lyricsUseCase.deleteLyricsForSongs(songs)
 
     suspend fun searchLyricsOnline(title: String, artist: String): List<LyricsResponse> = lyricsUseCase.searchLyricsOnline(title, artist)
 
@@ -611,7 +609,11 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         val idx = q.indexOfFirst { it.id == id }
         
         // Delete associated lyrics first
-        originalTrackList.find { it.id == id }?.let { deleteLyrics(it.path) }
+        originalTrackList.find { it.id == id }?.let { song ->
+            viewModelScope.launch {
+                deleteLyrics(song.path)
+            }
+        }
         
         if (idx != -1) {
             try { 

@@ -434,8 +434,10 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
                 .setMessage("This will remove local lyrics for this track.")
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Delete") { _, _ ->
-                    viewModel.deleteLyrics(song.path)
-                    loadLyrics(song)
+                    lifecycleScope.launch {
+                        viewModel.deleteLyrics(song.path)
+                        loadLyrics(song)
+                    }
                 }
                 .show()
             true

@@ -1,6 +1,7 @@
 package com.music.myusiq.utils
 
 import android.content.Context
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.util.Log
 import java.io.File
@@ -15,6 +16,27 @@ object ArtworkUtils {
         val normPath = PlatformUtils.normalizePath(songPath)
         val hashFile = File(cacheDir, "${normPath.hashCode()}.jpg")
         if (hashFile.exists() && hashFile.length() > 0) return hashFile
+
+        // Extract embedded picture directly from physical audio file if cache was cleared
+        if (normPath.isNotBlank()) {
+            val audioFile = File(normPath)
+            if (audioFile.exists() && audioFile.length() > 0) {
+                try {
+                    val retriever = MediaMetadataRetriever()
+                    retriever.setDataSource(normPath)
+                    val picture = retriever.embeddedPicture
+                    retriever.release()
+                    if (picture != null && picture.isNotEmpty()) {
+                        if (!cacheDir.exists()) cacheDir.mkdirs()
+                        idFile.writeBytes(picture)
+                        hashFile.writeBytes(picture)
+                        return idFile
+                    }
+                } catch (e: Exception) {
+                    Log.d("ArtworkUtils", "Could not extract embedded picture from $normPath: ${e.message}")
+                }
+            }
+        }
 
         return null
     }

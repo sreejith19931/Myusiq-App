@@ -1,4 +1,4 @@
-package com.music.rhythm.ui.components
+package com.music.myusiq.ui.components
 
 import android.animation.ValueAnimator
 import android.content.Context

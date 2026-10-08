@@ -67,6 +67,54 @@ object FileTagEditor {
     }
 
     /**
+     * Embeds lyrics text directly into the ID3/FLAC tag of an audio file using jaudiotagger.
+     */
+    fun embedLyrics(file: File, lyrics: String): Boolean {
+        if (!file.exists()) return false
+        return try {
+            val audioFile = AudioFileIO.read(file)
+            val tag = audioFile.tag ?: audioFile.createDefaultTag()
+            if (lyrics.isNotBlank()) {
+                tag.setField(FieldKey.LYRICS, lyrics)
+            } else {
+                tag.deleteField(FieldKey.LYRICS)
+            }
+            audioFile.commit()
+            Log.d("FileTagEditor", "Lyrics embedded successfully into ${file.name}")
+            true
+        } catch (e: Exception) {
+            Log.e("FileTagEditor", "Error embedding lyrics into ${file.absolutePath}", e)
+            false
+        }
+    }
+
+    /**
+     * Extracts embedded lyrics from an audio file's ID3/FLAC tag using MediaMetadataRetriever or jaudiotagger.
+     */
+    fun extractLyrics(file: File): String? {
+        if (!file.exists()) return null
+
+        // 1. Try JAudioTagger
+        try {
+            val audioFile = AudioFileIO.read(file)
+            val tag = audioFile.tag
+            val lyrics = tag?.getFirst(FieldKey.LYRICS)
+            if (!lyrics.isNullOrBlank()) return lyrics
+        } catch (_: Exception) {}
+
+        // 2. Try MediaMetadataRetriever with key 1000 (METADATA_KEY_LYRICS)
+        try {
+            val retriever = android.media.MediaMetadataRetriever()
+            retriever.setDataSource(file.absolutePath)
+            val lyrics = retriever.extractMetadata(1000)
+            retriever.release()
+            if (!lyrics.isNullOrBlank()) return lyrics
+        } catch (_: Exception) {}
+
+        return null
+    }
+
+    /**
      * Updates ID3 tags and calculates the new physical file path via MediaStore Uri / direct file access.
      * Returns the absolute path of the file.
      */
@@ -152,7 +200,7 @@ object FileTagEditor {
                 audioFile.commit()
                 Log.d("FileTagEditor", "Tags committed to cache file successfully")
 
-                context.contentResolver.openOutputStream(trackUri, "rwt")?.use { output ->
+                context.contentResolver.openOutputStream(trackUri, "wt")?.use { output ->
                     cacheFile.inputStream().use { input ->
                         input.copyTo(output)
                     }
@@ -161,6 +209,21 @@ object FileTagEditor {
                     return filePath
                 }
                 Log.d("FileTagEditor", "Cache file copied back to track URI")
+
+                // Also try direct embed on originalFile if available
+                if (originalFile.exists()) {
+                    try {
+                        embedId3TagsAndArtwork(
+                            file = originalFile,
+                            title = title,
+                            artist = artist,
+                            album = album,
+                            year = year,
+                            genre = genre,
+                            artworkBytes = artworkBytes
+                        )
+                    } catch (_: Exception) {}
+                }
                 
                 return filePath
             } catch (e: FileNotFoundException) {

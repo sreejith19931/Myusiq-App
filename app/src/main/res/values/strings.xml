@@ -91,6 +91,7 @@
     <string name="setup_desc">Complete these quick steps to get started.</string>
     <string name="grant_media_access">1. Grant Media Access</string>
     <string name="media_access_desc">Required to discover and read local soundtracks on this device.</string>
+    <string name="all_permissions_desc">Grant access to media files, playback notifications, audio visualizer, and Bluetooth devices so Rhythm can function fully.</string>
     <string name="grant_access">Grant Access</string>
     <string name="select_music_folder">2. Select Music Folder</string>
     <string name="no_directory_selected">No directory target locked yet.</string>

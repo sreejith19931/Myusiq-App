@@ -28,46 +28,97 @@ class LyricsUseCase(
 ) {
     suspend fun getLyricsForSong(path: String): String? {
         val normalizedPath = PlatformUtils.normalizePath(path)
-        val rawLyrics = musicRepository.getLyricsForPath(normalizedPath)?.rawLyrics
-            ?: run {
-                // Try local file loading as fallback
-                val fileLyrics = withContext(Dispatchers.IO) {
-                    try {
-                        val musicFile = File(path)
-                        if (musicFile.exists()) {
-                            val lyricsDir = File(musicFile.parentFile, "lyrics")
-                            val baseName = musicFile.nameWithoutExtension
-                            
-                            // 1. Check 'lyrics' subfolder (Priority)
-                            val lrcFile = File(lyricsDir, "$baseName.lrc")
-                            if (lrcFile.exists()) return@withContext lrcFile.readText()
-                            
-                            val txtFile = File(lyricsDir, "$baseName.txt")
-                            if (txtFile.exists()) return@withContext txtFile.readText()
-                            
-                            // 2. Check same folder
-                            val sameFolderLrc = File(musicFile.parentFile, "$baseName.lrc")
-                            if (sameFolderLrc.exists()) return@withContext sameFolderLrc.readText()
-                            
-                            val sameFolderTxt = File(musicFile.parentFile, "$baseName.txt")
-                            if (sameFolderTxt.exists()) return@withContext sameFolderTxt.readText()
-                        }
-                        null
-                    } catch (_: Exception) {
-                        null
-                    }
-                }
-                
-                if (fileLyrics != null) {
-                    // Cache in DB for faster future access and to associate with this new path
-                    scope.launch(Dispatchers.IO) {
-                        musicRepository.upsertLyrics(LyricsOverride(normalizedPath, fileLyrics))
-                    }
-                    fileLyrics
-                } else null
-            }
+        val dbRecord = musicRepository.getLyricsForPath(normalizedPath)
+        if (dbRecord != null) {
+            val lyricsText = dbRecord.rawLyrics
+            return if (lyricsText.isBlank()) null else lyricsText
+        }
 
-        return rawLyrics
+        // Try local file loading and physical audio tag extraction as fallback
+        val fileLyrics = withContext(Dispatchers.IO) {
+            try {
+                val musicFile = File(path)
+                if (musicFile.exists()) {
+                    val parentFolder = musicFile.parentFile
+                    val lyricsDir = File(parentFolder, "lyrics")
+                    val appLyricsDir = File(application.getExternalFilesDir(null), "lyrics")
+                    val baseName = musicFile.nameWithoutExtension
+
+                    // 1. Check 'lyrics' subfolder (Priority)
+                    val lrcFile = File(lyricsDir, "$baseName.lrc")
+                    if (lrcFile.exists() && lrcFile.length() > 0) return@withContext lrcFile.readText()
+
+                    val txtFile = File(lyricsDir, "$baseName.txt")
+                    if (txtFile.exists() && txtFile.length() > 0) return@withContext txtFile.readText()
+
+                    // 2. Check same folder
+                    val sameFolderLrc = File(parentFolder, "$baseName.lrc")
+                    if (sameFolderLrc.exists() && sameFolderLrc.length() > 0) return@withContext sameFolderLrc.readText()
+
+                    val sameFolderTxt = File(parentFolder, "$baseName.txt")
+                    if (sameFolderTxt.exists() && sameFolderTxt.length() > 0) return@withContext sameFolderTxt.readText()
+
+                    // 3. Check app external backup directory
+                    val backupLrc = File(appLyricsDir, "$baseName.lrc")
+                    if (backupLrc.exists() && backupLrc.length() > 0) return@withContext backupLrc.readText()
+
+                    // 4. Try extracting embedded lyrics from ID3/FLAC tag directly
+                    val embeddedLyrics = com.music.myusiq.utils.FileTagEditor.extractLyrics(musicFile)
+                    if (!embeddedLyrics.isNullOrBlank()) return@withContext embeddedLyrics
+                }
+                null
+            } catch (_: Exception) {
+                null
+            }
+        }
+
+        if (!fileLyrics.isNullOrBlank()) {
+            val validLyrics: String = fileLyrics
+            // Cache in DB for faster future access and to associate with this new path
+            scope.launch(Dispatchers.IO) {
+                musicRepository.upsertLyrics(LyricsOverride(normalizedPath, validLyrics))
+            }
+            return validLyrics
+        }
+
+        return null
+    }
+
+    private fun deleteFileSafely(file: File) {
+        if (!file.exists()) return
+
+        // 1. Try truncating file content first to 0 bytes so even if File.delete() is blocked by Scoped Storage, the file content is empty
+        try {
+            file.writeText("")
+        } catch (_: Exception) {
+            try {
+                java.io.FileOutputStream(file).use { }
+            } catch (_: Exception) {}
+        }
+
+        // 2. Try standard Java File.delete()
+        var deleted = false
+        try {
+            deleted = file.delete()
+        } catch (e: Exception) {
+            Log.d("LyricsUseCase", "File.delete() failed for ${file.absolutePath}: ${e.message}")
+        }
+
+        // 3. Try MediaStore Files delete
+        if (!deleted || file.exists()) {
+            try {
+                val uri = android.provider.MediaStore.Files.getContentUri("external")
+                val selection = "${android.provider.MediaStore.Files.FileColumns.DATA} = ?"
+                val selectionArgs = arrayOf(file.absolutePath)
+                application.contentResolver.delete(uri, selection, selectionArgs)
+            } catch (e: Exception) {
+                Log.e("LyricsUseCase", "ContentResolver delete failed for ${file.absolutePath}", e)
+            }
+        }
+
+        try {
+            MediaScannerConnection.scanFile(application, arrayOf(file.absolutePath), null, null)
+        } catch (_: Exception) {}
     }
 
     fun saveLyrics(path: String, lyrics: String) {
@@ -76,29 +127,48 @@ class LyricsUseCase(
             try {
                 val musicFile = File(path)
                 if (musicFile.exists()) {
-                    // Save in 'lyrics' folder in the same directory as the music file
-                    val lyricsDir = File(musicFile.parentFile, "lyrics")
+                    val parentFolder = musicFile.parentFile
+                    val lyricsDir = File(parentFolder, "lyrics")
+                    val appLyricsDir = File(application.getExternalFilesDir(null), "lyrics")
                     if (!lyricsDir.exists()) lyricsDir.mkdirs()
-                    
+                    if (appLyricsDir != null && !appLyricsDir.exists()) appLyricsDir.mkdirs()
+
                     val baseName = musicFile.nameWithoutExtension
+
                     // Clean up any existing lyrics files first to ensure replacement
                     listOf(".lrc", ".txt").forEach { ext ->
-                        val f = File(lyricsDir, "$baseName$ext")
-                        if (f.exists()) f.delete()
+                        deleteFileSafely(File(lyricsDir, "$baseName$ext"))
+                        deleteFileSafely(File(parentFolder, "$baseName$ext"))
+                        if (appLyricsDir != null) deleteFileSafely(File(appLyricsDir, "$baseName$ext"))
                     }
-                    
-                    // Use music file's name for the lyrics file
+
+                    // 1. Write .lrc file in 'lyrics' subfolder
                     val lrcFile = File(lyricsDir, "$baseName.lrc")
-                    lrcFile.writeText(lyrics)
-                    
-                    // Also try saving as .txt for compatibility if it's plain text
-                    if (!lyrics.contains("[")) {
-                        val txtFile = File(lyricsDir, "$baseName.txt")
-                        txtFile.writeText(lyrics)
-                        MediaScannerConnection.scanFile(application, arrayOf(lrcFile.absolutePath, txtFile.absolutePath), null, null)
-                    } else {
-                        MediaScannerConnection.scanFile(application, arrayOf(lrcFile.absolutePath), null, null)
+                    try { lrcFile.writeText(lyrics) } catch (_: Exception) {}
+
+                    // 2. Write .lrc file in same folder as music file
+                    val sameLrcFile = File(parentFolder, "$baseName.lrc")
+                    try { sameLrcFile.writeText(lyrics) } catch (_: Exception) {}
+
+                    // 3. Write backup copy in app external files dir
+                    if (appLyricsDir != null) {
+                        val backupLrcFile = File(appLyricsDir, "$baseName.lrc")
+                        try { backupLrcFile.writeText(lyrics) } catch (_: Exception) {}
                     }
+
+                    // 4. Embed lyrics directly into the physical audio file ID3 tag
+                    try {
+                        com.music.myusiq.utils.FileTagEditor.embedLyrics(musicFile, lyrics)
+                    } catch (e: Exception) {
+                        Log.e("LyricsUseCase", "Error embedding lyrics in audio tag", e)
+                    }
+
+                    MediaScannerConnection.scanFile(
+                        application,
+                        arrayOf(lrcFile.absolutePath, sameLrcFile.absolutePath),
+                        null,
+                        null
+                    )
                 }
             } catch (e: Exception) {
                 Log.e("LyricsUseCase", "Error saving lyrics to disk", e)
@@ -106,84 +176,160 @@ class LyricsUseCase(
         }
     }
 
-    fun deleteLyrics(path: String) {
-        scope.launch(Dispatchers.IO) {
-            musicRepository.deleteLyrics(PlatformUtils.normalizePath(path))
-            try {
-                val musicFile = File(path)
-                val lyricsDir = File(musicFile.parentFile, "lyrics")
+    suspend fun deleteLyrics(path: String) = withContext(Dispatchers.IO) {
+        val normalizedPath = PlatformUtils.normalizePath(path)
+        musicRepository.upsertLyrics(LyricsOverride(normalizedPath, ""))
+        try {
+            val musicFile = File(path)
+            if (musicFile.exists()) {
+                val parentFolder = musicFile.parentFile
+                val lyricsDir = File(parentFolder, "lyrics")
+                val appLyricsDir = File(application.getExternalFilesDir(null), "lyrics")
                 val baseName = musicFile.nameWithoutExtension
-                
-                val lrcFile = File(lyricsDir, "$baseName.lrc")
-                val txtFile = File(lyricsDir, "$baseName.txt")
-                
-                if (lrcFile.exists()) lrcFile.delete()
-                if (txtFile.exists()) txtFile.delete()
 
-                val sameLrc = File(musicFile.parentFile, "$baseName.lrc")
-                val sameTxt = File(musicFile.parentFile, "$baseName.txt")
-                if (sameLrc.exists()) sameLrc.delete()
-                if (sameTxt.exists()) sameTxt.delete()
-                
-                MediaScannerConnection.scanFile(application, arrayOf(lrcFile.absolutePath, txtFile.absolutePath), null, null)
-            } catch (e: Exception) {
-                Log.e("LyricsUseCase", "Error deleting lyrics from disk", e)
+                deleteFileSafely(File(lyricsDir, "$baseName.lrc"))
+                deleteFileSafely(File(lyricsDir, "$baseName.txt"))
+                deleteFileSafely(File(parentFolder, "$baseName.lrc"))
+                deleteFileSafely(File(parentFolder, "$baseName.txt"))
+                if (appLyricsDir != null) {
+                    deleteFileSafely(File(appLyricsDir, "$baseName.lrc"))
+                    deleteFileSafely(File(appLyricsDir, "$baseName.txt"))
+                }
+
+                if (lyricsDir != null && lyricsDir.exists()) {
+                    lyricsDir.listFiles()?.forEach { file ->
+                        if (file.nameWithoutExtension.equals(baseName, ignoreCase = true) &&
+                            (file.extension.equals("lrc", ignoreCase = true) || file.extension.equals("txt", ignoreCase = true))) {
+                            deleteFileSafely(file)
+                        }
+                    }
+                }
+
+                parentFolder?.listFiles()?.forEach { file ->
+                    if (file.nameWithoutExtension.equals(baseName, ignoreCase = true) &&
+                        (file.extension.equals("lrc", ignoreCase = true) || file.extension.equals("txt", ignoreCase = true))) {
+                        deleteFileSafely(file)
+                    }
+                }
+
+                // Clear embedded lyrics from physical audio file ID3 tag
+                com.music.myusiq.utils.FileTagEditor.embedLyrics(musicFile, "")
             }
+        } catch (e: Exception) {
+            Log.e("LyricsUseCase", "Error deleting lyrics from disk", e)
         }
     }
 
-    suspend fun deleteAllLyrics(songs: List<com.music.myusiq.domain.models.Song>) {
+    suspend fun deleteLyricsForSongs(songs: List<com.music.myusiq.domain.models.Song>) = withContext(Dispatchers.IO) {
+        songs.forEach { deleteLyrics(it.path) }
+    }
+
+    suspend fun deleteAllLyrics(songs: List<com.music.myusiq.domain.models.Song>) = withContext(Dispatchers.IO) {
         musicRepository.deleteAllLyrics()
-        withContext(Dispatchers.IO) {
-            val allSongs = if (songs.isNotEmpty()) songs else musicRepository.getSongs(false)
-            allSongs.forEach { song ->
-                try {
-                    val musicFile = File(song.path)
-                    if (musicFile.exists()) {
-                        val parentFolder = musicFile.parentFile
-                        val lyricsDir = File(parentFolder, "lyrics")
-                        val baseName = musicFile.nameWithoutExtension.lowercase()
+        val allSongs = if (songs.isNotEmpty()) songs else musicRepository.getSongs(false)
+        val appLyricsDir = File(application.getExternalFilesDir(null), "lyrics")
 
-                        if (lyricsDir.exists()) {
-                            lyricsDir.listFiles()?.forEach { file ->
-                                if (file.nameWithoutExtension.lowercase() == baseName &&
-                                    (file.extension.equals("lrc", ignoreCase = true) || file.extension.equals("txt", ignoreCase = true))) {
-                                    file.delete()
-                                }
-                            }
-                        }
+        allSongs.forEach { song ->
+            val normPath = PlatformUtils.normalizePath(song.path)
+            musicRepository.upsertLyrics(LyricsOverride(normPath, ""))
+            try {
+                val musicFile = File(song.path)
+                if (musicFile.exists()) {
+                    val parentFolder = musicFile.parentFile
+                    val lyricsDir = File(parentFolder, "lyrics")
+                    val baseName = musicFile.nameWithoutExtension
 
-                        parentFolder?.listFiles()?.forEach { file ->
-                            if (file.nameWithoutExtension.lowercase() == baseName &&
-                                (file.extension.equals("lrc", ignoreCase = true) || file.extension.equals("txt", ignoreCase = true))) {
-                                file.delete()
+                    deleteFileSafely(File(lyricsDir, "$baseName.lrc"))
+                    deleteFileSafely(File(lyricsDir, "$baseName.txt"))
+                    deleteFileSafely(File(parentFolder, "$baseName.lrc"))
+                    deleteFileSafely(File(parentFolder, "$baseName.txt"))
+                    if (appLyricsDir != null) {
+                        deleteFileSafely(File(appLyricsDir, "$baseName.lrc"))
+                        deleteFileSafely(File(appLyricsDir, "$baseName.txt"))
+                    }
+
+                    if (lyricsDir != null && lyricsDir.exists()) {
+                        lyricsDir.listFiles()?.forEach { file ->
+                            if (file.extension.equals("lrc", ignoreCase = true) || file.extension.equals("txt", ignoreCase = true)) {
+                                deleteFileSafely(file)
                             }
                         }
                     }
-                } catch (e: Exception) {
-                    Log.e("LyricsUseCase", "Error clearing lyrics for song: ${song.title}", e)
+
+                    parentFolder?.listFiles()?.forEach { file ->
+                        if (file.nameWithoutExtension.equals(baseName, ignoreCase = true) &&
+                            (file.extension.equals("lrc", ignoreCase = true) || file.extension.equals("txt", ignoreCase = true))) {
+                            deleteFileSafely(file)
+                        }
+                    }
+
+                    // Clear embedded lyrics from physical audio file ID3 tag
+                    com.music.myusiq.utils.FileTagEditor.embedLyrics(musicFile, "")
+                }
+            } catch (e: Exception) {
+                Log.e("LyricsUseCase", "Error clearing lyrics for song: ${song.title}", e)
+            }
+        }
+
+        // Wipe ALL .lrc and .txt files in all lyrics directories across all music folders
+        try {
+            val parentFolders = allSongs.mapNotNull { File(it.path).parentFile }.distinct()
+            parentFolders.forEach { parent ->
+                val lyricsDir = File(parent, "lyrics")
+                if (lyricsDir.exists() && lyricsDir.isDirectory) {
+                    lyricsDir.listFiles()?.forEach { file ->
+                        if (file.extension.equals("lrc", ignoreCase = true) || file.extension.equals("txt", ignoreCase = true)) {
+                            deleteFileSafely(file)
+                        }
+                    }
                 }
             }
+
+            if (appLyricsDir != null && appLyricsDir.exists()) {
+                appLyricsDir.listFiles()?.forEach { file ->
+                    if (file.extension.equals("lrc", ignoreCase = true) || file.extension.equals("txt", ignoreCase = true)) {
+                        deleteFileSafely(file)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("LyricsUseCase", "Error wiping lyrics folders", e)
         }
     }
 
     suspend fun getSongsWithLyrics(songs: List<com.music.myusiq.domain.models.Song>): List<com.music.myusiq.domain.models.Song> {
         return withContext(Dispatchers.IO) {
-            val dbLyricsPaths = musicRepository.getAllLyricsOverridesSync().map { it.songPath.lowercase() }.toSet()
+            val overridesMap = musicRepository.getAllLyricsOverridesSync().associateBy { it.songPath.lowercase() }
             songs.filter { song ->
                 val normPath = PlatformUtils.normalizePath(song.path).lowercase()
-                if (dbLyricsPaths.contains(normPath)) return@filter true
+                val override = overridesMap[normPath]
+                if (override != null) {
+                    return@filter override.rawLyrics.isNotBlank()
+                }
 
                 try {
                     val musicFile = File(song.path)
                     if (musicFile.exists()) {
-                        val lyricsDir = File(musicFile.parentFile, "lyrics")
+                        val parentFolder = musicFile.parentFile
+                        val lyricsDir = File(parentFolder, "lyrics")
+                        val appLyricsDir = File(application.getExternalFilesDir(null), "lyrics")
                         val baseName = musicFile.nameWithoutExtension
                         val lrcFile = File(lyricsDir, "$baseName.lrc")
                         val txtFile = File(lyricsDir, "$baseName.txt")
-                        val sameLrc = File(musicFile.parentFile, "$baseName.lrc")
-                        val sameTxt = File(musicFile.parentFile, "$baseName.txt")
-                        return@filter lrcFile.exists() || txtFile.exists() || sameLrc.exists() || sameTxt.exists()
+                        val sameLrc = File(parentFolder, "$baseName.lrc")
+                        val sameTxt = File(parentFolder, "$baseName.txt")
+                        val backupLrc = File(appLyricsDir, "$baseName.lrc")
+
+                        val hasFile = (lrcFile.exists() && lrcFile.length() > 0) ||
+                                (txtFile.exists() && txtFile.length() > 0) ||
+                                (sameLrc.exists() && sameLrc.length() > 0) ||
+                                (sameTxt.exists() && sameTxt.length() > 0) ||
+                                (backupLrc.exists() && backupLrc.length() > 0)
+
+                        if (hasFile) return@filter true
+
+                        val embedded = com.music.myusiq.utils.FileTagEditor.extractLyrics(musicFile)
+                        if (!embedded.isNullOrBlank()) return@filter true
                     }
                 } catch (_: Exception) {}
                 false

@@ -93,40 +93,110 @@ class MetadataUpdateUseCase(
                 listener.onUpdateStarted()
             }
             
-            // 1. Update physical file tags and local artwork cache
+            // 1. Update physical file tags, local artwork cache, and physical filename
+            var newFilePath = data.path
+            var targetFileName = ""
             if (data.path.isNotEmpty()) {
                 try {
+                    val originalFile = File(data.path)
+                    val ext = if (originalFile.extension.isNotBlank()) originalFile.extension else "mp3"
+                    val cleanTitle = data.title.replace(Regex("""[\\/:*?"<>|]"""), "_").trim()
+                        .ifBlank { originalFile.nameWithoutExtension }
+
+                    targetFileName = "$cleanTitle.$ext"
+
+                    val parentDir = originalFile.parentFile
+                    if (originalFile.exists() && parentDir != null && targetFileName.isNotBlank()) {
+                        val targetFile = File(parentDir, targetFileName)
+                        if (originalFile != targetFile) {
+                            try {
+                                if (originalFile.renameTo(targetFile)) {
+                                    newFilePath = targetFile.absolutePath
+                                    Log.d("MetadataUpdateUseCase", "Directly renamed file on storage to: $newFilePath")
+                                }
+                            } catch (e: Exception) {
+                                Log.d("MetadataUpdateUseCase", "Direct rename failed: ${e.message}")
+                            }
+                        }
+                    }
+
                     FileTagEditor.updateFileTags(context, data.path, uri, data.title, data.artist, data.album, data.year, data.genre, data.artworkUri)
-                    
+                    if (newFilePath != data.path) {
+                        FileTagEditor.updateFileTags(context, newFilePath, uri, data.title, data.artist, data.album, data.year, data.genre, data.artworkUri)
+                    }
+
+                    // Rename/migrate corresponding .lrc files so old lrc files do not get orphaned in lyrics folder
+                    val oldBase = originalFile.nameWithoutExtension
+                    val newBase = File(newFilePath).nameWithoutExtension
+                    if (oldBase.isNotBlank() && newBase.isNotBlank() && !oldBase.equals(newBase, ignoreCase = true)) {
+                        val lyricsDir = File(parentDir, "lyrics")
+                        val appLyricsDir = File(context.getExternalFilesDir(null), "lyrics")
+                        listOf(lyricsDir, parentDir, appLyricsDir).forEach { dir ->
+                            if (dir != null && dir.exists()) {
+                                listOf("lrc", "txt").forEach { ext ->
+                                    val oldLrc = File(dir, "$oldBase.$ext")
+                                    if (oldLrc.exists()) {
+                                        val newLrc = File(dir, "$newBase.$ext")
+                                        try {
+                                            val lyricsText = oldLrc.readText()
+                                            newLrc.writeText(lyricsText)
+                                            FileTagEditor.embedLyrics(File(newFilePath), lyricsText)
+                                        } catch (_: Exception) {}
+                                        try {
+                                            if (!oldLrc.delete()) oldLrc.writeText("")
+                                        } catch (_: Exception) {}
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     data.artworkUri?.let { artUri ->
                         com.music.myusiq.utils.ArtworkUtils.saveArtworkCache(context, data.songId, data.path, artUri)
+                        com.music.myusiq.utils.ArtworkUtils.saveArtworkCache(context, data.songId, newFilePath, artUri)
                     }
 
                     // 1b. Save to local override table to prevent reverting UI
+                    val normOldPath = PlatformUtils.normalizePath(data.path)
+                    val normNewPath = PlatformUtils.normalizePath(newFilePath)
+
                     musicRepository.upsertOverride(SongOverride(
-                        path = PlatformUtils.normalizePath(data.path),
+                        path = normNewPath,
                         title = data.title,
                         artist = data.artist,
                         album = data.album,
                         year = data.year,
                         genre = data.genre
                     ))
+
+                    if (normOldPath != normNewPath) {
+                        musicRepository.upsertOverride(SongOverride(
+                            path = normOldPath,
+                            title = data.title,
+                            artist = data.artist,
+                            album = data.album,
+                            year = data.year,
+                            genre = data.genre
+                        ))
+                    }
                 } catch (e: Exception) {
                     Log.e("MetadataUpdateUseCase", "Tag update failed", e)
                 }
             }
-            
-            // 2. Update MediaStore database entries
+
+            // 2. Update MediaStore database entries including DISPLAY_NAME to rename physical file on Scoped Storage
             val values = ContentValues().apply {
                 put(MediaStore.Audio.Media.TITLE, data.title)
                 put(MediaStore.Audio.Media.ARTIST, data.artist)
                 put(MediaStore.Audio.Media.ALBUM, data.album)
-                
+                if (targetFileName.isNotBlank()) {
+                    put(MediaStore.Audio.Media.DISPLAY_NAME, targetFileName)
+                }
                 if (data.year.isNotBlank()) {
                     put(MediaStore.Audio.Media.YEAR, data.year.toIntOrNull() ?: 0)
                 }
             }
-            
+
             val updated = try {
                 context.contentResolver.update(uri, values, null, null)
             } catch (e: SecurityException) {
@@ -137,7 +207,7 @@ class MetadataUpdateUseCase(
                 0
             }
             Log.d("MetadataUpdateUseCase", "MediaStore update result: $updated for ID: ${data.songId}")
-            
+
             withContext(Dispatchers.Main) {
                 if (showToast) {
                     if (updated > 0) {
@@ -152,11 +222,12 @@ class MetadataUpdateUseCase(
                 // Update local lists immediately in memory
                 listener.onUpdateProgress(data.songId, data.title, data.artist, data.album)
             }
-            
-            // 3. Scan the file to ensure MediaStore is fully synced
-            MediaScannerConnection.scanFile(context, arrayOf(data.path), null) { _, _ ->
+
+            // 3. Scan the files to ensure MediaStore is fully synced
+            val scanPaths = if (newFilePath != data.path) arrayOf(newFilePath, data.path) else arrayOf(data.path)
+            MediaScannerConnection.scanFile(context, scanPaths, null) { _, _ ->
                 scope.launch(Dispatchers.Main) {
-                    listener.onUpdateFinished(data, refreshLibrary)
+                    listener.onUpdateFinished(data.copy(path = newFilePath), refreshLibrary)
                 }
             }
         } catch (e: Exception) {

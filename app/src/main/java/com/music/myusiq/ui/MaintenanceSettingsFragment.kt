@@ -130,8 +130,10 @@ class MaintenanceSettingsFragment : Fragment(R.layout.fragment_settings_maintena
                 .setPositiveButton("Remove Selected") { _, _ ->
                     val selected = songsWithLyrics.filterIndexed { index, _ -> checked[index] }
                     if (selected.isNotEmpty()) {
-                        viewModel.deleteLyricsForSongs(selected)
-                        Toast.makeText(requireContext(), "Removed lyrics for ${selected.size} tracks", Toast.LENGTH_SHORT).show()
+                        lifecycleScope.launch {
+                            viewModel.deleteLyricsForSongs(selected)
+                            Toast.makeText(requireContext(), "Removed lyrics for ${selected.size} tracks", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
                 .setNegativeButton("Cancel", null)

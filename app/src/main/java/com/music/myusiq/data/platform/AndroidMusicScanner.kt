@@ -50,16 +50,35 @@ class AndroidMusicScanner(private val context: Context) : MusicScanner {
                 while (cursor.moveToNext()) {
                     val path = cursor.getString(dataColumn) ?: continue
                     val id = cursor.getLong(idColumn)
-                    val title = cursor.getString(titleColumn) ?: ""
-                    val artist = cursor.getString(artistColumn) ?: ""
+                    var title = cursor.getString(titleColumn) ?: ""
+                    var artist = cursor.getString(artistColumn) ?: ""
                     val duration = cursor.getInt(durationColumn)
                     val albumId = cursor.getLong(albumIdColumn)
-                    val album = cursor.getString(albumColumn) ?: ""
+                    var album = cursor.getString(albumColumn) ?: ""
                     val genre = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                         cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.GENRE)) ?: ""
                     } else ""
                     val dateAdded = cursor.getLong(dateAddedColumn)
                     val size = cursor.getLong(sizeColumn)
+
+                    // Fall back to physical ID3 metadata if MediaStore yields generic or empty tags
+                    if (artist.isBlank() || artist.equals("<unknown>", ignoreCase = true) ||
+                        artist.equals("Unknown Artist", ignoreCase = true) || title.isBlank() ||
+                        album.isBlank() || album.equals("<unknown>", ignoreCase = true)
+                    ) {
+                        try {
+                            val retriever = android.media.MediaMetadataRetriever()
+                            retriever.setDataSource(path)
+                            val fileTitle = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_TITLE)
+                            val fileArtist = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ARTIST)
+                            val fileAlbum = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ALBUM)
+                            retriever.release()
+
+                            if (!fileTitle.isNullOrBlank()) title = fileTitle
+                            if (!fileArtist.isNullOrBlank()) artist = fileArtist
+                            if (!fileAlbum.isNullOrBlank()) album = fileAlbum
+                        } catch (_: Exception) {}
+                    }
 
                     songs.add(RawSong(id, title, artist, path, duration, albumId, album, genre, dateAdded, size))
                 }
