@@ -178,14 +178,17 @@ a {
 .theme-toggle-btn {
     background: var(--surface-container);
     border: 1px solid var(--outline);
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
     cursor: pointer;
-    display: flex;
+    display: flex !important;
     align-items: center;
     justify-content: center;
     color: var(--on-surface);
+    flex-shrink: 0;
 }
 
 .theme-toggle-btn:hover {
@@ -193,14 +196,18 @@ a {
     color: var(--primary);
 }
 
-.theme-toggle-btn .sun-icon { display: block; width: 20px; height: 20px; }
-.theme-toggle-btn .moon-icon { display: none; width: 20px; height: 20px; }
+.theme-toggle-btn .sun-icon { display: block; width: 22px; height: 22px; stroke: currentColor; fill: none; }
+.theme-toggle-btn .moon-icon { display: none; width: 22px; height: 22px; stroke: currentColor; fill: none; }
 
-.light-mode .theme-toggle-btn .sun-icon { display: none; }
-.light-mode .theme-toggle-btn .moon-icon { display: block; }
+.light-mode .theme-toggle-btn .sun-icon { display: none !important; }
+.light-mode .theme-toggle-btn .moon-icon { display: block !important; }
 
 /* Buttons */
-.btn, button, input, select {
+button, input, select {
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.btn {
     font-family: 'Space Grotesk', sans-serif !important;
     display: inline-flex;
     align-items: center;
@@ -391,12 +398,16 @@ a {
 }
 
 .eq-slider {
-    writing-mode: bt-lr;
+    writing-mode: vertical-lr;
+    direction: rtl;
     -webkit-appearance: slider-vertical;
-    width: 8px;
-    height: 80px;
+    width: 24px;
+    height: 90px;
+    padding: 0 !important;
+    margin: 0;
     accent-color: var(--primary);
     cursor: pointer;
+    background: transparent;
 }
 
 .eq-badge {
