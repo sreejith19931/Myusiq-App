@@ -37,7 +37,7 @@ jobs:
     - name: Build Release APKs
       if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v')
       env:
-        RELEASE_STORE_FILE: release.jks
+        RELEASE_STORE_FILE: ${{ github.workspace }}/release.jks
         RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
         RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
         RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
