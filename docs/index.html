@@ -74,7 +74,7 @@
             <div class="hero-visual">
                 <div class="phone-frame">
                     <div class="phone-notch"></div>
-                    <img src="images/app_logo.svg" alt="Myusiq Player Screen" class="phone-screen" style="padding: 60px; background: radial-gradient(circle, var(--primary-container) 0%, #000 100%);">
+                    <img src="images/screenshot_player.png" alt="Myusiq Player Screen" class="phone-screen">
                 </div>
             </div>
         </div>
@@ -191,27 +191,39 @@
 
             <div class="gallery-tabs reveal">
                 <button class="gallery-tab active" onclick="filterGallery('all', this)">All Views</button>
-                <button class="gallery-tab" onclick="filterGallery('player', this)">Now Playing</button>
-                <button class="gallery-tab" onclick="filterGallery('library', this)">Library</button>
+                <button class="gallery-tab" onclick="filterGallery('player', this)">Player & Library</button>
                 <button class="gallery-tab" onclick="filterGallery('eq', this)">Equalizer</button>
+                <button class="gallery-tab" onclick="filterGallery('tools', this)">Tools & Modes</button>
             </div>
 
             <div class="gallery-grid reveal">
-                <div class="screenshot-card" data-category="player" onclick="openLightbox('images/app_logo.svg', 'Myusiq - Now Playing Player Interface')">
-                    <img src="images/app_logo.svg" alt="Now Playing Screen" style="padding: 40px; background: var(--surface-container-high);">
+                <div class="screenshot-card" data-category="player" onclick="openLightbox('images/screenshot_player.png', 'Myusiq - Now Playing Player Interface')">
+                    <img src="images/screenshot_player.png" alt="Now Playing Screen">
                 </div>
-                <div class="screenshot-card" data-category="library" onclick="openLightbox('images/app_logo.svg', 'Myusiq - Album & Library View')">
-                    <img src="images/app_logo.svg" alt="Library Screen" style="padding: 40px; background: var(--surface-container-high);">
+                <div class="screenshot-card" data-category="player" onclick="openLightbox('images/screenshot_tracks.png', 'Myusiq - Music Tracks & Albums Library')">
+                    <img src="images/screenshot_tracks.png" alt="Tracks Library Screen">
                 </div>
-                <div class="screenshot-card" data-category="eq" onclick="openLightbox('images/app_logo.svg', 'Myusiq - 5-Band Equalizer & Audio FX')">
-                    <img src="images/app_logo.svg" alt="Equalizer Screen" style="padding: 40px; background: var(--surface-container-high);">
+                <div class="screenshot-card" data-category="player" onclick="openLightbox('images/screenshot_folders.png', 'Myusiq - Folder Hierarchy & Directory Browser')">
+                    <img src="images/screenshot_folders.png" alt="Folder Browser Screen">
+                </div>
+                <div class="screenshot-card" data-category="eq" onclick="openLightbox('images/screenshot_equalizer.png', 'Myusiq - 5-Band Studio Equalizer & Audio Effects')">
+                    <img src="images/screenshot_equalizer.png" alt="Studio Equalizer Screen">
+                </div>
+                <div class="screenshot-card" data-category="tools" onclick="openLightbox('images/screenshot_janitor.png', 'Myusiq - Library Janitor Metadata Repair')">
+                    <img src="images/screenshot_janitor.png" alt="Library Janitor Screen">
+                </div>
+                <div class="screenshot-card" data-category="tools" onclick="openLightbox('images/screenshot_trimmer.png', 'Myusiq - Precision Audio Ringtone Trimmer')">
+                    <img src="images/screenshot_trimmer.png" alt="Audio Trimmer Screen">
+                </div>
+                <div class="screenshot-card" data-category="tools" onclick="openLightbox('images/screenshot_driving.png', 'Myusiq - High-Contrast Driving Mode')">
+                    <img src="images/screenshot_driving.png" alt="Driving Mode Screen">
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Timeline / Roadmap Section (Auto-populated by scripts/update_roadmap.py) -->
-        <section id="timeline" class="timeline-section">
+            <section id="timeline" class="timeline-section">
         <div class="container">
             <div class="section-header reveal">
                 <span class="section-badge">Roadmap & History</span>
