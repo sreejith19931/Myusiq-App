@@ -140,21 +140,6 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TAG_NAME: ${{ github.ref_name }}
           RELEASE_URL: https://github.com/sreejith19931/Myusiq-App/releases/tag/${{ github.ref_name }}
-        run: |
-          if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
-            MESSAGE="🚀 <b>New Version Released: ${TAG_NAME}</b>%0A%0A"
-            MESSAGE+="<b>Myusiq ${TAG_NAME} is now live!</b>%0A%0A"
-            MESSAGE+="<b>Changelog:</b>%0A"
-            MESSAGE+="- In-App GitHub Update Tracker%0A"
-            MESSAGE+="- Direct APK Download & Install%0A"
-            MESSAGE+="- UI & Performance Enhancements%0A%0A"
-            MESSAGE+="🔗 <a href='${RELEASE_URL}'>View Release & Download APK</a>"
-
-            curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-              -d "chat_id=${TELEGRAM_CHAT_ID}" \
-              -d "parse_mode=HTML" \
-              -d "disable_web_page_preview=false" \
-              -d "text=${MESSAGE}"
-          else
-            echo "Telegram credentials not provided. Skipping notification."
-          fi
+          APK_URL: https://github.com/sreejith19931/Myusiq-App/releases/download/${{ github.ref_name }}/Myusiq-${{ github.ref_name }}.apk
+          WEBSITE_URL: https://rhythmmusicplayer.github.io/myusiq.github.io
+        run: python scripts/send_telegram_announcement.py
