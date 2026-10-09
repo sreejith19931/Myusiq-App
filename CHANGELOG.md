@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1] - 2026-10-10
+
+### Fixed
+- **In-App Update Checker Fixes**: Fixed issue where "Check for Updates" reported "Unable to check. Check internet connection" by adding Proguard/R8 `@Keep` rules for Gson models.
+- **Specific Error Feedback**: Enhanced update check status reporting to distinguish network disconnections from GitHub API rate limits (HTTP 403/429), HTTP 404, or parse errors.
+- **Multi-Repository Fallback & Asset Filtering**: Added fallback endpoint support and improved APK asset matching to reliably download phone installer binaries.
+- **Package Install Permission Handling**: Handled Android 8.0+ unknown app installation permissions gracefully.
+
 ## [1.1.0] - 2026-10-09
 
 ### Added & Fixed
