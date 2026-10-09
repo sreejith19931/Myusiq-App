@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2026-10-09
+
+### Added & Fixed
+- **In-App GitHub Update Tracker**: Automatic update check on app launch and manual check in Settings -> About with direct APK download & installation.
+- **Telegram Announcement Automation**: Integrated automated release publishing & Telegram channel notifications.
+- **UI & Performance Enhancements**: General polish, bug fixes, and stability improvements.
+
 ## [1.0.2] - 2026-10-08
 
 ### Added & Fixed
