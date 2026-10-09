@@ -141,5 +141,5 @@ jobs:
           TAG_NAME: ${{ github.ref_name }}
           RELEASE_URL: https://github.com/sreejith19931/Myusiq-App/releases/tag/${{ github.ref_name }}
           APK_URL: https://github.com/sreejith19931/Myusiq-App/releases/download/${{ github.ref_name }}/Myusiq-${{ github.ref_name }}.apk
-          WEBSITE_URL: https://rhythmmusicplayer.github.io/myusiq.github.io
+          WEBSITE_URL: https://myusiq.vercel.app
         run: python scripts/send_telegram_announcement.py

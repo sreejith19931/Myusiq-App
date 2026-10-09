@@ -9,7 +9,7 @@ def send_telegram_announcement():
     tag = os.environ.get('TAG_NAME', '')
     release_url = os.environ.get('RELEASE_URL', f'https://github.com/sreejith19931/Myusiq-App/releases/tag/{tag}')
     apk_url = os.environ.get('APK_URL', f'https://github.com/sreejith19931/Myusiq-App/releases/download/{tag}/Myusiq-{tag}.apk')
-    website_url = os.environ.get('WEBSITE_URL', 'https://rhythmmusicplayer.github.io/myusiq.github.io')
+    website_url = os.environ.get('WEBSITE_URL', 'https://myusiq.vercel.app')
 
     if not bot_token or not chat_id:
         print("Telegram credentials (TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID) missing. Skipping announcement.")
