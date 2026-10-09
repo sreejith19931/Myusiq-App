@@ -11,7 +11,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Android-brightgreen.svg" alt="Platform" />
   <img src="https://img.shields.io/badge/API-26%2B-blue.svg" alt="API Level" />
-  <a href="https://rhythmmusicplayer.github.io/myusiq.github.io"><img src="https://img.shields.io/badge/Website-rhythmmusicplayer.github.io-orange.svg" alt="Website" /></a>
+  <a href="https://myusiq.vercel.app"><img src="https://img.shields.io/badge/Website-myusiq.vercel.app-orange.svg" alt="Website" /></a>
   <img src="https://img.shields.io/github/license/sreejith19931/Myusiq" alt="License" />
   <img src="https://img.shields.io/github/repo-size/sreejith19931/Myusiq" alt="Repo Size" />
   <img src="https://img.shields.io/github/issues-pr/sreejith19931/Myusiq" alt="PRs Welcome" />
@@ -99,7 +99,7 @@ Keep your collection organized and healthy with ease.
 
 ### Download
 Official releases and the companion website can be found at:
-**[rhythmmusicplayer.github.io/myusiq.github.io](https://rhythmmusicplayer.github.io/myusiq.github.io)**
+**[myusiq.vercel.app](https://myusiq.vercel.app)**
 
 *Release builds coming soon.* In the meantime, you can build from source.
 
