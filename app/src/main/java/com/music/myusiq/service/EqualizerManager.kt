@@ -114,6 +114,36 @@ object EqualizerManager {
         _activeHardwareRoute.value = profileIndex
     }
 
+    fun detectActiveAudioProfile(audioManager: android.media.AudioManager): Int {
+        val devices = audioManager.getDevices(android.media.AudioManager.GET_DEVICES_OUTPUTS)
+        for (device in devices) {
+            when (device.type) {
+                android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
+                android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
+                android.media.AudioDeviceInfo.TYPE_HEARING_AID,
+                android.media.AudioDeviceInfo.TYPE_BLE_HEADSET,
+                android.media.AudioDeviceInfo.TYPE_BLE_SPEAKER -> return PROFILE_BLUETOOTH
+                
+                android.media.AudioDeviceInfo.TYPE_WIRED_HEADSET,
+                android.media.AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
+                android.media.AudioDeviceInfo.TYPE_USB_HEADSET,
+                android.media.AudioDeviceInfo.TYPE_USB_DEVICE -> return PROFILE_WIRED
+                
+                else -> {}
+            }
+        }
+        return PROFILE_SPEAKER
+    }
+
+    fun handleAudioDeviceRouting(context: Context, audioManager: android.media.AudioManager) {
+        val detectedProfile = detectActiveAudioProfile(audioManager)
+        _activeHardwareRoute.value = detectedProfile
+        if (currentActiveProfile != detectedProfile) {
+            switchProfile(context, detectedProfile)
+            Log.d("EqualizerManager", "Auto-switched EQ profile to $detectedProfile")
+        }
+    }
+
     fun switchProfile(context: Context, profileIndex: Int) {
         currentActiveProfile = profileIndex
         loadProfileSettings(context.applicationContext, profileIndex)

@@ -356,6 +356,7 @@ class PlaybackService : MediaLibraryService() {
     private val bluetoothReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val p = getSharedPreferences("app_prefs", MODE_PRIVATE)
+            EqualizerManager.handleAudioDeviceRouting(applicationContext, audioManager)
             
             when (intent.action) {
                 BluetoothDevice.ACTION_ACL_CONNECTED -> {
@@ -386,6 +387,7 @@ class PlaybackService : MediaLibraryService() {
             addAction(BluetoothDevice.ACTION_ACL_CONNECTED)
             addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED)
             addAction(AudioManager.ACTION_AUDIO_BECOMING_NOISY)
+            addAction(Intent.ACTION_HEADSET_PLUG)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(bluetoothReceiver, filter, RECEIVER_EXPORTED)
@@ -395,6 +397,7 @@ class PlaybackService : MediaLibraryService() {
 
         persistence = (applicationContext as MainApplication).playbackPersistence
         audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
+        EqualizerManager.handleAudioDeviceRouting(applicationContext, audioManager)
         val db = (applicationContext as MainApplication).database
         songHistoryDao = db.songHistoryDao()
         musicRepository = MusicRepository(

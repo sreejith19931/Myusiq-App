@@ -3,16 +3,19 @@ package com.music.myusiq.ui
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import com.music.myusiq.R
+import com.music.myusiq.utils.UpdateManager
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import com.music.myusiq.R
 
 class AboutFragment : Fragment(R.layout.fragment_about) {
 
@@ -21,7 +24,7 @@ class AboutFragment : Fragment(R.layout.fragment_about) {
         super.onViewCreated(view, savedInstanceState)
 
         val header = view.findViewById<View>(R.id.aboutHeader)
-        header.findViewById<TextView>(R.id.tvHeaderTitle).setText(R.string.about_rhythm)
+        header.findViewById<TextView>(R.id.tvHeaderTitle).setText(R.string.about_myusiq)
         header.findViewById<TextView>(R.id.tvHeaderSubtitle).visibility = View.GONE
         header.findViewById<View>(R.id.btnBack).apply {
             visibility = View.VISIBLE
@@ -34,8 +37,8 @@ class AboutFragment : Fragment(R.layout.fragment_about) {
             // Version
             view.findViewById<TextView>(R.id.tvAboutVersion).text = getString(R.string.version_format, packageInfo.versionName)
             
-            // Package
-            view.findViewById<TextView>(R.id.tvAboutPackage).text = packageInfo.packageName
+            // Maintainer
+            view.findViewById<TextView>(R.id.tvAboutMaintainer).text = getString(R.string.maintainer_value)
             
             // Last Updated
             val sdf = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
@@ -46,28 +49,26 @@ class AboutFragment : Fragment(R.layout.fragment_about) {
             Log.e("AboutFragment", "Error getting package info", e)
         }
 
+        view.findViewById<View>(R.id.btnCheckUpdate)?.setOnClickListener {
+            lifecycleScope.launch {
+                Toast.makeText(requireContext(), "Checking for updates...", Toast.LENGTH_SHORT).show()
+                val updateInfo = UpdateManager.checkForUpdates(requireContext(), force = true)
+                if (updateInfo == null) {
+                    Toast.makeText(requireContext(), "Unable to check for updates. Check internet connection.", Toast.LENGTH_SHORT).show()
+                } else if (updateInfo.hasUpdate) {
+                    UpdateManager.showUpdateDialog(requireActivity(), updateInfo)
+                } else {
+                    Toast.makeText(requireContext(), "You are on the latest version (${updateInfo.currentVersion})!", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
         view.findViewById<View>(R.id.btnReportBug)?.setOnClickListener {
             try {
-                val packageInfo = requireContext().packageManager.getPackageInfo(requireContext().packageName, 0)
-                val versionName = packageInfo.versionName
-                val packageName = packageInfo.packageName
-                val androidVersion = Build.VERSION.RELEASE
-                val deviceModel = Build.MODEL
-
-                val emailBody = "\n\n\n---\n" +
-                        "App Version: $versionName\n" +
-                        "Package: $packageName\n" +
-                        "Android Version: $androidVersion\n" +
-                        "Device: $deviceModel"
-
-                val intent = Intent(Intent.ACTION_SENDTO).apply {
-                    data = Uri.parse("mailto:rhythmmusicplayer@gmail.com")
-                    putExtra(Intent.EXTRA_SUBJECT, "Rhythm Bug Report & Feedback")
-                    putExtra(Intent.EXTRA_TEXT, emailBody)
-                }
-                startActivity(Intent.createChooser(intent, "Send Bug Report"))
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/sreejith19931/Myusiq/issues"))
+                startActivity(intent)
             } catch (e: Exception) {
-                Log.e("AboutFragment", "Error launching email intent", e)
+                Log.e("AboutFragment", "Error launching GitHub issues link", e)
             }
         }
     }

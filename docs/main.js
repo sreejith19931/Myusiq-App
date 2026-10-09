@@ -13,7 +13,7 @@ function closeBanner() {
 const defaultThemes = [
     { name: "Purple Ambient", primary: "#A78BFA", container: "#2E1065" },
     { name: "Sky Pulse", primary: "#38BDF8", container: "#0F172A" },
-    { name: "Emerald Rhythm", primary: "#43A047", container: "#1B5E20" },
+    { name: "Emerald Myusiq", primary: "#43A047", container: "#1B5E20" },
     { name: "Crimson Flame", primary: "#E53935", container: "#B71C1C" },
     { name: "Sunset Gold", primary: "#FB8C00", container: "#E65100" }
 ];

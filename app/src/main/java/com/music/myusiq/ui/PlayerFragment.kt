@@ -26,6 +26,7 @@ import android.widget.ScrollView
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.FileProvider
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.isVisible
 import androidx.palette.graphics.Palette
@@ -424,7 +425,11 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
         btnLyricsPoster.isEnabled = false
         btnLyricsPoster.alpha = 0.38f
         btnLyricsPoster.setOnClickListener {
-            Toast.makeText(requireContext(), "Lyric poster feature coming soon", Toast.LENGTH_SHORT).show()
+            if (currentLyrics.isNotEmpty()) {
+                showLyricsPosterGenerator()
+            } else {
+                Toast.makeText(requireContext(), "No lyrics available to create poster", Toast.LENGTH_SHORT).show()
+            }
         }
         
         btnLyricsResetSearch.setOnLongClickListener {
@@ -681,13 +686,24 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
             
             override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
                 val line = currentLyrics[position].text
+                val checkable = holder.itemView as? android.widget.Checkable
                 val tv = holder.itemView as TextView
+                
                 tv.text = line
+                checkable?.isChecked = selectedLines.contains(line)
+
                 tv.setOnClickListener {
-                    if (selectedLines.contains(line)) {
+                    val isSelected = selectedLines.contains(line)
+                    if (isSelected) {
                         selectedLines.remove(line)
-                    } else if (selectedLines.size < 4) {
-                        selectedLines.add(line)
+                        checkable?.isChecked = false
+                    } else {
+                        if (selectedLines.size < 4) {
+                            selectedLines.add(line)
+                            checkable?.isChecked = true
+                        } else {
+                            Toast.makeText(requireContext(), "Maximum 4 lines allowed", Toast.LENGTH_SHORT).show()
+                        }
                     }
                     tvPosterLyrics.text = if (selectedLines.isEmpty()) "Select lines below" else selectedLines.joinToString("\n")
                 }
@@ -698,6 +714,39 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
         rvSelection.layoutManager = LinearLayoutManager(requireContext())
         rvSelection.adapter = adapter
 
+        val cgPosterThemes = dialogView.findViewById<com.google.android.material.chip.ChipGroup>(R.id.cgPosterThemes)
+        cgPosterThemes?.setOnCheckedStateChangeListener { _, checkedIds ->
+            when (checkedIds.firstOrNull()) {
+                R.id.chipThemeBlur -> {
+                    ivPosterBackground.visibility = View.VISIBLE
+                    layoutPosterContent.setBackgroundColor(Color.TRANSPARENT)
+                    tvPosterLyrics.setTextColor(Color.WHITE)
+                    tvPosterTrackInfo.setTextColor(Color.WHITE)
+                }
+                R.id.chipThemeDark -> {
+                    ivPosterBackground.visibility = View.GONE
+                    layoutPosterContent.setBackgroundColor(Color.parseColor("#121212"))
+                    tvPosterLyrics.setTextColor(Color.WHITE)
+                    tvPosterTrackInfo.setTextColor(Color.parseColor("#B0BEC5"))
+                }
+                R.id.chipThemeAccent -> {
+                    ivPosterBackground.visibility = View.GONE
+                    val accent = viewModel.currentBgColor.value ?: Color.parseColor("#1DB954")
+                    layoutPosterContent.setBackgroundColor(accent)
+                    val isLight = ColorUtils.calculateLuminance(accent) > 0.5
+                    val textColor = if (isLight) Color.BLACK else Color.WHITE
+                    tvPosterLyrics.setTextColor(textColor)
+                    tvPosterTrackInfo.setTextColor(textColor)
+                }
+                R.id.chipThemeMinimal -> {
+                    ivPosterBackground.visibility = View.GONE
+                    layoutPosterContent.setBackgroundColor(Color.WHITE)
+                    tvPosterLyrics.setTextColor(Color.BLACK)
+                    tvPosterTrackInfo.setTextColor(Color.parseColor("#555555"))
+                }
+            }
+        }
+
         val dialog = MaterialAlertDialogBuilder(requireContext())
             .setView(dialogView)
             .show()
@@ -705,21 +754,41 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
         btnShare.setOnClickListener {
             if (selectedLines.isEmpty()) return@setOnClickListener
             
-            // Render view to Bitmap
             val bitmap = Bitmap.createBitmap(layoutPosterContent.width, layoutPosterContent.height, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(bitmap)
             layoutPosterContent.draw(canvas)
-            
-            // Share bitmap
-            val path = MediaStore.Images.Media.insertImage(requireContext().contentResolver, bitmap, "LyricPoster_${System.currentTimeMillis()}", null)
-            val uri = Uri.parse(path)
-            
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "image/jpeg"
-                putExtra(Intent.EXTRA_STREAM, uri)
+
+            lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                try {
+                    val imagesDir = java.io.File(requireContext().cacheDir, "images")
+                    if (!imagesDir.exists()) imagesDir.mkdirs()
+                    val imageFile = java.io.File(imagesDir, "LyricPoster_${System.currentTimeMillis()}.jpg")
+                    java.io.FileOutputStream(imageFile).use { out ->
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
+                    }
+                    
+                    val uri = FileProvider.getUriForFile(
+                        requireContext(),
+                        "${requireContext().packageName}.fileprovider",
+                        imageFile
+                    )
+                    
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        val intent = Intent(Intent.ACTION_SEND).apply {
+                            type = "image/jpeg"
+                            putExtra(Intent.EXTRA_STREAM, uri)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+                        startActivity(Intent.createChooser(intent, "Share Lyric Poster"))
+                        dialog.dismiss()
+                    }
+                } catch (e: Exception) {
+                    Log.e("PlayerFragment", "Error sharing lyric poster", e)
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        Toast.makeText(requireContext(), "Failed to share lyric poster", Toast.LENGTH_SHORT).show()
+                    }
+                }
             }
-            startActivity(Intent.createChooser(intent, "Share Lyric Poster"))
-            dialog.dismiss()
         }
     }
 
@@ -842,9 +911,9 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
             }
 
             btnLyricsPoster.setIconTint(iconTintList)
-            btnLyricsPoster.alpha = 0.38f
-            btnLyricsPoster.isEnabled = false
             btnLyricsPoster.backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
+            btnLyricsPoster.isEnabled = currentLyrics.isNotEmpty()
+            btnLyricsPoster.alpha = if (currentLyrics.isNotEmpty()) 1.0f else 0.38f
             
             btnPlaybackSpeed.setTextColor(accent)
             btnPlaybackSpeed.setIconTint(iconTintList)
@@ -949,6 +1018,8 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
         transliteratedLyricsText = null
         currentLyrics = emptyList()
         activeLyricIndex = -1
+        btnLyricsPoster.isEnabled = false
+        btnLyricsPoster.alpha = 0.38f
         updateTransliterateButtonState()
         lyricsAdapter.notifyDataSetChanged()
 
@@ -1099,7 +1170,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
 
     private fun parseLyrics(raw: String) {
         val lines = mutableListOf<LyricLine>()
-        val lrcRegex = Regex("""\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)""")
+        val lrcRegex = Regex("""\[(\d{2}):(\d{2})\.(\d{2,3})](.*)""")
         
         raw.lines().forEach { line ->
             val match = lrcRegex.find(line)
@@ -1137,6 +1208,8 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
         currentLyrics = sorted
         activeLyricIndex = -1
         isAutoScrolling = true
+        btnLyricsPoster.isEnabled = sorted.isNotEmpty()
+        btnLyricsPoster.alpha = if (sorted.isNotEmpty()) 1.0f else 0.38f
         lyricsAdapter.notifyDataSetChanged()
         rvLyrics.scrollToPosition(0)
     }

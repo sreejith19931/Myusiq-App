@@ -17,9 +17,13 @@ object ArtworkUtils {
         )
         for (dir in dirs) {
             try {
-                val rhythmDir = File(dir, ".rhythm_backup/artwork")
-                if (!rhythmDir.exists()) rhythmDir.mkdirs()
-                if (rhythmDir.exists()) return rhythmDir
+                val myusiqDir = File(dir, ".myusiq_backup/artwork")
+                if (!myusiqDir.exists()) {
+                    val legacyDir = File(dir, ".rhythm_backup/artwork")
+                    if (legacyDir.exists()) return legacyDir
+                    myusiqDir.mkdirs()
+                }
+                if (myusiqDir.exists()) return myusiqDir
             } catch (_: Exception) {}
         }
         return null

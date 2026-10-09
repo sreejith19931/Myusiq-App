@@ -19,8 +19,7 @@
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardPosterPreview"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="240dp"
         app:cardCornerRadius="24dp"
         app:cardElevation="8dp"
         app:strokeWidth="0dp">
@@ -70,6 +69,50 @@
             </LinearLayout>
         </FrameLayout>
     </com.google.android.material.card.MaterialCardView>
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:scrollbars="none">
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/cgPosterThemes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:singleSelection="true"
+            app:selectionRequired="true">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipThemeBlur"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="@string/poster_theme_blur" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipThemeDark"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/poster_theme_dark" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipThemeAccent"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/poster_theme_accent" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipThemeMinimal"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/poster_theme_minimal" />
+        </com.google.android.material.chip.ChipGroup>
+    </HorizontalScrollView>
 
     <TextView
         android:layout_width="wrap_content"

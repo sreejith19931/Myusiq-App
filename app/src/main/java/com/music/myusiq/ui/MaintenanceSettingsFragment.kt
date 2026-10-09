@@ -57,7 +57,7 @@ class MaintenanceSettingsFragment : Fragment(R.layout.fragment_settings_maintena
         }
 
         view.findViewById<View>(R.id.rowExportData).setOnClickListener {
-            createBackupLauncher.launch("rhythm_backup.json")
+            createBackupLauncher.launch("myusiq_backup.json")
         }
 
         view.findViewById<View>(R.id.rowRestoreData).setOnClickListener {

@@ -173,6 +173,19 @@ class WearMediaController(private val context: Context) {
         browser?.seekToPrevious()
     }
 
+    fun adjustVolume(delta: Int) {
+        try {
+            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? android.media.AudioManager
+            audioManager?.adjustStreamVolume(
+                android.media.AudioManager.STREAM_MUSIC,
+                if (delta > 0) android.media.AudioManager.ADJUST_RAISE else android.media.AudioManager.ADJUST_LOWER,
+                android.media.AudioManager.FLAG_SHOW_UI
+            )
+        } catch (e: Exception) {
+            Log.e("WearMediaController", "Error adjusting volume", e)
+        }
+    }
+
     fun disconnect() {
         browserFuture?.let { MediaBrowser.releaseFuture(it) }
         browser = null

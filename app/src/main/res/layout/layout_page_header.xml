@@ -33,9 +33,10 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:orientation="vertical"
+        android:paddingHorizontal="64dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/btnEndAction"
-        app:layout_constraintStart_toEndOf="@+id/btnBack"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
         <com.google.android.material.textview.MaterialTextView
@@ -46,6 +47,7 @@
             android:textStyle="bold"
             android:letterSpacing="0.02"
             android:textColor="?attr/colorOnSurface"
+            android:gravity="center"
             tools:text="Tracks" />
 
         <com.google.android.material.textview.MaterialTextView
@@ -56,6 +58,7 @@
             android:textAppearance="?attr/textAppearanceLabelLarge"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:alpha="0.8"
+            android:gravity="center"
             tools:text="16 Tracks" />
     </LinearLayout>
 

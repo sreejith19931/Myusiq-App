@@ -80,15 +80,15 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/package_name"
+                            android:text="@string/maintainer_name"
                             android:textAppearance="?attr/textAppearanceLabelSmall"
                             android:textColor="?attr/colorOnSurfaceVariant" />
 
                         <TextView
-                            android:id="@+id/tvAboutPackage"
+                            android:id="@+id/tvAboutMaintainer"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="com.music.myusiq"
+                            android:text="@string/maintainer_value"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:layout_marginBottom="16dp" />
 
@@ -110,13 +110,22 @@
                 </com.google.android.material.card.MaterialCardView>
 
                 <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnReportBug"
+                    android:id="@+id/btnCheckUpdate"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="24dp"
-                    android:text="@string/report_bug"
+                    android:text="@string/check_for_updates"
                     app:cornerRadius="16dp"
                     style="@style/Widget.Material3.Button.TonalButton" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnReportBug"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/report_bug"
+                    app:cornerRadius="16dp"
+                    style="@style/Widget.Material3.Button.OutlinedButton" />
 
                 <TextView
                     android:layout_width="wrap_content"

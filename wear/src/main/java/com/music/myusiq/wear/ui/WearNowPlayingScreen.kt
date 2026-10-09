@@ -139,16 +139,38 @@ fun WearNowPlayingScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        Button(
-            onClick = onOpenQueue,
-            colors = queueColors,
-            modifier = Modifier
-                .height(32.dp)
-                .padding(horizontal = 8.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = "Queue", style = MaterialTheme.typography.labelSmall)
+            IconButton(
+                onClick = { controller.adjustVolume(-1) },
+                colors = prevNextColors,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Text("-", style = MaterialTheme.typography.titleMedium, color = Color.White)
+            }
+
+            Button(
+                onClick = onOpenQueue,
+                colors = queueColors,
+                modifier = Modifier
+                    .height(32.dp)
+                    .padding(horizontal = 8.dp)
+            ) {
+                Text(text = "Queue", style = MaterialTheme.typography.labelSmall)
+            }
+
+            IconButton(
+                onClick = { controller.adjustVolume(1) },
+                colors = prevNextColors,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Text("+", style = MaterialTheme.typography.titleMedium, color = Color.White)
+            }
         }
     }
 }

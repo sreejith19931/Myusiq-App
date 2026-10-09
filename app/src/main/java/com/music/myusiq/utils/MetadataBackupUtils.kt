@@ -19,10 +19,17 @@ object MetadataBackupUtils {
         )
         for (dir in dirs) {
             try {
-                val rhythmDir = File(dir, ".rhythm_backup")
-                if (!rhythmDir.exists()) rhythmDir.mkdirs()
-                val file = File(rhythmDir, "metadata_overrides_backup.json")
-                if (file.exists() || rhythmDir.canWrite()) return file
+                val myusiqDir = File(dir, ".myusiq_backup")
+                if (!myusiqDir.exists()) {
+                    val legacyDir = File(dir, ".rhythm_backup")
+                    if (legacyDir.exists()) {
+                        val legacyFile = File(legacyDir, "metadata_overrides_backup.json")
+                        if (legacyFile.exists()) return legacyFile
+                    }
+                    myusiqDir.mkdirs()
+                }
+                val file = File(myusiqDir, "metadata_overrides_backup.json")
+                if (file.exists() || myusiqDir.canWrite()) return file
             } catch (_: Exception) {}
         }
         return null

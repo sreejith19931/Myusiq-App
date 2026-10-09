@@ -91,7 +91,7 @@
     <string name="setup_desc">Complete these quick steps to get started.</string>
     <string name="grant_media_access">1. Grant Media Access</string>
     <string name="media_access_desc">Required to discover and read local soundtracks on this device.</string>
-    <string name="all_permissions_desc">Grant access to media files, playback notifications, audio visualizer, and Bluetooth devices so Rhythm can function fully.</string>
+    <string name="all_permissions_desc">Grant access to media files, playback notifications, audio visualizer, and Bluetooth devices so Myusiq can function fully.</string>
     <string name="grant_access">Grant Access</string>
     <string name="select_music_folder">2. Select Music Folder</string>
     <string name="no_directory_selected">No directory target locked yet.</string>
@@ -277,7 +277,8 @@
     <string name="min_45">45 Min</string>
     <string name="min_60">60 Min</string>
     <string name="app_details">App Details</string>
-    <string name="package_name">Package Name</string>
+    <string name="maintainer_name">Maintainer</string>
+    <string name="maintainer_value">Sreejith</string>
     <string name="last_updated">Last Updated</string>
     <string name="made_by">Made with ❤️ by Team Myusiq</string>
 
@@ -308,10 +309,17 @@
     <string name="missing_messy_tags">Missing or Messy Tags</string>
     <string name="checking_tag_health">Checking tag health&#8230;</string>
     <string name="identify_unknown">Identify Unknown Tracks</string>
-    <string name="about_rhythm">About Myusiq</string>
+    <string name="about_myusiq">About Myusiq</string>
     <string name="version_format">Version %s</string>
+    <string name="check_for_updates">Check for Updates</string>
     <string name="report_bug">Report a Bug / Issue</string>
-    <string name="report_bug_desc">Let us know if you run into any trouble</string>
+    <string name="report_bug_desc">Open GitHub Issues to report bugs or request features</string>
+
+    <!-- Poster Themes -->
+    <string name="poster_theme_blur">Ambient Blur</string>
+    <string name="poster_theme_dark">Dark Glass</string>
+    <string name="poster_theme_accent">Vibrant Accent</string>
+    <string name="poster_theme_minimal">Minimalist</string>
 
     <!-- Permissions and Waveform Strings -->
     <string name="audio_permission_required_for_waveform">Audio recording permission is required for Real-Time Audio Waveform.</string>

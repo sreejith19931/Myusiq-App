@@ -28,11 +28,19 @@ import java.io.File
 
 class MyusiqSolidWidgetProvider : AppWidgetProvider() {
 
+    private fun startServiceSafely(context: Context, intent: Intent) {
+        try {
+            context.startForegroundService(intent)
+        } catch (e: Exception) {
+            Log.e("MyusiqSolidWidgetProvider", "Unable to start PlaybackService from widget broadcast", e)
+        }
+    }
+
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         val intent = Intent(context, PlaybackService::class.java).apply {
             action = "UPDATE_WIDGET"
         }
-        context.startForegroundService(intent)
+        startServiceSafely(context, intent)
     }
 
     override fun onAppWidgetOptionsChanged(context: Context?, appWidgetManager: AppWidgetManager?, appWidgetId: Int, newOptions: Bundle?) {
@@ -40,7 +48,7 @@ class MyusiqSolidWidgetProvider : AppWidgetProvider() {
         val intent = Intent(context ?: return, PlaybackService::class.java).apply {
             action = "UPDATE_WIDGET"
         }
-        context.startForegroundService(intent)
+        startServiceSafely(context, intent)
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -51,7 +59,7 @@ class MyusiqSolidWidgetProvider : AppWidgetProvider() {
             val serviceIntent = Intent(context, PlaybackService::class.java).apply {
                 this.action = action
             }
-            context.startForegroundService(serviceIntent)
+            startServiceSafely(context, serviceIntent)
         }
     }
 

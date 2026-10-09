@@ -100,7 +100,7 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
         
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Auto-Fix Metadata")
-            .setMessage("Rhythm will search online for official artwork and tags for these ${missingArtSongs.size} tracks. This requires an internet connection.\n\nContinue?")
+            .setMessage("Myusiq will search online for official artwork and tags for these ${missingArtSongs.size} tracks. This requires an internet connection.\n\nContinue?")
             .setNegativeButton("Cancel", null)
             .setPositiveButton("Start") { _, _ ->
                 executeAutoFix()
@@ -168,7 +168,7 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
         
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Repair Missing Info")
-            .setMessage("Rhythm will attempt to identify ${unknownSongs.size} tracks with generic or missing titles/artists and fetch official info.\n\nContinue?")
+            .setMessage("Myusiq will attempt to identify ${unknownSongs.size} tracks with generic or missing titles/artists and fetch official info.\n\nContinue?")
             .setNegativeButton("Cancel", null)
             .setPositiveButton("Start") { _, _ ->
                 btnRepairUnknown.isEnabled = false

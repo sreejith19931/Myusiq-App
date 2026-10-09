@@ -220,6 +220,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         
+        lifecycleScope.launch {
+            delay(2.seconds)
+            val updateInfo = UpdateManager.checkForUpdates(this@MainActivity, force = false)
+            if (updateInfo != null && updateInfo.hasUpdate) {
+                UpdateManager.showUpdateDialog(this@MainActivity, updateInfo)
+            }
+        }
+
         onBackPressedDispatcher.addCallback(this, backPressedCallback)
     }
 
@@ -454,14 +462,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     playerSheet.setBackgroundColor(Color.TRANSPARENT)
                     
                     window.decorView.setBackgroundColor(themeSurface)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        window.setDecorFitsSystemWindows(false)
-                    } else {
-                        @Suppress("DEPRECATION")
-                        window.statusBarColor = themeSurface
-                        @Suppress("DEPRECATION")
-                        window.navigationBarColor = themeSurface
-                    }
 
                     val iconColorStateList = ColorStateList(
                         arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf(-android.R.attr.state_checked)),

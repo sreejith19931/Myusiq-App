@@ -1,0 +1,224 @@
+package com.music.myusiq.utils
+
+import android.app.DownloadManager
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.net.Uri
+import android.os.Environment
+import android.util.Log
+import android.widget.Toast
+import androidx.core.content.ContextCompat
+import androidx.core.content.edit
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.util.concurrent.TimeUnit
+
+data class GithubRelease(
+    @SerializedName("tag_name") val tagName: String = "",
+    @SerializedName("name") val name: String? = null,
+    @SerializedName("body") val body: String? = null,
+    @SerializedName("html_url") val htmlUrl: String = "",
+    @SerializedName("assets") val assets: List<GithubAsset> = emptyList()
+)
+
+data class GithubAsset(
+    @SerializedName("name") val name: String = "",
+    @SerializedName("browser_download_url") val downloadUrl: String = ""
+)
+
+data class UpdateInfo(
+    val hasUpdate: Boolean,
+    val currentVersion: String,
+    val latestVersion: String,
+    val releaseNotes: String,
+    val apkDownloadUrl: String?,
+    val releasePageUrl: String
+)
+
+object UpdateManager {
+    private const val TAG = "UpdateManager"
+    private const val GITHUB_REPO_URL = "https://api.github.com/repos/sreejith19931/Myusiq/releases/latest"
+    private const val PREFS_NAME = "update_prefs"
+    private const val KEY_LAST_CHECK_TIME = "last_check_time"
+    private const val CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000L // 24 hours
+
+    private val okHttpClient by lazy {
+        OkHttpClient.Builder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(15, TimeUnit.SECONDS)
+            .build()
+    }
+
+    suspend fun checkForUpdates(context: Context, force: Boolean = false): UpdateInfo? = withContext(Dispatchers.IO) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val lastCheckTime = prefs.getLong(KEY_LAST_CHECK_TIME, 0)
+        val currentTime = System.currentTimeMillis()
+
+        if (!force && (currentTime - lastCheckTime < CHECK_INTERVAL_MS)) {
+            Log.d(TAG, "Skipping background update check, recently checked within 24h.")
+            return@withContext null
+        }
+
+        try {
+            val request = Request.Builder()
+                .url(GITHUB_REPO_URL)
+                .header("Accept", "application/vnd.github.v3+json")
+                .header("User-Agent", "Myusiq-Android-App")
+                .build()
+
+            val response = okHttpClient.newCall(request).execute()
+            if (!response.isSuccessful) {
+                Log.e(TAG, "GitHub API call failed: ${response.code}")
+                return@withContext null
+            }
+
+            val bodyString = response.body?.string() ?: return@withContext null
+            val release = Gson().fromJson(bodyString, GithubRelease::class.java) ?: return@withContext null
+
+            prefs.edit {
+                putLong(KEY_LAST_CHECK_TIME, currentTime)
+            }
+
+            val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+            val currentVersion = packageInfo.versionName ?: "1.0.0"
+            val latestVersion = release.tagName.trimStart('v', 'V')
+
+            val hasUpdate = isVersionNewer(currentVersion, latestVersion)
+
+            val apkAsset = release.assets.find { it.name.endsWith(".apk", ignoreCase = true) }
+                ?: release.assets.firstOrNull()
+
+            return@withContext UpdateInfo(
+                hasUpdate = hasUpdate,
+                currentVersion = currentVersion,
+                latestVersion = release.tagName,
+                releaseNotes = release.body ?: "No release notes provided.",
+                apkDownloadUrl = apkAsset?.downloadUrl,
+                releasePageUrl = release.htmlUrl
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Error checking for updates", e)
+            return@withContext null
+        }
+    }
+
+    fun isVersionNewer(current: String, latest: String): Boolean {
+        try {
+            val currentParts = current.split(".").map { it.filter { char -> char.isDigit() }.toIntOrNull() ?: 0 }
+            val latestParts = latest.split(".").map { it.filter { char -> char.isDigit() }.toIntOrNull() ?: 0 }
+
+            val length = maxOf(currentParts.size, latestParts.size)
+            for (i in 0 until length) {
+                val c = currentParts.getOrElse(i) { 0 }
+                val l = latestParts.getOrElse(i) { 0 }
+                if (l > c) return true
+                if (l < c) return false
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Version parse error", e)
+        }
+        return false
+    }
+
+    fun showUpdateDialog(context: Context, updateInfo: UpdateInfo) {
+        val message = "A new version (${updateInfo.latestVersion}) is available!\n\n" +
+                "Changelog:\n${updateInfo.releaseNotes}"
+
+        MaterialAlertDialogBuilder(context)
+            .setTitle("New Update Available 🚀")
+            .setMessage(message)
+            .setPositiveButton("Install Update") { _, _ ->
+                if (!updateInfo.apkDownloadUrl.isNullOrEmpty()) {
+                    downloadAndInstallApk(context, updateInfo.apkDownloadUrl, updateInfo.latestVersion)
+                } else {
+                    openReleasePage(context, updateInfo.releasePageUrl)
+                }
+            }
+            .setNegativeButton("Later", null)
+            .show()
+    }
+
+    private fun downloadAndInstallApk(context: Context, apkUrl: String, version: String) {
+        try {
+            val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager
+            if (downloadManager == null) {
+                openReleasePage(context, apkUrl)
+                return
+            }
+
+            val fileName = "Myusiq-$version.apk"
+            val uri = Uri.parse(apkUrl)
+
+            val request = DownloadManager.Request(uri).apply {
+                setTitle("Downloading Myusiq Update ($version)")
+                setDescription("Downloading update file...")
+                setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+                setAllowedOverMetered(true)
+                setAllowedOverRoaming(true)
+            }
+
+            val downloadId = downloadManager.enqueue(request)
+            Toast.makeText(context, "Download started. Check notifications.", Toast.LENGTH_SHORT).show()
+
+            val onComplete = object : BroadcastReceiver() {
+                override fun onReceive(c: Context, intent: Intent) {
+                    val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
+                    if (id == downloadId) {
+                        try {
+                            c.unregisterReceiver(this)
+                        } catch (_: Exception) {}
+
+                        val downloadedUri = downloadManager.getUriForDownloadedFile(downloadId)
+                        if (downloadedUri != null) {
+                            promptInstallApk(c, downloadedUri)
+                        } else {
+                            openReleasePage(c, apkUrl)
+                        }
+                    }
+                }
+            }
+
+            ContextCompat.registerReceiver(
+                context,
+                onComplete,
+                IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
+                ContextCompat.RECEIVER_EXPORTED
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Error initiating APK download", e)
+            openReleasePage(context, apkUrl)
+        }
+    }
+
+    private fun promptInstallApk(context: Context, uri: Uri) {
+        try {
+            val installIntent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "application/vnd.android.package-archive")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
+            }
+            context.startActivity(installIntent)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error prompting APK install", e)
+            Toast.makeText(context, "Downloaded update to Downloads folder.", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun openReleasePage(context: Context, url: String) {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(intent)
+        } catch (_: Exception) {
+            Toast.makeText(context, "Could not open browser", Toast.LENGTH_SHORT).show()
+        }
+    }
+}

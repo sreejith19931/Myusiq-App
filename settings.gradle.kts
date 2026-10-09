@@ -22,7 +22,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Rhythm"
+rootProject.name = "Myusiq"
 include(":app")
 include(":shared")
 include(":wear")
