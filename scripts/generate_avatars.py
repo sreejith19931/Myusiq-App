@@ -54,8 +54,6 @@ def create_chat_group_avatar():
     head_draw.rounded_rectangle([cx + 185, cy - 10, cx + 240, cy + 150], radius=20, fill=(10, 30, 60, 255))
 
     # Equalizer Waveform in center
-    wave_x_start = cx - 140
-    wave_x_end = cx + 140
     bar_width = 16
     spacing = 10
 
@@ -83,21 +81,24 @@ def create_chat_group_avatar():
     text_draw = ImageDraw.Draw(text_img)
 
     # Bottom pill badge
-    badge_w, badge_h = 580, 110
+    badge_w, badge_h = 620, 110
     badge_x = cx - badge_w // 2
     badge_y = cy + 280
     text_draw.rounded_rectangle([badge_x, badge_y, badge_x + badge_w, badge_y + badge_h], radius=55, fill=(0, 168, 255, 230))
     text_draw.rounded_rectangle([badge_x + 4, badge_y + 4, badge_x + badge_w - 4, badge_y + badge_h - 4], radius=51, outline=(255, 255, 255, 180), width=4)
 
-    # Try loading bold truetype font or fall back
+    # Try loading Bahnschrift / Segoe UI Bold font for ultra-sleek modern typography
     try:
-        font = ImageFont.truetype("arial.ttf", 52)
-        font_sub = ImageFont.truetype("arialbd.ttf", 46)
+        font_sub = ImageFont.truetype("bahnschrift.ttf", 46)
     except Exception:
-        font = ImageFont.load_default()
-        font_sub = font
+        try:
+            font_sub = ImageFont.truetype("segoeuib.ttf", 46)
+        except Exception:
+            try:
+                font_sub = ImageFont.truetype("arialbd.ttf", 46)
+            except Exception:
+                font_sub = ImageFont.load_default()
 
-    # Draw Text
     text_main = "MYUSIQ COMMUNITY"
 
     bbox = text_draw.textbbox((0, 0), text_main, font=font_sub)
@@ -162,7 +163,6 @@ def create_updates_channel_avatar():
     icon_draw.rounded_rectangle([cx + 175, cy - 20, cx + 225, cy + 130], radius=20, fill=(15, 25, 45, 255))
 
     # Center Megaphone / Broadcast Waves Icon
-    # Radio tower / Sound wave lines
     for radius, width_a in [(60, 8), (110, 10), (160, 12)]:
         icon_draw.arc([cx - radius, cy + 20 - radius, cx + radius, cy + 20 + radius], start=210, end=330, fill=(0, 229, 255, 255), width=width_a)
         icon_draw.arc([cx - radius, cy + 20 - radius, cx + radius, cy + 20 + radius], start=30, end=150, fill=(0, 229, 255, 255), width=width_a)
@@ -174,21 +174,27 @@ def create_updates_channel_avatar():
     img = Image.alpha_composite(img, icon_glow)
     img = Image.alpha_composite(img, icon_img)
 
-    # 4. Text Banner - OFFICIAL UPDATES
+    # 4. Text Banner - MYUSIQ UPDATES
     text_img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     text_draw = ImageDraw.Draw(text_img)
 
     # Bottom pill badge - Dark Gold & Cyan
-    badge_w, badge_h = 560, 110
+    badge_w, badge_h = 580, 110
     badge_x = cx - badge_w // 2
     badge_y = cy + 280
     text_draw.rounded_rectangle([badge_x, badge_y, badge_x + badge_w, badge_y + badge_h], radius=55, fill=(15, 35, 65, 240))
     text_draw.rounded_rectangle([badge_x, badge_y, badge_x + badge_w, badge_y + badge_h], radius=55, outline=(255, 215, 0, 255), width=5)
 
     try:
-        font_sub = ImageFont.truetype("arialbd.ttf", 46)
+        font_sub = ImageFont.truetype("bahnschrift.ttf", 46)
     except Exception:
-        font_sub = ImageFont.load_default()
+        try:
+            font_sub = ImageFont.truetype("segoeuib.ttf", 46)
+        except Exception:
+            try:
+                font_sub = ImageFont.truetype("arialbd.ttf", 46)
+            except Exception:
+                font_sub = ImageFont.load_default()
 
     text_main = "MYUSIQ UPDATES"
 
@@ -207,7 +213,6 @@ def main():
     output_dir = os.path.join(root_dir, "images")
     os.makedirs(output_dir, exist_ok=True)
 
-    # Artifacts directory for IDE viewing
     artifacts_dir = r"C:\Users\Sreejith\AppData\Local\Google\AndroidStudio2026.2.1\projects\mysimplemusicplayer.e670f2ba\.artifacts\2f70d6a7-4f09-48bc-8781-0ebf4a4cccb8\images"
     os.makedirs(artifacts_dir, exist_ok=True)
 
