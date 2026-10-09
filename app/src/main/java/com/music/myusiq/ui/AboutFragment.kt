@@ -65,7 +65,7 @@ class AboutFragment : Fragment(R.layout.fragment_about) {
 
         view.findViewById<View>(R.id.btnReportBug)?.setOnClickListener {
             try {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/sreejith19931/Myusiq/issues"))
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/sreejith19931/Myusiq-App/issues"))
                 startActivity(intent)
             } catch (e: Exception) {
                 Log.e("AboutFragment", "Error launching GitHub issues link", e)

@@ -44,7 +44,7 @@ data class UpdateInfo(
 
 object UpdateManager {
     private const val TAG = "UpdateManager"
-    private const val GITHUB_REPO_URL = "https://api.github.com/repos/sreejith19931/Myusiq/releases/latest"
+    private const val GITHUB_REPO_URL = "https://api.github.com/repos/sreejith19931/Myusiq-App/releases/latest"
     private const val PREFS_NAME = "update_prefs"
     private const val KEY_LAST_CHECK_TIME = "last_check_time"
     private const val CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000L // 24 hours
