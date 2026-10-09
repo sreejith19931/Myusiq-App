@@ -22,9 +22,9 @@
 <body>
 
     <!-- Announcement Banner for Major Releases -->
-    <div id="announcement-banner" class="announcement-banner" style="display: none;">
+    <div id="announcement-banner" class="announcement-banner" style="display: flex;">
         <span class="banner-badge">🎉 Major Release</span>
-        <span id="banner-text">🎉 Major Release! Welcome to Myusiq v1.1.0!</span>
+        <span id="banner-text">🎉 Major Release! Welcome to Myusiq v1.1.0 — Experience the next level of offline audio!</span>
         <a id="banner-action" href="#download" class="banner-link">Get Update</a>
         <button class="banner-close" onclick="closeBanner()" aria-label="Close Announcement">&times;</button>
     </div>
@@ -90,13 +90,13 @@
 
     <!-- Interactive Features Section -->
 
-    <!-- Latest Release Blog Announcement -->
+        <!-- Latest Release Blog Announcement -->
     <section id="latest-blog-post" class="blog-announcement-section">
         <div class="container">
             <div class="glass-card blog-card reveal">
                 <div class="blog-header">
                     <div class="blog-badge-wrap">
-                        <span class="blog-badge">🚀 LATEST UPDATE</span>
+                        <span class="blog-badge">🚀 FEATURED RELEASE</span>
                         <span class="blog-version">v1.1.0</span>
                     </div>
                     <span class="blog-date">Oct 09, 2026</span>
@@ -110,6 +110,12 @@
                             <li><strong>In-App GitHub Update Tracker</strong>: Automatic update check on app launch and manual check in Settings -> About with direct APK download & installation.</li>
                             <li><strong>Telegram Announcement Automation</strong>: Integrated automated release publishing & Telegram channel notifications.</li>
                             <li><strong>UI & Performance Enhancements</strong>: General polish, bug fixes, and stability improvements.</li>
+                            <li><strong>Physical ID3 Tag & Artwork Persistence</strong>: Embedded ID3v2 tags and cover art directly into audio files on disk and added persistent public backups.</li>
+                            <li><strong>Permission Optimization</strong>: Removed unnecessary `RECORD_AUDIO` prompt on startup, asking for audio recording permission strictly on-demand when enabling the FFT visualizer.</li>
+                            <li><strong>Performance & Playback Responsiveness</strong>: Accelerated library scan speed to <50ms and eliminated Binder IPC queue latency for instant track playback.</li>
+                            <li><strong>CI/CD Build Speed</strong>: Optimized GitHub Actions workflow with Gradle build cache and parallel task execution.</li>
+                            <li><strong>Release Key Integration</strong>: Configured release keystore and signing configs for automated GitHub releases and seamless in-place app updates.</li>
+                            <li><strong>CI/CD Build Pipeline</strong>: Updated GitHub Actions build workflow to generate production release APKs automatically.</li>
                         </ul>
                     </div>
                 </div>

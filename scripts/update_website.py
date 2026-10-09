@@ -52,13 +52,56 @@ def markdown_to_html(text):
     # Convert bold markdown **bold** to <strong>bold</strong>
     return re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
 
-def is_major_release(version):
-    # Version is major if it ends in .0.0 or minor/patch is 0 or X.0.0 format (e.g. 1.0.0, 2.0.0)
-    version = version.lstrip('v')
+def is_major_or_minor_release(version):
+    """
+    Returns True for major and minor releases (e.g., 1.1, 1.2, 1.3, 1.1.0, 1.2.0, 2.0.0).
+    Returns False for patch/hotfix releases (e.g., 1.2.1, 1.2.2, 1.1.3).
+    """
+    version = str(version).strip().lstrip('v').lstrip('V')
     parts = version.split('.')
-    if len(parts) >= 2:
-        return parts[1] == '0' and (len(parts) < 3 or parts[2] == '0')
-    return False
+    if len(parts) == 2:
+        return True
+    elif len(parts) >= 3:
+        try:
+            return int(parts[2]) == 0
+        except ValueError:
+            return False
+    return True
+
+def get_blog_release_data(releases):
+    """
+    Finds the latest major/minor release to feature in the Blog Post.
+    Aggregates changelog items from that release and any preceding patch releases
+    since the prior major/minor release (e.g., all changes between 1.2 and 1.3).
+    """
+    if not releases:
+        return None
+
+    target_idx = None
+    for idx, rel in enumerate(releases):
+        if is_major_or_minor_release(rel['version']):
+            target_idx = idx
+            break
+
+    if target_idx is None:
+        target_idx = 0
+
+    blog_release = releases[target_idx]
+    aggregated_items = list(blog_release['items'])
+
+    for idx in range(target_idx + 1, len(releases)):
+        rel = releases[idx]
+        if is_major_or_minor_release(rel['version']):
+            break
+        for item in rel['items']:
+            if item not in aggregated_items:
+                aggregated_items.append(item)
+
+    return {
+        "version": blog_release['version'],
+        "date": blog_release['date'],
+        "items": aggregated_items
+    }
 
 def update_website():
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -83,7 +126,7 @@ def update_website():
     with open(index_path, 'r', encoding='utf-8') as f:
         html = f.read()
 
-    # 1. Update version buttons and download links
+    # 1. Update version buttons and download links to latest APK (even if patch)
     html = re.sub(
         r'Get APK \(v[\d\.]+\)',
         f'Get APK (v{clean_version})',
@@ -115,7 +158,7 @@ def update_website():
         html
     )
 
-    # 2. Build Timeline HTML
+    # 2. Build Timeline HTML (all releases including patches)
     timeline_items = []
     for rel in releases:
         items_html = "\n".join([f"                            <li>{markdown_to_html(it)}</li>" for it in rel['items']])
@@ -135,27 +178,29 @@ def update_website():
 
     timeline_html = "\n".join(timeline_items)
 
-    # Replace timeline section content
     timeline_pattern = r'(<div class="timeline reveal">)[\s\S]*?(<\/div>\s*<\/div>\s*<\/section>)'
     replacement = f'\\1\n{timeline_html}\n            \\2'
     html = re.sub(timeline_pattern, replacement, html)
 
-    # 3. Build Latest Release Blog Post Section Above 'Crafted for Excellence'
-    blog_items_html = "\n".join([f"                            <li>{markdown_to_html(it)}</li>" for it in latest_release['items']])
-    blog_post_html = f"""    <!-- Latest Release Blog Announcement -->
+    # 3. Build Featured Blog Post Section (strictly for Major/Minor releases like 1.1, 1.2, 1.3)
+    blog_data = get_blog_release_data(releases)
+    if blog_data:
+        blog_clean_version = blog_data['version'].lstrip('v')
+        blog_items_html = "\n".join([f"                            <li>{markdown_to_html(it)}</li>" for it in blog_data['items']])
+        blog_post_html = f"""    <!-- Latest Release Blog Announcement -->
     <section id="latest-blog-post" class="blog-announcement-section">
         <div class="container">
             <div class="glass-card blog-card reveal">
                 <div class="blog-header">
                     <div class="blog-badge-wrap">
-                        <span class="blog-badge">🚀 LATEST UPDATE</span>
-                        <span class="blog-version">v{clean_version}</span>
+                        <span class="blog-badge">🚀 FEATURED RELEASE</span>
+                        <span class="blog-version">v{blog_clean_version}</span>
                     </div>
-                    <span class="blog-date">{latest_release['date']}</span>
+                    <span class="blog-date">{blog_data['date']}</span>
                 </div>
-                <h2 class="blog-title">What's New in Myusiq v{clean_version}</h2>
+                <h2 class="blog-title">What's New in Myusiq v{blog_clean_version}</h2>
                 <div class="blog-body">
-                    <p class="blog-intro">We are excited to announce the official release of <strong>Myusiq v{clean_version}</strong>! This update brings key feature additions, performance optimizations, and important usability upgrades to your audio experience.</p>
+                    <p class="blog-intro">We are excited to announce the official release of <strong>Myusiq v{blog_clean_version}</strong>! This update brings key feature additions, performance optimizations, and important usability upgrades to your audio experience.</p>
                     <div class="blog-highlights-box">
                         <h4 class="blog-highlights-title">✨ Key Features &amp; Changes Implemented</h4>
                         <ul class="blog-items-list">
@@ -175,24 +220,18 @@ def update_website():
         </div>
     </section>"""
 
-    # Insert or replace blog post section above 'features' section
-    blog_pattern = r'(<!-- Latest Release Blog Announcement -->[\s\S]*?<\/section>)'
-    if re.search(blog_pattern, html):
-        html = re.sub(blog_pattern, blog_post_html, html)
-    else:
-        features_pattern = r'(\s*<section id="features" class="features-section">)'
-        html = re.sub(features_pattern, f'\n\n{blog_post_html}\n\n\\1', html)
+        blog_pattern = r'(<!-- Latest Release Blog Announcement -->[\s\S]*?<\/section>)'
+        if re.search(blog_pattern, html):
+            html = re.sub(blog_pattern, blog_post_html, html)
+        else:
+            features_pattern = r'(\s*<section id="features" class="features-section">)'
+            html = re.sub(features_pattern, f'\n\n{blog_post_html}\n\n\\1', html)
 
-    # 4. Handle Announcement Banner for Major Releases
-    is_major = is_major_release(clean_version)
-    if is_major:
-        banner_display = "flex"
-        banner_text = f"🎉 Major Release! Welcome to Myusiq v{clean_version} — Experience the next level of offline audio!"
-    else:
-        banner_display = "flex" if is_major else "none"
-        banner_text = f"🎉 Major Release! Welcome to Myusiq v{clean_version}!"
+    # 4. Handle Announcement Banner for Major/Minor Releases
+    is_major_or_minor = is_major_or_minor_release(clean_version)
+    banner_display = "flex" if is_major_or_minor else "none"
+    banner_text = f"🎉 Major Release! Welcome to Myusiq v{clean_version} — Experience the next level of offline audio!"
 
-    # Update banner display style and text
     banner_pattern = r'(<div id="announcement-banner" class="announcement-banner" style="display:\s*)[^;]+(;[^">]*">)'
     html = re.sub(banner_pattern, f'\\1{banner_display}\\2', html)
 
@@ -202,7 +241,7 @@ def update_website():
     with open(index_path, 'w', encoding='utf-8') as f:
         f.write(html)
 
-    print(f"Successfully updated docs/index.html to v{clean_version} (Is Major Release: {is_major})")
+    print(f"Successfully updated docs/index.html to v{clean_version} (Featured Blog Post: v{blog_data['version'] if blog_data else 'none'})")
 
 if __name__ == "__main__":
     update_website()
