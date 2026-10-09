@@ -140,13 +140,55 @@ def update_website():
     replacement = f'\\1\n{timeline_html}\n            \\2'
     html = re.sub(timeline_pattern, replacement, html)
 
-    # 3. Handle Announcement Banner for Major Releases
+    # 3. Build Latest Release Blog Post Section Above 'Crafted for Excellence'
+    blog_items_html = "\n".join([f"                            <li>{markdown_to_html(it)}</li>" for it in latest_release['items']])
+    blog_post_html = f"""    <!-- Latest Release Blog Announcement -->
+    <section id="latest-blog-post" class="blog-announcement-section">
+        <div class="container">
+            <div class="glass-card blog-card reveal">
+                <div class="blog-header">
+                    <div class="blog-badge-wrap">
+                        <span class="blog-badge">🚀 LATEST UPDATE</span>
+                        <span class="blog-version">v{clean_version}</span>
+                    </div>
+                    <span class="blog-date">{latest_release['date']}</span>
+                </div>
+                <h2 class="blog-title">What's New in Myusiq v{clean_version}</h2>
+                <div class="blog-body">
+                    <p class="blog-intro">We are excited to announce the official release of <strong>Myusiq v{clean_version}</strong>! This update brings key feature additions, performance optimizations, and important usability upgrades to your audio experience.</p>
+                    <div class="blog-highlights-box">
+                        <h4 class="blog-highlights-title">✨ Key Features &amp; Changes Implemented</h4>
+                        <ul class="blog-items-list">
+{blog_items_html}
+                        </ul>
+                    </div>
+                </div>
+                <div class="blog-actions">
+                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/download/v{clean_version}/Myusiq-v{clean_version}.apk" class="btn btn-primary btn-sm">
+                        ⚡ Download Myusiq-v{clean_version}.apk
+                    </a>
+                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/tag/v{clean_version}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
+                        📦 View Release Notes on GitHub
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>"""
+
+    # Insert or replace blog post section above 'features' section
+    blog_pattern = r'(<!-- Latest Release Blog Announcement -->[\s\S]*?<\/section>)'
+    if re.search(blog_pattern, html):
+        html = re.sub(blog_pattern, blog_post_html, html)
+    else:
+        features_pattern = r'(\s*<section id="features" class="features-section">)'
+        html = re.sub(features_pattern, f'\n\n{blog_post_html}\n\n\\1', html)
+
+    # 4. Handle Announcement Banner for Major Releases
     is_major = is_major_release(clean_version)
     if is_major:
         banner_display = "flex"
         banner_text = f"🎉 Major Release! Welcome to Myusiq v{clean_version} — Experience the next level of offline audio!"
     else:
-        # Check if any release in history was a major version to showcase, or keep banner styled
         banner_display = "flex" if is_major else "none"
         banner_text = f"🎉 Major Release! Welcome to Myusiq v{clean_version}!"
 
