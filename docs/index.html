@@ -22,9 +22,9 @@
 <body>
 
     <!-- Announcement Banner for Major Releases -->
-    <div id="announcement-banner" class="announcement-banner" style="display: flex;">
+    <div id="announcement-banner" class="announcement-banner" style="display: none;">
         <span class="banner-badge">🎉 Major Release</span>
-        <span id="banner-text">🎉 Major Release! Welcome to Myusiq v1.1.0 — Experience the next level of offline audio!</span>
+        <span id="banner-text">🎉 Major Release! Welcome to Myusiq v1.1.1 — Experience the next level of offline audio!</span>
         <a id="banner-action" href="#download" class="banner-link">Get Update</a>
         <button class="banner-close" onclick="closeBanner()" aria-label="Close Announcement">&times;</button>
     </div>
@@ -42,7 +42,7 @@
                     <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
                 </button>
                 <a href="https://github.com/sreejith19931/Myusiq/issues" target="_blank" rel="noopener" class="btn btn-outlined">Report Bug</a>
-                <a href="#download" class="btn btn-primary">Get APK (v1.1.0)</a>
+                <a href="#download" class="btn btn-primary">Get APK (v1.1.1)</a>
             </div>
         </div>
     </nav>
@@ -55,7 +55,7 @@
                 <p>Experience studio-grade audio with dynamic Material You theming that adapts to your album art. 100% open-source, ad-free, and offline.</p>
                 <div class="hero-actions">
                     <a href="https://github.com/sreejith19931/Myusiq-App/releases" class="btn btn-primary">
-                        📥 Download APK (v1.1.0)
+                        📥 Download APK (v1.1.1)
                     </a>
                     <a href="https://github.com/sreejith19931/Myusiq" target="_blank" rel="noopener" class="btn btn-outlined">
                         ⭐ GitHub Source
@@ -90,7 +90,7 @@
 
     <!-- Interactive Features Section -->
 
-        <!-- Latest Release Blog Announcement -->
+            <!-- Latest Release Blog Announcement -->
     <section id="latest-blog-post" class="blog-announcement-section">
         <div class="container">
             <div class="glass-card blog-card reveal">
@@ -120,10 +120,10 @@
                     </div>
                 </div>
                 <div class="blog-actions">
-                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/download/v1.1.0/Myusiq-v1.1.0.apk" class="btn btn-primary btn-sm">
-                        ⚡ Download Myusiq-v1.1.0.apk
+                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/download/v1.1.1/Myusiq-v1.1.1.apk" class="btn btn-primary btn-sm">
+                        ⚡ Download Myusiq-v1.1.1.apk
                     </a>
-                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/tag/v1.1.0" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
+                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/tag/v1.1.1" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
                         📦 View Release Notes on GitHub
                     </a>
                 </div>
@@ -286,6 +286,21 @@
                     <div class="timeline-dot"></div>
                     <div class="timeline-content glass-card">
                         <div class="timeline-header">
+                            <span class="version-badge">v1.1.1</span>
+                            <span class="date">Oct 10, 2026</span>
+                        </div>
+                        <ul class="changelog-list">
+                            <li><strong>In-App Update Checker Fixes</strong>: Fixed issue where "Check for Updates" reported "Unable to check. Check internet connection" by adding Proguard/R8 `@Keep` rules for Gson models.</li>
+                            <li><strong>Specific Error Feedback</strong>: Enhanced update check status reporting to distinguish network disconnections from GitHub API rate limits (HTTP 403/429), HTTP 404, or parse errors.</li>
+                            <li><strong>Multi-Repository Fallback & Asset Filtering</strong>: Added fallback endpoint support and improved APK asset matching to reliably download phone installer binaries.</li>
+                            <li><strong>Package Install Permission Handling</strong>: Handled Android 8.0+ unknown app installation permissions gracefully.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content glass-card">
+                        <div class="timeline-header">
                             <span class="version-badge">v1.1.0</span>
                             <span class="date">Oct 09, 2026</span>
                         </div>
@@ -370,11 +385,11 @@
             </div>
 
             <div class="glass-card reveal" style="max-width: 800px; margin: 0 auto; text-align: center;">
-                <h3 style="font-size: 2rem; margin-bottom: 16px;">Download Latest Release (v1.1.0)</h3>
+                <h3 style="font-size: 2rem; margin-bottom: 16px;">Download Latest Release (v1.1.1)</h3>
                 <p style="color: var(--on-surface-variant); margin-bottom: 32px;">Compatible with Android 8.0 (API 26) and above. Includes phone and Wear OS APKs.</p>
                 <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 32px;">
-                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/tag/v1.1.0" class="btn btn-primary">
-                        📥 Download Myusiq-v1.1.0.apk
+                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/tag/v1.1.1" class="btn btn-primary">
+                        📥 Download Myusiq-v1.1.1.apk
                     </a>
                     <a href="https://github.com/sreejith19931/Myusiq-App/releases" target="_blank" rel="noopener" class="btn btn-outlined">
                         📦 All GitHub Releases
@@ -384,7 +399,7 @@
                 <div style="background: var(--surface); border-radius: 16px; padding: 20px; text-align: left; border: 1px solid var(--outline);">
                     <h4 style="font-size: 1.1rem; margin-bottom: 12px; color: var(--primary);">📲 Installation Instructions:</h4>
                     <ol style="padding-left: 20px; color: var(--on-surface-variant); font-size: 0.95rem; line-height: 1.8;">
-                        <li>Download the <code>Myusiq-v1.1.0.apk</code> file to your Android device.</li>
+                        <li>Download the <code>Myusiq-v1.1.1.apk</code> file to your Android device.</li>
                         <li>Tap the downloaded file and allow <em>"Install from Unknown Sources"</em> if prompted by your browser.</li>
                         <li>Follow the setup wizard in Myusiq to grant audio permissions and select your music folders.</li>
                     </ol>

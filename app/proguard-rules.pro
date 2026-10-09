@@ -37,6 +37,22 @@
 -keep class com.music.myusiq.SongOverride { *; }
 -keep class com.music.myusiq.LyricsOverride { *; }
 
+# Gson rules
+-keepattributes Signature
+-keepattributes *Annotation*
+-dontwarn sun.misc.**
+-keep class com.google.gson.** { *; }
+-keepclassmembers class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+}
+
+# Update Manager & GitHub models
+-keep class com.music.myusiq.utils.GithubRelease { *; }
+-keep class com.music.myusiq.utils.GithubAsset { *; }
+-keep class com.music.myusiq.utils.UpdateInfo { *; }
+-keep class com.music.myusiq.utils.UpdateCheckResult** { *; }
+-keep class com.music.myusiq.utils.UpdateManager { *; }
+
 # Palette rules
 -keep class androidx.palette.graphics.** { *; }
 

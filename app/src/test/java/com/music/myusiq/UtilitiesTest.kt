@@ -2,8 +2,11 @@ package com.music.myusiq
 
 import com.music.myusiq.utils.YouTubeTitleCleaner
 import com.music.myusiq.utils.TransliterationUtil
+import com.music.myusiq.utils.UpdateManager
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class UtilitiesTest {
@@ -46,5 +49,15 @@ class UtilitiesTest {
         // Ensure format remains timestamped line
         assertNotNull(transliterated)
         assertEquals(true, transliterated.startsWith("[00:10.00]"))
+    }
+
+    @Test
+    fun testUpdateManager_IsVersionNewer() {
+        assertTrue(UpdateManager.isVersionNewer("1.0.0", "1.1.0"))
+        assertTrue(UpdateManager.isVersionNewer("1.0.0", "v1.1.0"))
+        assertTrue(UpdateManager.isVersionNewer("1.0.1", "1.1.0"))
+        assertFalse(UpdateManager.isVersionNewer("1.1.0", "1.1.0"))
+        assertFalse(UpdateManager.isVersionNewer("1.1.0", "v1.1.0"))
+        assertFalse(UpdateManager.isVersionNewer("1.2.0", "1.1.0"))
     }
 }

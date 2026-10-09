@@ -11,6 +11,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.music.myusiq.R
+import com.music.myusiq.utils.UpdateCheckResult
 import com.music.myusiq.utils.UpdateManager
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -52,13 +53,21 @@ class AboutFragment : Fragment(R.layout.fragment_about) {
         view.findViewById<View>(R.id.btnCheckUpdate)?.setOnClickListener {
             lifecycleScope.launch {
                 Toast.makeText(requireContext(), "Checking for updates...", Toast.LENGTH_SHORT).show()
-                val updateInfo = UpdateManager.checkForUpdates(requireContext(), force = true)
-                if (updateInfo == null) {
-                    Toast.makeText(requireContext(), "Unable to check for updates. Check internet connection.", Toast.LENGTH_SHORT).show()
-                } else if (updateInfo.hasUpdate) {
-                    UpdateManager.showUpdateDialog(requireActivity(), updateInfo)
-                } else {
-                    Toast.makeText(requireContext(), "You are on the latest version (${updateInfo.currentVersion})!", Toast.LENGTH_SHORT).show()
+                when (val result = UpdateManager.checkForUpdates(requireContext(), force = true)) {
+                    is UpdateCheckResult.Success -> {
+                        val updateInfo = result.updateInfo
+                        if (updateInfo.hasUpdate) {
+                            UpdateManager.showUpdateDialog(requireActivity(), updateInfo)
+                        } else {
+                            Toast.makeText(requireContext(), "You are on the latest version (${updateInfo.currentVersion})!", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    is UpdateCheckResult.Error -> {
+                        Toast.makeText(requireContext(), result.message, Toast.LENGTH_LONG).show()
+                    }
+                    is UpdateCheckResult.Skipped -> {
+                        // Not skipped when force = true
+                    }
                 }
             }
         }

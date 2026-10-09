@@ -1,7 +1,6 @@
 package com.music.myusiq.ui
 
 import android.annotation.SuppressLint
-import android.content.Intent
 import android.content.SharedPreferences
 import android.content.res.ColorStateList
 import android.content.res.Configuration
@@ -43,6 +42,8 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import com.music.myusiq.domain.models.Song
 import com.music.myusiq.domain.models.TopTrack
+import com.music.myusiq.utils.UpdateCheckResult
+import com.music.myusiq.utils.UpdateManager
 import com.music.myusiq.data.dao.SongHistoryDao
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -222,9 +223,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         
         lifecycleScope.launch {
             delay(2.seconds)
-            val updateInfo = UpdateManager.checkForUpdates(this@MainActivity, force = false)
-            if (updateInfo != null && updateInfo.hasUpdate) {
-                UpdateManager.showUpdateDialog(this@MainActivity, updateInfo)
+            val result = UpdateManager.checkForUpdates(this@MainActivity, force = false)
+            if (result is UpdateCheckResult.Success && result.updateInfo.hasUpdate) {
+                UpdateManager.showUpdateDialog(this@MainActivity, result.updateInfo)
             }
         }
 
