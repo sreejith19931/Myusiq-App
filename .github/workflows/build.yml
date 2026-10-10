@@ -120,6 +120,7 @@ jobs:
           git push https://x-access-token:${API_TOKEN_GITHUB}@github.com/sreejith19931/Myusiq-App.git main
 
       - name: Sync to Website Repo
+        if: "!contains(github.ref_name, 'beta') && !contains(github.ref_name, 'rc') && !contains(github.ref_name, 'alpha')"
         env:
           API_TOKEN_GITHUB: ${{ secrets.RELEASE_TOKEN }}
         run: |
@@ -146,10 +147,11 @@ jobs:
             README.md
             CHANGELOG.md
           draft: false
-          prerelease: false
+          prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') || contains(github.ref_name, 'alpha') }}
           generate_release_notes: true
 
       - name: Send Telegram Announcement
+        if: "!contains(github.ref_name, 'beta') && !contains(github.ref_name, 'rc') && !contains(github.ref_name, 'alpha')"
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
