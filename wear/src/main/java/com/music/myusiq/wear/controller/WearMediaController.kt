@@ -11,6 +11,11 @@ import androidx.media3.common.Player
 import androidx.media3.session.MediaBrowser
 import androidx.media3.session.SessionToken
 import androidx.palette.graphics.Palette
+import com.google.android.gms.tasks.Tasks
+import com.google.android.gms.wearable.DataClient
+import com.google.android.gms.wearable.DataEvent
+import com.google.android.gms.wearable.DataMapItem
+import com.google.android.gms.wearable.Wearable
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
 import kotlinx.coroutines.CoroutineScope
@@ -44,7 +49,67 @@ class WearMediaController(private val context: Context) {
     private val _accentColor = MutableStateFlow<Color?>(null)
     val accentColor: StateFlow<Color?> = _accentColor.asStateFlow()
 
+    private val dataClientListener = DataClient.OnDataChangedListener { dataEvents ->
+        for (event in dataEvents) {
+            if (event.type == DataEvent.TYPE_CHANGED && event.dataItem.uri.path == "/myusiq/state") {
+                val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
+                val playing = dataMap.getBoolean("isPlaying")
+                val title = dataMap.getString("title", "No Track Playing")
+                val artist = dataMap.getString("artist", "Myusiq")
+
+                _isPlaying.value = playing
+                _currentTitle.value = title
+                _currentArtist.value = artist
+
+                val queueTitles = dataMap.getStringArrayList("queueTitles") ?: emptyList()
+                val queueArtists = dataMap.getStringArrayList("queueArtists") ?: emptyList()
+
+                val items = mutableListOf<MediaItem>()
+                for (i in queueTitles.indices) {
+                    val t = queueTitles[i]
+                    val a = if (i < queueArtists.size) queueArtists[i] else "Unknown"
+                    val item = MediaItem.Builder()
+                        .setMediaId("item_$i")
+                        .setMediaMetadata(
+                            MediaMetadata.Builder()
+                                .setTitle(t)
+                                .setArtist(a)
+                                .build()
+                        )
+                        .build()
+                    items.add(item)
+                }
+                _queueItems.value = items
+
+                val asset = dataMap.getAsset("artwork")
+                if (asset != null) {
+                    scope.launch {
+                        try {
+                            val fdTask = Wearable.getDataClient(context).getFdForAsset(asset)
+                            val fd = Tasks.await(fdTask)
+                            fd.inputStream.use { stream ->
+                                val bitmap = BitmapFactory.decodeStream(stream)
+                                if (bitmap != null) {
+                                    generatePalette(bitmap)
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.e("WearMediaController", "Failed to decode artwork asset", e)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     fun connect() {
+        try {
+            Wearable.getDataClient(context).addListener(dataClientListener)
+            sendMessageToPhone("/myusiq/request_sync")
+        } catch (e: Exception) {
+            Log.e("WearMediaController", "Failed to register Wearable data listener", e)
+        }
+
         try {
             val serviceComponent = ComponentName("com.music.myusiq", "com.music.myusiq.service.PlaybackService")
             val sessionToken = SessionToken(context, serviceComponent)
@@ -60,11 +125,26 @@ class WearMediaController(private val context: Context) {
                         updateState(mediaBrowser)
                     }
                 } catch (e: Exception) {
-                    Log.e("WearMediaController", "Failed to connect to PlaybackService", e)
+                    Log.e("WearMediaController", "Failed to connect to PlaybackService via MediaBrowser", e)
                 }
             }, MoreExecutors.directExecutor())
         } catch (e: Exception) {
             Log.e("WearMediaController", "Error initializing MediaBrowser connection", e)
+        }
+    }
+
+    private fun sendMessageToPhone(path: String, payload: ByteArray? = null) {
+        scope.launch {
+            try {
+                val nodeClient = Wearable.getNodeClient(context)
+                val nodes = Tasks.await(nodeClient.connectedNodes)
+                val messageClient = Wearable.getMessageClient(context)
+                for (node in nodes) {
+                    messageClient.sendMessage(node.id, path, payload ?: ByteArray(0))
+                }
+            } catch (e: Exception) {
+                Log.e("WearMediaController", "Error sending message to phone: $path", e)
+            }
         }
     }
 
@@ -157,6 +237,7 @@ class WearMediaController(private val context: Context) {
     }
 
     fun playPause() {
+        sendMessageToPhone("/myusiq/play_pause")
         val controller = browser ?: return
         if (controller.isPlaying) {
             controller.pause()
@@ -166,15 +247,29 @@ class WearMediaController(private val context: Context) {
     }
 
     fun skipToNext() {
+        sendMessageToPhone("/myusiq/next")
         browser?.seekToNext()
     }
 
     fun skipToPrevious() {
+        sendMessageToPhone("/myusiq/prev")
         browser?.seekToPrevious()
     }
 
+    fun skipToQueueItem(index: Int) {
+        sendMessageToPhone("/myusiq/play_index", index.toString().toByteArray())
+        browser?.seekToDefaultPosition(index)
+    }
+
     fun adjustVolume(delta: Int) {
+        val path = if (delta > 0) "/myusiq/vol_up" else "/myusiq/vol_down"
+        sendMessageToPhone(path)
         try {
+            if (delta > 0) {
+                browser?.increaseDeviceVolume()
+            } else {
+                browser?.decreaseDeviceVolume()
+            }
             val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? android.media.AudioManager
             audioManager?.adjustStreamVolume(
                 android.media.AudioManager.STREAM_MUSIC,
@@ -187,6 +282,11 @@ class WearMediaController(private val context: Context) {
     }
 
     fun disconnect() {
+        try {
+            Wearable.getDataClient(context).removeListener(dataClientListener)
+        } catch (e: Exception) {
+            Log.e("WearMediaController", "Error unregistering Wearable data listener", e)
+        }
         browserFuture?.let { MediaBrowser.releaseFuture(it) }
         browser = null
         scope.cancel()

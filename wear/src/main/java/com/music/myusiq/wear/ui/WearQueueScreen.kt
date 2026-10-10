@@ -54,7 +54,10 @@ fun WearQueueScreen(
                     val artist = mediaItem.mediaMetadata.artist?.toString() ?: "Unknown"
 
                     Button(
-                        onClick = { onBackToNowPlaying() },
+                        onClick = {
+                            controller.skipToQueueItem(index)
+                            onBackToNowPlaying()
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 2.dp)

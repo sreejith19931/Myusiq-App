@@ -8,10 +8,10 @@ on:
   pull_request:
     branches: [ "main", "master" ]
   release:
-    types: [created]
+    types: [created, published]
 
 env:
-  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.parallel=true -Dorg.gradle.caching=true"
+  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.parallel=true -Dorg.gradle.caching=true -Dorg.gradle.configuration-cache=true"
 
 jobs:
   build:
@@ -25,7 +25,11 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
-        cache: gradle
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+      with:
+        cache-read-only: ${{ github.ref_name != 'main' && github.ref_name != 'master' && !startsWith(github.ref, 'refs/tags/v') }}
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
@@ -37,25 +41,36 @@ jobs:
       run: |
         python -c "import base64, os; s = os.environ['RELEASE_KEYSTORE_BASE64'].replace('\n', '').replace('\r', '').replace(' ', ''); s += '=' * ((4 - len(s) % 4) % 4); open('release.jks', 'wb').write(base64.b64decode(s))"
 
-    - name: Build Release APKs & Run Unit Tests
+    - name: Build Release/Beta APKs & Run Unit Tests
       if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v')
       env:
         RELEASE_STORE_FILE: ${{ github.workspace }}/release.jks
         RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
         RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
         RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-      run: ./gradlew assembleRelease test --build-cache --parallel
+      run: |
+        if [[ "${GITHUB_REF_NAME}" == *"beta"* || "${GITHUB_REF_NAME}" == *"rc"* ]]; then
+          echo "Building Beta variant..."
+          ./gradlew assembleBeta test --build-cache --parallel --configuration-cache
+        else
+          echo "Building Official Release variant..."
+          ./gradlew assembleRelease test --build-cache --parallel --configuration-cache
+        fi
 
     - name: Build Debug APK & Run Unit Tests
       if: github.event_name != 'release' && !startsWith(github.ref, 'refs/tags/v')
-      run: ./gradlew assembleDebug test --build-cache --parallel
+      run: ./gradlew assembleDebug test --build-cache --parallel --configuration-cache
 
     - name: Prepare APKs for Release
       if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v')
       run: |
         VERSION_NAME=${GITHUB_REF_NAME}
         mkdir -p release-output
-        cp app/build/outputs/apk/release/app-release.apk release-output/Myusiq-${VERSION_NAME}.apk
+        if [ -f app/build/outputs/apk/beta/app-beta.apk ]; then
+          cp app/build/outputs/apk/beta/app-beta.apk release-output/Myusiq-${VERSION_NAME}.apk
+        else
+          cp app/build/outputs/apk/release/app-release.apk release-output/Myusiq-${VERSION_NAME}.apk
+        fi
         if [ -f wear/build/outputs/apk/release/wear-release.apk ]; then
           cp wear/build/outputs/apk/release/wear-release.apk release-output/Myusiq-Wear-${VERSION_NAME}.apk
         fi
@@ -112,12 +127,12 @@ jobs:
           
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
-          git clone --depth 1 https://x-access-token:${API_TOKEN_GITHUB}@github.com/rhythmmusicplayer/myusiq.github.io.git website-repo
+          git clone --depth 1 https://x-access-token:${API_TOKEN_GITHUB}@github.com/myusiqmusicplayer/myusiq.github.io.git website-repo
           cp -r docs/* website-repo/
           cd website-repo
           git add .
           git commit -m "deploy: update website for release ${GITHUB_REF_NAME}" || echo "No changes to commit"
-          git push https://x-access-token:${API_TOKEN_GITHUB}@github.com/rhythmmusicplayer/myusiq.github.io.git main
+          git push https://x-access-token:${API_TOKEN_GITHUB}@github.com/myusiqmusicplayer/myusiq.github.io.git main
 
       - name: Create Release on Public Repo
         uses: softprops/action-gh-release@v2

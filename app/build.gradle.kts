@@ -64,9 +64,16 @@ android {
                 "proguard-rules.pro",
             )
         }
+        create("beta") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".beta"
+            resValue("string", "app_name", "Myusiq Beta")
+            matchingFallbacks += listOf("release")
+        }
     }
     buildFeatures {
         viewBinding = true
+        resValues = true
     }
     testOptions {
         unitTests.isReturnDefaultValues = true
@@ -107,15 +114,16 @@ dependencies {
     implementation(libs.jaudiotagger)
     implementation(libs.okhttp)
     implementation(libs.gson)
-    implementation(libs.coil)
     implementation(libs.coroutines.android)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.core.splashscreen)
+    implementation(libs.play.services.wearable)
     ksp(libs.androidx.room.compiler)
 }
 
 ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
     arg("room.incremental", "true")
     arg("room.expandProjection", "true")
 }

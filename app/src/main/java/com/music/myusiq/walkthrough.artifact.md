@@ -1,6 +1,6 @@
 # Walkthrough - "Premium Features" Expansion
 
-I have implemented several high-impact features to make Rhythm a truly premium music player.
+I have implemented several high-impact features to make Myusiq a truly premium music player.
 
 ## New Features
 

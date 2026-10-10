@@ -6,7 +6,7 @@ When a crossfade occurs, the next track briefly plays at full volume before bein
 
 ### Playback Service
 
-#### [MODIFY] [PlaybackService.kt](file:///C:/Users/Sreejith/AndroidStudioProjects/MySimpleMusicPlayer/app/src/main/java/com/music/rhythm/service/PlaybackService.kt)
+#### [MODIFY] [PlaybackService.kt](file:///C:/Users/Sreejith/AndroidStudioProjects/Myusiq/app/src/main/java/com/music/myusiq/service/PlaybackService.kt)
 
 - Update `onMediaItemTransition` in `setupPlayer` to prevent volume resets if a crossfade animation is currently active.
 - Specifically, ensure that when the "next" player starts playing during a crossfade, it doesn't hit the `else` block that sets `volume = 1.0f`.

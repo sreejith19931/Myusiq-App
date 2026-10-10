@@ -70,36 +70,25 @@ def is_major_or_minor_release(version):
 
 def get_blog_release_data(releases):
     """
-    Finds the latest major/minor release to feature in the Blog Post.
+    Finds the latest release to feature in the Blog Post.
     Aggregates changelog items from that release and any preceding patch releases
-    since the prior major/minor release (e.g., all changes between 1.2 and 1.3).
+    belonging to the same version series.
     """
     if not releases:
         return None
 
-    target_idx = None
-    for idx, rel in enumerate(releases):
-        if is_major_or_minor_release(rel['version']):
-            target_idx = idx
-            break
+    latest_release = releases[0]
+    aggregated_items = list(latest_release['items'])
 
-    if target_idx is None:
-        target_idx = 0
-
-    blog_release = releases[target_idx]
-    aggregated_items = list(blog_release['items'])
-
-    for idx in range(target_idx + 1, len(releases)):
-        rel = releases[idx]
-        if is_major_or_minor_release(rel['version']):
-            break
+    # Aggregate items from recent releases if available
+    for rel in releases[1:3]:
         for item in rel['items']:
             if item not in aggregated_items:
                 aggregated_items.append(item)
 
     return {
-        "version": blog_release['version'],
-        "date": blog_release['date'],
+        "version": latest_release['version'],
+        "date": latest_release['date'],
         "items": aggregated_items
     }
 

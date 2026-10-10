@@ -841,17 +841,25 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             return
         }
 
-        // 2. Optimization: Check if the new list matches the previous queue and controller item count
-        val isSameQueue = controller.mediaItemCount == list.size &&
-                          previousQueue.size == list.size &&
-                          previousQueue.indices.all { previousQueue[it].id == list[it].id }
+        // 2. Optimization: Check if the new list matches the existing controller queue or previousQueue
+        val matchesController = controller.mediaItemCount == list.size &&
+            (0 until controller.mediaItemCount).all { i ->
+                controller.getMediaItemAt(i).mediaId == list[i].id.toString()
+            }
+
+        val isSameQueue = matchesController || (
+            previousQueue.size == list.size &&
+            previousQueue.indices.all { previousQueue[it].id == list[it].id }
+        )
         
         if (isSameQueue) {
             if (controller.currentMediaItemIndex != index) {
                 controller.seekTo(index, C.TIME_UNSET)
             }
             if (playImmediately) {
-                controller.prepare()
+                if (controller.playbackState == Player.STATE_IDLE) {
+                    controller.prepare()
+                }
                 controller.play()
             }
             return
@@ -860,8 +868,12 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         // 3. Set items and start playback
         val items = list.map { it.toMediaItem() }
         controller.setMediaItems(items, index, C.TIME_UNSET)
-        controller.prepare()
-        controller.playWhenReady = playImmediately
+        if (playImmediately) {
+            controller.prepare()
+            controller.play()
+        } else {
+            controller.playWhenReady = false
+        }
         
         viewModelScope.launch(Dispatchers.IO) {
             persistence.saveCurrentQueue(list.map { it.path })
@@ -975,8 +987,15 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             while (!isSongsLoaded && timeout < 20) { 
                 delay(100.milliseconds)
                 timeout++
+                if (controller.mediaItemCount > 0) {
+                    syncServiceStateWithLiveData()
+                    return@launch
+                }
             }
-            if (!isActive) return@launch
+            if (!isActive || controller.mediaItemCount > 0) {
+                syncServiceStateWithLiveData()
+                return@launch
+            }
             
             val savedQueuePaths = persistence.getSavedQueuePaths()
             val lastPath = persistence.lastSongPath.firstOrNull()
@@ -1039,7 +1058,14 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     fun togglePlayPause() {
         mediaController?.let {
-            if (it.isPlaying) it.pause() else it.play()
+            if (it.isPlaying) {
+                it.pause()
+            } else {
+                if (it.playbackState == Player.STATE_IDLE && it.mediaItemCount > 0) {
+                    it.prepare()
+                }
+                it.play()
+            }
             syncServiceStateWithLiveData()
         }
     }

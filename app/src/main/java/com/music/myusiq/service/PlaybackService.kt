@@ -23,7 +23,6 @@ import android.media.PlaybackParams
 import android.media.audiofx.PresetReverb
 import android.net.Uri
 import android.os.Build
-import androidx.core.content.ContextCompat
 import androidx.core.app.NotificationCompat
 import android.os.Binder
 import android.os.Bundle
@@ -81,9 +80,22 @@ import com.music.myusiq.domain.models.*
 import com.music.myusiq.data.dao.SongHistoryDao
 import com.music.myusiq.utils.*
 import kotlinx.coroutines.Job
+import com.google.android.gms.wearable.Asset
+import com.google.android.gms.wearable.PutDataMapRequest
+import com.google.android.gms.wearable.Wearable
 
 @OptIn(UnstableApi::class)
 class PlaybackService : MediaLibraryService() {
+    companion object {
+        const val ACTION_WEAR_COMMAND = "com.music.myusiq.ACTION_WEAR_COMMAND"
+        const val EXTRA_WEAR_COMMAND_PATH = "wear_command_path"
+        const val EXTRA_WEAR_COMMAND_PAYLOAD = "wear_command_payload"
+
+        private var activeInstance: WeakReference<PlaybackService>? = null
+
+        fun getInstance(): PlaybackService? = activeInstance?.get()
+    }
+
     enum class RepeatState { OFF, ALL, ONE }
 
     private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -381,6 +393,7 @@ class PlaybackService : MediaLibraryService() {
 
     override fun onCreate() {
         super.onCreate()
+        activeInstance = WeakReference(this)
         Log.d("PlaybackService", "onCreate started")
 
         val filter = IntentFilter().apply {
@@ -911,11 +924,18 @@ class PlaybackService : MediaLibraryService() {
                     .build()
                 
                 val availablePlayerCommands = MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS.buildUpon()
+                    .add(Player.COMMAND_PLAY_PAUSE)
+                    .add(Player.COMMAND_SEEK_TO_NEXT)
+                    .add(Player.COMMAND_SEEK_TO_PREVIOUS)
+                    .add(Player.COMMAND_SEEK_TO_MEDIA_ITEM)
+                    .add(Player.COMMAND_SEEK_TO_DEFAULT_POSITION)
                     .add(Player.COMMAND_SEEK_BACK)
                     .add(Player.COMMAND_SEEK_FORWARD)
                     .add(Player.COMMAND_CHANGE_MEDIA_ITEMS)
                     .add(Player.COMMAND_SET_SHUFFLE_MODE)
                     .add(Player.COMMAND_SET_REPEAT_MODE)
+                    .add(Player.COMMAND_ADJUST_DEVICE_VOLUME_WITH_FLAGS)
+                    .add(Player.COMMAND_SET_DEVICE_VOLUME_WITH_FLAGS)
                     .build()
 
                 return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
@@ -1094,6 +1114,7 @@ class PlaybackService : MediaLibraryService() {
             Log.d("PlaybackService", "POST_NOTIFICATIONS permission status: $status (0 is granted)")
         }
         restorePlaybackState()
+        syncStateToWearables()
     }
 
     private fun updateMediaSessionCustomLayout() {
@@ -1407,9 +1428,17 @@ class PlaybackService : MediaLibraryService() {
         val action = intent?.action
         Log.d("PlaybackService", "onStartCommand: action=$action")
 
-        // Explicitly start foreground for widget actions to avoid ForegroundServiceDidNotStartInTimeException
+        if (action == ACTION_WEAR_COMMAND) {
+            val path = intent.getStringExtra(EXTRA_WEAR_COMMAND_PATH)
+            val payload = intent.getByteArrayExtra(EXTRA_WEAR_COMMAND_PAYLOAD)
+            if (!path.isNullOrEmpty()) {
+                handleWearCommand(path, payload)
+            }
+        }
+
+        // Explicitly start foreground for widget/wear actions to avoid ForegroundServiceDidNotStartInTimeException
         // when the service is started via Context.startForegroundService() but playback is paused.
-        if (action == "TOGGLE_PLAY_PAUSE" || action == "NEXT" || action == "PREV" || action == "UPDATE_WIDGET" || action == "SHUFFLE" || action == "REPEAT") {
+        if (action == "TOGGLE_PLAY_PAUSE" || action == "NEXT" || action == "PREV" || action == "UPDATE_WIDGET" || action == "SHUFFLE" || action == "REPEAT" || action == ACTION_WEAR_COMMAND) {
             val notification = NotificationCompat.Builder(this, "PLAYBACK_CHANNEL")
                 .setSmallIcon(R.drawable.ic_music_note_2)
                 .setContentTitle(getString(R.string.app_name))
@@ -1612,7 +1641,6 @@ class PlaybackService : MediaLibraryService() {
             if (restoredData != null) {
                 withContext(Dispatchers.Main) {
                     playerA.setMediaItems(restoredData.mediaItems, restoredData.startIndex, restoredData.startPositionMs)
-                    playerA.prepare()
                     activePlayerReference = WeakReference(playerA)
                     mediaSession?.player = playerA
                 }
@@ -1621,14 +1649,133 @@ class PlaybackService : MediaLibraryService() {
     }
 
     override fun onDestroy() {
+        if (activeInstance?.get() === this) activeInstance = null
         serviceScope.cancel()
         trackingJob?.cancel()
         playbackMonitorJob?.cancel()
         playerA.release()
         playerB.release()
         mediaSession?.release()
-        unregisterReceiver(bluetoothReceiver)
+        try {
+            unregisterReceiver(bluetoothReceiver)
+        } catch (e: Exception) {
+            Log.w("PlaybackService", "Bluetooth receiver not registered or already unregistered", e)
+        }
         super.onDestroy()
+    }
+
+    fun handleWearCommand(path: String, payload: ByteArray? = null) {
+        serviceScope.launch(Dispatchers.Main) {
+            when (path) {
+                "/myusiq/play_pause", "/play_pause" -> {
+                    if (exoPlayer.isPlaying) {
+                        exoPlayer.pause()
+                    } else {
+                        if (requestAudioFocus()) {
+                            exoPlayer.play()
+                        }
+                    }
+                }
+                "/myusiq/next", "/next" -> {
+                    if (requestAudioFocus()) {
+                        exoPlayer.seekToNext()
+                        if (!exoPlayer.isPlaying) exoPlayer.play()
+                    }
+                }
+                "/myusiq/prev", "/prev" -> {
+                    if (requestAudioFocus()) {
+                        exoPlayer.seekToPrevious()
+                        if (!exoPlayer.isPlaying) exoPlayer.play()
+                    }
+                }
+                "/myusiq/vol_up", "/vol_up" -> {
+                    audioManager.adjustStreamVolume(
+                        AudioManager.STREAM_MUSIC,
+                        AudioManager.ADJUST_RAISE,
+                        AudioManager.FLAG_SHOW_UI
+                    )
+                }
+                "/myusiq/vol_down", "/vol_down" -> {
+                    audioManager.adjustStreamVolume(
+                        AudioManager.STREAM_MUSIC,
+                        AudioManager.ADJUST_LOWER,
+                        AudioManager.FLAG_SHOW_UI
+                    )
+                }
+                "/myusiq/play_index", "/play_index" -> {
+                    payload?.let { bytes ->
+                        val index = String(bytes).toIntOrNull()
+                        if (index != null && index >= 0 && index < exoPlayer.mediaItemCount) {
+                            if (requestAudioFocus()) {
+                                exoPlayer.seekToDefaultPosition(index)
+                                exoPlayer.play()
+                            }
+                        }
+                    }
+                }
+                "/myusiq/request_sync", "/request_sync" -> {
+                    syncStateToWearables()
+                }
+            }
+            syncStateToWearables()
+        }
+    }
+
+    fun syncStateToWearables() {
+        serviceScope.launch(Dispatchers.IO) {
+            try {
+                val isPlaying = withContext(Dispatchers.Main) { exoPlayer.isPlaying }
+                val currentItem = withContext(Dispatchers.Main) { exoPlayer.currentMediaItem }
+                val metadata = currentItem?.mediaMetadata
+                val title = metadata?.title?.toString() ?: "No Track Playing"
+                val artist = metadata?.artist?.toString() ?: "Myusiq"
+
+                val queueCount = withContext(Dispatchers.Main) { exoPlayer.mediaItemCount }
+                val queueTitles = mutableListOf<String>()
+                val queueArtists = mutableListOf<String>()
+                withContext(Dispatchers.Main) {
+                    for (i in 0 until queueCount) {
+                        val item = exoPlayer.getMediaItemAt(i)
+                        queueTitles.add(item.mediaMetadata.title?.toString() ?: "Track $i")
+                        queueArtists.add(item.mediaMetadata.artist?.toString() ?: "Unknown")
+                    }
+                }
+
+                val artworkData = metadata?.artworkData
+                val artworkUri = metadata?.artworkUri
+
+                val artBytes: ByteArray? = if (artworkData != null && artworkData.isNotEmpty()) {
+                    artworkData
+                } else if (artworkUri != null) {
+                    try {
+                        contentResolver.openInputStream(artworkUri)?.use { stream ->
+                            stream.readBytes()
+                        }
+                    } catch (e: Exception) {
+                        Log.e("PlaybackService", "Error reading artwork uri for wear", e)
+                        null
+                    }
+                } else {
+                    null
+                }
+
+                val putDataMapReq = PutDataMapRequest.create("/myusiq/state").apply {
+                    dataMap.putBoolean("isPlaying", isPlaying)
+                    dataMap.putString("title", title)
+                    dataMap.putString("artist", artist)
+                    dataMap.putLong("timestamp", System.currentTimeMillis())
+                    dataMap.putStringArrayList("queueTitles", ArrayList(queueTitles))
+                    dataMap.putStringArrayList("queueArtists", ArrayList(queueArtists))
+                    if (artBytes != null && artBytes.isNotEmpty()) {
+                        dataMap.putAsset("artwork", Asset.createFromBytes(artBytes))
+                    }
+                }
+                val request = putDataMapReq.asPutDataRequest().setUrgent()
+                Wearable.getDataClient(applicationContext).putDataItem(request)
+            } catch (e: Exception) {
+                Log.e("PlaybackService", "Error syncing state to wearables", e)
+            }
+        }
     }
     
     // Direct controls for other components

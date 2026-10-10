@@ -10,9 +10,10 @@
     <!-- OpenGraph / Social Metadata -->
     <meta property="og:title" content="Myusiq | Modern Open-Source Music Player for Android">
     <meta property="og:description" content="Experience studio-grade audio with Material You dynamic theming. 100% offline, privacy-first, and open-source.">
-    <meta property="og:image" content="images/app_logo.svg">
+    <meta property="og:image" content="https://myusiq.vercel.app/images/app_logo.png">
     <meta property="og:url" content="https://myusiq.vercel.app">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://myusiq.vercel.app/images/app_logo.png">
 
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -90,23 +91,27 @@
 
     <!-- Interactive Features Section -->
 
-            <!-- Latest Release Blog Announcement -->
+                    <!-- Latest Release Blog Announcement -->
     <section id="latest-blog-post" class="blog-announcement-section">
         <div class="container">
             <div class="glass-card blog-card reveal">
                 <div class="blog-header">
                     <div class="blog-badge-wrap">
                         <span class="blog-badge">🚀 FEATURED RELEASE</span>
-                        <span class="blog-version">v1.1.0</span>
+                        <span class="blog-version">v1.1.1</span>
                     </div>
-                    <span class="blog-date">Oct 09, 2026</span>
+                    <span class="blog-date">Oct 10, 2026</span>
                 </div>
-                <h2 class="blog-title">What's New in Myusiq v1.1.0</h2>
+                <h2 class="blog-title">What's New in Myusiq v1.1.1</h2>
                 <div class="blog-body">
-                    <p class="blog-intro">We are excited to announce the official release of <strong>Myusiq v1.1.0</strong>! This update brings key feature additions, performance optimizations, and important usability upgrades to your audio experience.</p>
+                    <p class="blog-intro">We are excited to announce the official release of <strong>Myusiq v1.1.1</strong>! This update brings key feature additions, performance optimizations, and important usability upgrades to your audio experience.</p>
                     <div class="blog-highlights-box">
                         <h4 class="blog-highlights-title">✨ Key Features &amp; Changes Implemented</h4>
                         <ul class="blog-items-list">
+                            <li><strong>In-App Update Checker Fixes</strong>: Fixed issue where "Check for Updates" reported "Unable to check. Check internet connection" by adding Proguard/R8 `@Keep` rules for Gson models.</li>
+                            <li><strong>Specific Error Feedback</strong>: Enhanced update check status reporting to distinguish network disconnections from GitHub API rate limits (HTTP 403/429), HTTP 404, or parse errors.</li>
+                            <li><strong>Multi-Repository Fallback & Asset Filtering</strong>: Added fallback endpoint support and improved APK asset matching to reliably download phone installer binaries.</li>
+                            <li><strong>Package Install Permission Handling</strong>: Handled Android 8.0+ unknown app installation permissions gracefully.</li>
                             <li><strong>In-App GitHub Update Tracker</strong>: Automatic update check on app launch and manual check in Settings -> About with direct APK download & installation.</li>
                             <li><strong>Telegram Announcement Automation</strong>: Integrated automated release publishing & Telegram channel notifications.</li>
                             <li><strong>UI & Performance Enhancements</strong>: General polish, bug fixes, and stability improvements.</li>
@@ -114,8 +119,6 @@
                             <li><strong>Permission Optimization</strong>: Removed unnecessary `RECORD_AUDIO` prompt on startup, asking for audio recording permission strictly on-demand when enabling the FFT visualizer.</li>
                             <li><strong>Performance & Playback Responsiveness</strong>: Accelerated library scan speed to <50ms and eliminated Binder IPC queue latency for instant track playback.</li>
                             <li><strong>CI/CD Build Speed</strong>: Optimized GitHub Actions workflow with Gradle build cache and parallel task execution.</li>
-                            <li><strong>Release Key Integration</strong>: Configured release keystore and signing configs for automated GitHub releases and seamless in-place app updates.</li>
-                            <li><strong>CI/CD Build Pipeline</strong>: Updated GitHub Actions build workflow to generate production release APKs automatically.</li>
                         </ul>
                     </div>
                 </div>
