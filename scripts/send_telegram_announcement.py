@@ -3,10 +3,29 @@ import re
 import json
 import urllib.request
 
+def escape_html(text):
+    if not text:
+        return ""
+    return text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+
+def format_markdown_bold(text):
+    parts = re.split(r'(\*\*.*?\*\*)', text)
+    res = []
+    for part in parts:
+        if part.startswith('**') and part.endswith('**'):
+            inner = escape_html(part[2:-2])
+            res.append(f'<b>{inner}</b>')
+        else:
+            res.append(escape_html(part))
+    return ''.join(res)
+
 def send_telegram_announcement():
     bot_token = os.environ.get('TELEGRAM_BOT_TOKEN')
     chat_id = os.environ.get('TELEGRAM_CHAT_ID')
     tag = os.environ.get('TAG_NAME', '')
+    if not tag.startswith('v') and not tag.startswith('V') and tag:
+        tag = f'v{tag}'
+
     release_url = os.environ.get('RELEASE_URL', f'https://github.com/sreejith19931/Myusiq-App/releases/tag/{tag}')
     apk_url = os.environ.get('APK_URL', f'https://github.com/sreejith19931/Myusiq-App/releases/download/{tag}/Myusiq-{tag}.apk')
     website_url = os.environ.get('WEBSITE_URL', 'https://myusiq.vercel.app')
@@ -29,35 +48,41 @@ def send_telegram_announcement():
                     lines = [l.strip() for l in block.split('\n') if l.strip().startswith('- ')]
                     for line in lines:
                         cleaned = line[2:].strip()
-                        cleaned = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', cleaned)
-                        changelog_items.append(f'• {cleaned}')
+                        formatted_line = format_markdown_bold(cleaned)
+                        changelog_items.append(f'• {formatted_line}')
                     if changelog_items:
                         break
     except Exception as e:
         print('Changelog parse error:', e)
 
-    changelog_str = '\n'.join(changelog_items) if changelog_items else '• General improvements and bug fixes.'
+    changelog_str = '\n'.join(changelog_items) if changelog_items else '• General improvements, bug fixes, and performance updates.'
 
     message = f"""🚀 <b>Myusiq {tag} is now live!</b>
 
 📋 <b>Changelog:</b>
 {changelog_str}
 
-📥 <b>Direct APK Download:</b>
-<a href="{apk_url}">Download Myusiq-{tag}.apk</a>
+⚡ <i>Studio-grade audio player with Material You dynamic themes. 100% open-source & offline.</i>"""
 
-🌐 <b>Official Website:</b>
-<a href="{website_url}">{website_url}</a>
-
-📦 <b>GitHub Release Page:</b>
-<a href="{release_url}">View Release on GitHub</a>"""
+    reply_markup = {
+        'inline_keyboard': [
+            [
+                {'text': '⚡ Direct APK Download', 'url': apk_url},
+                {'text': '🌐 Official Website', 'url': website_url}
+            ],
+            [
+                {'text': '📦 View Release Notes on GitHub', 'url': release_url}
+            ]
+        ]
+    }
 
     url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
     payload = {
         'chat_id': chat_id,
         'text': message,
         'parse_mode': 'HTML',
-        'disable_web_page_preview': False
+        'disable_web_page_preview': False,
+        'reply_markup': reply_markup
     }
 
     try:

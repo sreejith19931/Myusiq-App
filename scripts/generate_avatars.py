@@ -213,7 +213,7 @@ def main():
     output_dir = os.path.join(root_dir, "images")
     os.makedirs(output_dir, exist_ok=True)
 
-    artifacts_dir = r"C:\Users\Sreejith\AppData\Local\Google\AndroidStudio2026.2.1\projects\mysimplemusicplayer.e670f2ba\.artifacts\2f70d6a7-4f09-48bc-8781-0ebf4a4cccb8\images"
+    artifacts_dir = os.path.join(root_dir, ".artifacts", "images")
     os.makedirs(artifacts_dir, exist_ok=True)
 
     chat_avatar = create_chat_group_avatar()

@@ -1,6 +1,6 @@
 # Implementation Plan - "Premium Features" Expansion
 
-Following the analysis of the codebase, I will implement the remaining "Premium" features to complete the feature set of the Rhythm music player.
+Following the analysis of the codebase, I will implement the remaining "Premium" features to complete the feature set of the Myusiq music player.
 
 ## User Review Required
 
@@ -9,22 +9,22 @@ Following the analysis of the codebase, I will implement the remaining "Premium"
 
 ## Proposed Changes
 
-### [app](file:///C:/Users/Sreejith/AndroidStudioProjects/MySimpleMusicPlayer/app)
+### [app](file:///C:/Users/Sreejith/AndroidStudioProjects/Myusiq/app)
 
-#### [NEW] [RhythmWidgetProvider.kt](file:///C:/Users/Sreejith/AndroidStudioProjects/MySimpleMusicPlayer/app/src/main/java/com/music/rhythm/RhythmWidgetProvider.kt)
+#### [NEW] [MyusiqWidgetProvider.kt](file:///C:/Users/Sreejith/AndroidStudioProjects/Myusiq/app/src/main/java/com/music/myusiq/service/MyusiqWidgetProvider.kt)
 - Implement an `AppWidgetProvider` that allows basic playback control (Play/Pause, Next, Previous) and displays current song info.
 
-#### [NEW] [layout_widget_standard.xml](file:///C:/Users/Sreejith/AndroidStudioProjects/MySimpleMusicPlayer/app/src/main/res/layout/layout_widget_standard.xml)
+#### [NEW] [layout_widget_standard.xml](file:///C:/Users/Sreejith/AndroidStudioProjects/Myusiq/app/src/main/res/layout/layout_widget_standard.xml)
 - Design a modern Material 3 widget layout with adaptive colors.
 
-#### [MODIFY] [MainActivity.kt](file:///C:/Users/Sreejith/AndroidStudioProjects/MySimpleMusicPlayer/app/src/main/java/com/music/rhythm/MainActivity.kt)
+#### [MODIFY] [MainActivity.kt](file:///C:/Users/Sreejith/AndroidStudioProjects/Myusiq/app/src/main/java/com/music/myusiq/ui/MainActivity.kt)
 - **Shake to Shuffle**: Integrate `SensorEventListener` to detect shakes and toggle shuffle mode in the `PlaybackViewModel`.
 - **Shared Element Transitions**: Update `navigateToTabFragment` to support `setReorderingAllowed(true)` and `addSharedElement` for a more fluid experience.
 
-#### [MODIFY] [PlaybackViewModel.kt](file:///C:/Users/Sreejith/AndroidStudioProjects/MySimpleMusicPlayer/app/src/main/java/com/music/rhythm/PlaybackViewModel.kt)
+#### [MODIFY] [PlaybackViewModel.kt](file:///C:/Users/Sreejith/AndroidStudioProjects/Myusiq/app/src/main/java/com/music/myusiq/ui/viewmodels/PlaybackViewModel.kt)
 - Add "Song Radio" logic if not already fully functional (ensure it fetches similar songs based on genre/artist from the local library).
 
-#### [MODIFY] [AndroidManifest.xml](file:///C:/Users/Sreejith/AndroidStudioProjects/MySimpleMusicPlayer/app/src/main/AndroidManifest.xml)
+#### [MODIFY] [AndroidManifest.xml](file:///C:/Users/Sreejith/AndroidStudioProjects/Myusiq/app/src/main/AndroidManifest.xml)
 - Register the new Widget Provider.
 
 ## Verification Plan

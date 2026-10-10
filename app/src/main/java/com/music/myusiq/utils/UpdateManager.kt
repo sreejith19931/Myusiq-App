@@ -233,12 +233,31 @@ object UpdateManager {
                     if (id == downloadId) {
                         try {
                             c.unregisterReceiver(this)
-                        } catch (_: Exception) {}
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Receiver already unregistered or failed to unregister", e)
+                        }
 
-                        val downloadedUri = downloadManager.getUriForDownloadedFile(downloadId)
-                        if (downloadedUri != null) {
-                            promptInstallApk(c, downloadedUri)
+                        val query = DownloadManager.Query().setFilterById(downloadId)
+                        val cursor = downloadManager.query(query)
+                        if (cursor != null && cursor.moveToFirst()) {
+                            val statusIdx = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
+                            val status = if (statusIdx >= 0) cursor.getInt(statusIdx) else -1
+                            cursor.close()
+
+                            if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                                val downloadedUri = downloadManager.getUriForDownloadedFile(downloadId)
+                                if (downloadedUri != null) {
+                                    promptInstallApk(c, downloadedUri)
+                                } else {
+                                    openReleasePage(c, apkUrl)
+                                }
+                            } else {
+                                Log.e(TAG, "APK Download failed with status code: $status")
+                                Toast.makeText(c, "Download failed. Opening release page...", Toast.LENGTH_SHORT).show()
+                                openReleasePage(c, apkUrl)
+                            }
                         } else {
+                            cursor?.close()
                             openReleasePage(c, apkUrl)
                         }
                     }

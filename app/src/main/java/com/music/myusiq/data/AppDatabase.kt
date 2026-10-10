@@ -17,7 +17,7 @@ import com.music.myusiq.data.dao.*
         SearchHistory::class,
     ],
     version = 11,
-    exportSchema = false,
+    exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun songHistoryDao(): SongHistoryDao

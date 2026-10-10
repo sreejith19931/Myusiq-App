@@ -1,6 +1,6 @@
-# Professional README Enhancement for Rhythm
+# Professional README Enhancement for Myusiq
 
-Enhance the [README.md](file:///C:/Users/Sreejith/AndroidStudioProjects/MySimpleMusicPlayer/README.md) to provide a professional, polished presentation of the Rhythm music player.
+Enhance the [README.md](file:///C:/Users/Sreejith/AndroidStudioProjects/Myusiq/README.md) to provide a professional, polished presentation of the Myusiq music player.
 
 ## User Review Required
 
@@ -11,7 +11,7 @@ Enhance the [README.md](file:///C:/Users/Sreejith/AndroidStudioProjects/MySimple
 
 ### Documentation
 
-#### [MODIFY] [README.md](file:///C:/Users/Sreejith/AndroidStudioProjects/MySimpleMusicPlayer/README.md)
+#### [MODIFY] [README.md](file:///C:/Users/Sreejith/AndroidStudioProjects/Myusiq/README.md)
 - Add professional badges (License, Android Version, Size, etc.).
 - Create a clear "Hero" section with a tagline and project status.
 - Improve the screenshot showcase with a cleaner grid layout.
@@ -21,4 +21,4 @@ Enhance the [README.md](file:///C:/Users/Sreejith/AndroidStudioProjects/MySimple
 ## Verification Plan
 
 ### Manual Verification
-- The user should view the [README.md](file:///C:/Users/Sreejith/AndroidStudioProjects/MySimpleMusicPlayer/README.md) in the IDE's Markdown preview or after pushing to GitHub to ensure it renders correctly.
+- The user should view the [README.md](file:///C:/Users/Sreejith/AndroidStudioProjects/Myusiq/README.md) in the IDE's Markdown preview or after pushing to GitHub to ensure it renders correctly.
