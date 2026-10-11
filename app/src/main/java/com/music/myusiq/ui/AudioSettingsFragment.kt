@@ -113,9 +113,10 @@ class AudioSettingsFragment : Fragment(R.layout.fragment_settings_audio) {
 
         // ReplayGain
         val switchReplayGain = view.findViewById<MaterialSwitch>(R.id.switchReplayGain)
-        switchReplayGain.isChecked = sharedPreferences.getBoolean("replaygain_enabled", true)
+        switchReplayGain.isChecked = sharedPreferences.getBoolean("replaygain_enabled", false)
         switchReplayGain.setOnCheckedChangeListener { _, isChecked ->
             sharedPreferences.edit { putBoolean("replaygain_enabled", isChecked) }
+            com.music.myusiq.utils.ReplayGainUtil.clearCache()
             viewModel.notifySettingsChanged()
         }
 

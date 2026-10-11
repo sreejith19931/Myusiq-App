@@ -1190,7 +1190,7 @@ class PlaybackService : MediaLibraryService() {
                 val p = getSharedPreferences("app_prefs", MODE_PRIVATE)
                 val fadeInEnabled = p.getBoolean("audio_fade_in", false)
                 val crossfadeEnabled = p.getBoolean("crossfade_enabled", false)
-                val isReplayGainEnabled = p.getBoolean("replaygain_enabled", true)
+                val isReplayGainEnabled = p.getBoolean("replaygain_enabled", false)
                 
                 val currentPath = mediaItem?.mediaMetadata?.extras?.getString("path") ?: ""
                 currentReplayGainFactor = ReplayGainUtil.getVolumeFactorForFile(currentPath, isReplayGainEnabled)
