@@ -23,14 +23,20 @@ class SettingsHubItem @JvmOverloads constructor(
         setPadding(20)
         
         val typedArray = context.obtainStyledAttributes(attrs, R.styleable.SettingsHubItem)
-        val iconRes = typedArray.getResourceId(R.styleable.SettingsHubItem_hubIcon, 0)
-        val titleText = typedArray.getString(R.styleable.SettingsHubItem_hubTitle)
-        val subtitleText = typedArray.getString(R.styleable.SettingsHubItem_hubSubtitle)
-        val iconTint = typedArray.getColor(
-            R.styleable.SettingsHubItem_hubIconTint,
-            ThemeUtils.getThemeColor(context, android.R.attr.colorPrimary),
-        )
-        typedArray.recycle()
+        var iconRes = 0
+        var titleText: String? = null
+        var subtitleText: String? = null
+        var iconTint = ThemeUtils.getThemeColor(context, android.R.attr.colorPrimary)
+        try {
+            iconRes = typedArray.getResourceId(R.styleable.SettingsHubItem_hubIcon, 0)
+            titleText = typedArray.getString(R.styleable.SettingsHubItem_hubTitle)
+            subtitleText = typedArray.getString(R.styleable.SettingsHubItem_hubSubtitle)
+            iconTint = typedArray.getColor(R.styleable.SettingsHubItem_hubIconTint, iconTint)
+        } catch (_: Exception) {
+            // Fallback gracefully if attribute resolution fails
+        } finally {
+            typedArray.recycle()
+        }
 
         LayoutInflater.from(context).inflate(R.layout.view_settings_hub_item, this, true)
 
@@ -43,8 +49,13 @@ class SettingsHubItem @JvmOverloads constructor(
         findViewById<TextView>(R.id.tvHubSubtitle).text = subtitleText
         
         val outValue = TypedValue()
-        context.theme.resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)
-        setBackgroundResource(outValue.resourceId)
+        if (context.theme.resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)) {
+            if (outValue.resourceId != 0) {
+                setBackgroundResource(outValue.resourceId)
+            } else if (outValue.type >= TypedValue.TYPE_FIRST_COLOR_INT && outValue.type <= TypedValue.TYPE_LAST_COLOR_INT) {
+                setBackgroundColor(outValue.data)
+            }
+        }
         isClickable = true
         isFocusable = true
     }

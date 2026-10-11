@@ -208,13 +208,13 @@ class TrackInfoBottomSheet : BottomSheetDialogFragment() {
         val labelTv = TextView(context).apply {
             text = label
             textSize = 12f
-            setTextColor(MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurfaceVariant))
+            setTextColor(MaterialColors.getColor(context, com.google.android.material.R.attr.colorOnSurfaceVariant, 0xFF757575.toInt()))
         }
         val valueTv = TextView(context).apply {
             text = value
             textSize = 15f
             setTypeface(null, Typeface.BOLD)
-            setTextColor(MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface))
+            setTextColor(MaterialColors.getColor(context, com.google.android.material.R.attr.colorOnSurface, 0xFF212121.toInt()))
         }
         itemLayout.addView(labelTv)
         itemLayout.addView(valueTv)
