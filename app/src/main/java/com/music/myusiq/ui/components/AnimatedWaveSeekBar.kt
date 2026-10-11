@@ -19,8 +19,8 @@ class AnimatedWaveSeekBar @JvmOverloads constructor(
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
 ) : View(context, attrs, defStyleAttr) {
-    private var playedColor: Int
-    private var unplayedColor: Int
+    private var playedColor: Int = Color.RED
+    private var unplayedColor: Int = Color.GRAY
     
     private val playedPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
@@ -96,13 +96,26 @@ class AnimatedWaveSeekBar @JvmOverloads constructor(
         }
 
     init {
-        val defaultPlayed = MaterialColors.getColor(context, com.google.android.material.R.attr.colorPrimaryContainer, Color.RED)
-        val defaultUnplayed = MaterialColors.getColor(context, com.google.android.material.R.attr.colorSurfaceVariant, Color.GRAY)
+        val defaultPlayed = try {
+            MaterialColors.getColor(context, com.google.android.material.R.attr.colorPrimaryContainer, Color.RED)
+        } catch (_: Exception) {
+            Color.RED
+        }
+        val defaultUnplayed = try {
+            MaterialColors.getColor(context, com.google.android.material.R.attr.colorSurfaceVariant, Color.GRAY)
+        } catch (_: Exception) {
+            Color.GRAY
+        }
         
+        playedColor = defaultPlayed
+        unplayedColor = defaultUnplayed
+
         val typedArray = context.obtainStyledAttributes(attrs, R.styleable.AnimatedWaveSeekBar, 0, 0)
         try {
             playedColor = typedArray.getColor(R.styleable.AnimatedWaveSeekBar_playedColor, defaultPlayed)
             unplayedColor = typedArray.getColor(R.styleable.AnimatedWaveSeekBar_unplayedColor, defaultUnplayed)
+        } catch (_: Exception) {
+            // Keep defaults if custom attributes failed to resolve
         } finally {
             typedArray.recycle()
         }

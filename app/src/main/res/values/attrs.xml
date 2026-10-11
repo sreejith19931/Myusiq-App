@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="AnimatedWaveSeekBar">
-        <attr name="playedColor" format="color" />
-        <attr name="unplayedColor" format="color" />
+        <attr name="playedColor" format="color|reference" />
+        <attr name="unplayedColor" format="color|reference" />
     </declare-styleable>
 
     <declare-styleable name="SettingsHubItem">
         <attr name="hubIcon" format="reference" />
         <attr name="hubTitle" format="string" />
         <attr name="hubSubtitle" format="string" />
-        <attr name="hubIconTint" format="color" />
+        <attr name="hubIconTint" format="color|reference" />
     </declare-styleable>
 </resources>

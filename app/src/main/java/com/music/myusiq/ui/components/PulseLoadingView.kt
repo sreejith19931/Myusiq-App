@@ -26,7 +26,11 @@ class PulseLoadingView @JvmOverloads constructor(
     private var animator: ValueAnimator? = null
 
     init {
-        paint.color = ThemeUtils.getThemeColor(context, R.attr.colorPrimaryContainer)
+        paint.color = try {
+            ThemeUtils.getThemeColor(context, R.attr.colorPrimaryContainer)
+        } catch (_: Exception) {
+            0xFF2196F3.toInt()
+        }
         startAnimation()
     }
 

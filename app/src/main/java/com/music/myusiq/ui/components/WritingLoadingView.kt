@@ -35,9 +35,9 @@ class WritingLoadingView @JvmOverloads constructor(
     private val paperRect = RectF()
 
     init {
-        paperPaint.color = MaterialColors.getColor(context, R.attr.colorSurfaceVariant, 0)
-        linePaint.color = MaterialColors.getColor(context, R.attr.colorOnSurfaceVariant, 0)
-        penPaint.color = MaterialColors.getColor(context, R.attr.colorPrimaryContainer, 0)
+        paperPaint.color = try { MaterialColors.getColor(context, R.attr.colorSurfaceVariant, 0) } catch (_: Exception) { 0xFFE0E0E0.toInt() }
+        linePaint.color = try { MaterialColors.getColor(context, R.attr.colorOnSurfaceVariant, 0) } catch (_: Exception) { 0xFF757575.toInt() }
+        penPaint.color = try { MaterialColors.getColor(context, R.attr.colorPrimaryContainer, 0) } catch (_: Exception) { 0xFF2196F3.toInt() }
         
         startAnimation()
     }
