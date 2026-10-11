@@ -597,6 +597,20 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun deleteTracksFromStorage(context: Context, songs: List<Song>) {
+        if (songs.isEmpty()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            val uris = songs.map { ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, it.id) }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val intent = MediaStore.createDeleteRequest(context.contentResolver, uris)
+                _pendingDeleteIntent.value = IntentSenderRequest.Builder(intent.intentSender).build()
+            } else {
+                uris.forEach { uri -> context.contentResolver.delete(uri, null, null) }
+                withContext(Dispatchers.Main) { processTrackDeletion() }
+            }
+        }
+    }
+
     fun requestDelete(intent: PendingIntent) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             _pendingDeleteIntent.value = IntentSenderRequest.Builder(intent.intentSender).build()
