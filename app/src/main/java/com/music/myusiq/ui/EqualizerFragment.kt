@@ -202,9 +202,14 @@ class EqualizerFragment : Fragment(R.layout.fragment_equalizer) {
             val tvLabel = rowView.findViewById<TextView>(R.id.tvBandLabel)
             val seekBar = rowView.findViewById<SeekBar>(R.id.sbBandSlider)
 
+            val targetProgress = EqualizerManager.getBandLevel(bandIndex) - minLevel
             tvLabel.text = freqLabel
             seekBar.max = maxLevel - minLevel
-            seekBar.progress = EqualizerManager.getBandLevel(bandIndex) - minLevel
+            
+            android.animation.ObjectAnimator.ofInt(seekBar, "progress", 0, targetProgress).apply {
+                duration = 300
+                start()
+            }
 
             seekBar.setOnSeekBarChangeListener(
                 object : SeekBar.OnSeekBarChangeListener {

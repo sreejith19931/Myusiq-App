@@ -5,7 +5,9 @@ import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import com.google.android.material.transition.MaterialSharedAxis
 import com.music.myusiq.R
+import com.music.myusiq.utils.performHapticClick
 
 class SettingsFragment : Fragment(R.layout.fragment_settings) {
 
@@ -19,30 +21,35 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
         header.findViewById<TextView>(R.id.tvHeaderSubtitle).visibility = View.GONE
         header.findViewById<View>(R.id.btnBack).visibility = View.GONE
 
-        view.findViewById<View>(R.id.hubAudio).setOnClickListener {
+        view.findViewById<View>(R.id.hubAudio).performHapticClick {
             navigateTo(R.id.dest_settings_audio)
         }
-        view.findViewById<View>(R.id.hubAppearance).setOnClickListener {
+        view.findViewById<View>(R.id.hubAppearance).performHapticClick {
             navigateTo(R.id.dest_settings_appearance)
         }
-        view.findViewById<View>(R.id.hubLyrics).setOnClickListener {
+        view.findViewById<View>(R.id.hubLyrics).performHapticClick {
             navigateTo(R.id.dest_settings_lyrics)
         }
-        view.findViewById<View>(R.id.hubLibrary).setOnClickListener {
+        view.findViewById<View>(R.id.hubLibrary).performHapticClick {
             navigateTo(R.id.dest_settings_library)
         }
-        view.findViewById<View>(R.id.hubMaintenance).setOnClickListener {
+        view.findViewById<View>(R.id.hubMaintenance).performHapticClick {
             navigateTo(R.id.dest_settings_maintenance)
         }
-        view.findViewById<View>(R.id.hubAbout).setOnClickListener {
+        view.findViewById<View>(R.id.hubAbout).performHapticClick {
             navigateTo(R.id.dest_about)
         }
     }
 
     private fun navigateTo(destinationId: Int) {
         val fragment = createFragment(destinationId)
+
+        exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
+        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
+        fragment.enterTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
+        fragment.returnTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
+
         requireActivity().supportFragmentManager.beginTransaction()
-            .setCustomAnimations(R.anim.slide_in_right, R.anim.slide_out_left, R.anim.slide_in_left, R.anim.slide_out_right)
             .add(R.id.navHostFragment, fragment)
             .hide(this)
             .addToBackStack(null)

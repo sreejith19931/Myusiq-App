@@ -28,10 +28,14 @@ class LyricsSettingsFragment : Fragment(R.layout.fragment_settings_lyrics) {
 
         val switchOverlay = view.findViewById<MaterialSwitch>(R.id.switchLyricOverlay)
         val switchMinimalist = view.findViewById<MaterialSwitch>(R.id.switchSingleLineLyrics)
+        val switchTapToSeek = view.findViewById<MaterialSwitch>(R.id.switchTapToSeekLyrics)
+
+        val appPrefs = requireContext().getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
 
         viewLifecycleOwner.lifecycleScope.launch {
             switchOverlay.isChecked = themeManager.useLyricOverlayFlow.first()
             switchMinimalist.isChecked = themeManager.useSingleLineLyricsFlow.first()
+            switchTapToSeek.isChecked = appPrefs.getBoolean("tap_lyric_to_seek_enabled", true)
         }
 
         switchOverlay.setOnCheckedChangeListener { _, isChecked ->
@@ -44,6 +48,10 @@ class LyricsSettingsFragment : Fragment(R.layout.fragment_settings_lyrics) {
             viewLifecycleOwner.lifecycleScope.launch {
                 themeManager.saveUseSingleLineLyrics(isChecked)
             }
+        }
+
+        switchTapToSeek.setOnCheckedChangeListener { _, isChecked ->
+            appPrefs.edit().putBoolean("tap_lyric_to_seek_enabled", isChecked).apply()
         }
     }
 }

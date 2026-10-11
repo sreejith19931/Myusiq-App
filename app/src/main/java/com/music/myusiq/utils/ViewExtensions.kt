@@ -49,3 +49,17 @@ fun View.applyBlurEffect(radius: Float) {
         }
     }
 }
+
+fun View.performHapticClick(listener: View.OnClickListener? = null) {
+    setOnClickListener { v ->
+        v.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+        listener?.onClick(v)
+    }
+}
+
+fun View.performHapticClick(onClick: (View) -> Unit) {
+    setOnClickListener { v ->
+        v.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+        onClick(v)
+    }
+}

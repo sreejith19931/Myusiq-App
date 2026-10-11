@@ -51,9 +51,36 @@ class TrackAdapter(
     private val onTrackLongClicked: ((Song) -> Unit)? = null,
     private val onOptionSelected: ((Song, itemId: Int) -> Unit)? = null,
     private val menuCustomizer: ((Song, Menu) -> Unit)? = null,
-) : ListAdapter<TrackUiModel, TrackAdapter.TrackViewHolder>(TrackDiffCallback()) {
+) : ListAdapter<TrackUiModel, TrackAdapter.TrackViewHolder>(TrackDiffCallback()), android.widget.SectionIndexer {
 
     var onOrderChangedListener: ((List<Song>) -> Unit)? = null
+    private var sectionPositions = ArrayList<Int>()
+    private var sectionsArray = arrayOf<Any>()
+
+    override fun getSections(): Array<Any> {
+        val sections = ArrayList<String>()
+        sectionPositions = ArrayList()
+        val list = currentList
+        for (i in 0 until list.size) {
+            val title = list[i].song.title.trim()
+            val section = if (title.isNotEmpty()) title.first().uppercaseChar().toString() else "#"
+            if (!sections.contains(section)) {
+                sections.add(section)
+                sectionPositions.add(i)
+            }
+        }
+        sectionsArray = sections.toArray()
+        return sectionsArray
+    }
+
+    override fun getPositionForSection(sectionIndex: Int): Int {
+        if (sectionIndex < 0 || sectionIndex >= sectionPositions.size) return 0
+        return sectionPositions[sectionIndex]
+    }
+
+    override fun getSectionForPosition(position: Int): Int {
+        return 0
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TrackViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_track, parent, false)
@@ -322,7 +349,16 @@ class TrackAdapter(
             }
 
             itemView.setOnClickListener {
-                onTrackClicked(song, ivTrackArt)
+                itemView.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+                itemView.animate()
+                    .scaleX(0.97f)
+                    .scaleY(0.97f)
+                    .setDuration(70)
+                    .withEndAction {
+                        itemView.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+                        onTrackClicked(song, ivTrackArt)
+                    }
+                    .start()
             }
 
             itemView.setOnLongClickListener {

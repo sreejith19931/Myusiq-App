@@ -113,7 +113,27 @@ class SetupActivity : AppCompatActivity() {
     private fun setupViewPager() {
         val adapter = SetupPagerAdapter(this)
         binding.viewPagerSetup.adapter = adapter
-        binding.viewPagerSetup.isUserInputEnabled = false // Disable swiping
+        binding.viewPagerSetup.isUserInputEnabled = false // Disable manual swipe, use controls
+
+        binding.viewPagerSetup.setPageTransformer { page, position ->
+            when {
+                position < -1 -> { page.alpha = 0f }
+                position <= 0 -> {
+                    page.alpha = 1f
+                    page.translationX = 0f
+                    page.scaleX = 1f
+                    page.scaleY = 1f
+                }
+                position <= 1 -> {
+                    page.alpha = 1 - position
+                    page.translationX = page.width * -position * 0.25f
+                    val scaleFactor = 0.85f + (1 - position) * 0.15f
+                    page.scaleX = scaleFactor
+                    page.scaleY = scaleFactor
+                }
+                else -> { page.alpha = 0f }
+            }
+        }
 
         binding.viewPagerSetup.registerOnPageChangeCallback(object :
             ViewPager2.OnPageChangeCallback() {

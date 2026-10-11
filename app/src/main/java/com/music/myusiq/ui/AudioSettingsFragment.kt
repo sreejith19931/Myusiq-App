@@ -103,5 +103,29 @@ class AudioSettingsFragment : Fragment(R.layout.fragment_settings_audio) {
         switchShakeToShuffle.setOnCheckedChangeListener { _, isChecked ->
             sharedPreferences.edit { putBoolean("shake_to_shuffle", isChecked) }
         }
+
+        // Audio Quality Badge
+        val switchQualityBadge = view.findViewById<MaterialSwitch>(R.id.switchAudioQualityBadge)
+        switchQualityBadge.isChecked = sharedPreferences.getBoolean("show_audio_quality_badge", true)
+        switchQualityBadge.setOnCheckedChangeListener { _, isChecked ->
+            sharedPreferences.edit { putBoolean("show_audio_quality_badge", isChecked) }
+        }
+
+        // ReplayGain
+        val switchReplayGain = view.findViewById<MaterialSwitch>(R.id.switchReplayGain)
+        switchReplayGain.isChecked = sharedPreferences.getBoolean("replaygain_enabled", true)
+        switchReplayGain.setOnCheckedChangeListener { _, isChecked ->
+            sharedPreferences.edit { putBoolean("replaygain_enabled", isChecked) }
+            viewModel.notifySettingsChanged()
+        }
+
+        // Player Guide
+        view.findViewById<View>(R.id.rowPlayerGuide).setOnClickListener {
+            val dialogView = android.view.LayoutInflater.from(requireContext()).inflate(R.layout.dialog_player_guide, null)
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setView(dialogView)
+                .setPositiveButton(R.string.got_it) { dialog, _ -> dialog.dismiss() }
+                .show()
+        }
     }
 }
