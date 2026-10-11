@@ -79,6 +79,12 @@ class TrackAdapter(
     }
 
     override fun getSectionForPosition(position: Int): Int {
+        if (position <= 0 || sectionPositions.isEmpty()) return 0
+        for (i in sectionPositions.indices.reversed()) {
+            if (position >= sectionPositions[i]) {
+                return i
+            }
+        }
         return 0
     }
 
