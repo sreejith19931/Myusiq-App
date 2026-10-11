@@ -152,6 +152,7 @@ class PlaybackService : MediaLibraryService() {
     private var duckingFactor = 1.0f
     private var currentReplayGainFactor = 1.0f
     private var wasPlayingBeforeFocusLoss = false
+    private var lastMediaCommandTime = 0L
 
     private val audioFocusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
         when (focusChange) {
@@ -972,8 +973,17 @@ class PlaybackService : MediaLibraryService() {
                 controller: MediaSession.ControllerInfo,
                 playerCommand: Int
             ): Int {
+                val now = System.currentTimeMillis()
+                if (playerCommand in listOf(Player.COMMAND_SEEK_TO_NEXT, Player.COMMAND_SEEK_TO_PREVIOUS, Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM, Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)) {
+                    if (now - lastMediaCommandTime < 250) {
+                        Log.d("PlaybackService", "Debouncing rapid seek command: $playerCommand")
+                        return SessionResult.RESULT_INFO_SKIPPED
+                    }
+                    lastMediaCommandTime = now
+                }
+
                 if (playerCommand == Player.COMMAND_PLAY_PAUSE) {
-                    val isRecentBtConnection = System.currentTimeMillis() - lastBluetoothConnectionTime < 2000 // 2 seconds window
+                    val isRecentBtConnection = now - lastBluetoothConnectionTime < 2000 // 2 seconds window
                     val p = getSharedPreferences("app_prefs", MODE_PRIVATE)
                     val autoResumeEnabled = p.getBoolean("bluetooth_resume_on_connect", false)
 

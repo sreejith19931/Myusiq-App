@@ -207,15 +207,17 @@ class TracksFragment : Fragment() {
     }
 
     private fun showBatchDeleteDialog() {
+        val count = selectedSongs.value.size
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Delete tracks?")
-            .setMessage("Are you sure you want to delete ${selectedSongs.value.size} tracks from your device? This cannot be undone.")
+            .setMessage("Are you sure you want to delete $count tracks from your device? This cannot be undone.")
             .setNegativeButton("Cancel", null)
             .setPositiveButton("Delete") { _, _ ->
                 val songsToDelete = viewModel.songsLibrary.value.filter { selectedSongs.value.contains(it.id) }
-                songsToDelete.forEach { viewModel.deleteTrackFromStorage(requireContext(), it) }
+                viewModel.deleteTracksFromStorage(requireContext(), songsToDelete)
                 isSelectionMode = false
                 selectedSongs.value = emptySet()
+                btnBatchEdit?.visibility = View.GONE
             }
             .show()
     }
