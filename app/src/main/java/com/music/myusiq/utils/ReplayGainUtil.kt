@@ -8,10 +8,11 @@ import kotlin.math.pow
 object ReplayGainUtil {
 
     private val gainCache = mutableMapOf<String, Float>()
+    private val dbRegex = Regex("[+-]?\\d+(?:\\.\\d+)?")
 
     /**
-     * Extracts ReplayGain track gain in dB and returns a linear volume factor (0.1f .. 1.0f).
-     * Format example in tag: "-3.50 dB" or "+1.2 dB" or "-5.2"
+     * Extracts ReplayGain track gain in dB and returns a linear volume factor (0.5f .. 1.25f).
+     * Applies a +6 dB pre-amp compensation so normalized audio maintains strong, dynamic volume.
      */
     fun getVolumeFactorForFile(filePath: String, useReplayGain: Boolean): Float {
         if (!useReplayGain || filePath.isBlank()) return 1.0f
@@ -23,37 +24,42 @@ object ReplayGainUtil {
 
         return try {
             val audioFile = AudioFileIO.read(file)
-            val tag = audioFile.tag ?: return 1.0f
+            val tag = audioFile.tag
 
-            var gainStr: String? = null
-            
-            // Search through tag fields for REPLAYGAIN
-            val iterator = tag.fields
-            while (iterator.hasNext()) {
-                val field = iterator.next()
-                val id = field.id.uppercase()
-                if (id.contains("REPLAYGAIN_TRACK_GAIN") || id.contains("REPLAYGAIN_ALBUM_GAIN") || id == "TXXX") {
-                    val strVal = field.toString()
-                    if (strVal.contains("REPLAYGAIN_TRACK_GAIN", ignoreCase = true) || strVal.contains("REPLAYGAIN_ALBUM_GAIN", ignoreCase = true)) {
-                        gainStr = strVal.substringAfter("=").substringAfter(":").trim()
-                        break
-                    }
-                }
-            }
-
-            if (gainStr.isNullOrBlank()) {
+            if (tag == null) {
                 gainCache[filePath] = 1.0f
                 return 1.0f
             }
 
-            // Parse e.g. "-3.50 dB" -> -3.50
-            val cleanDbStr = gainStr.replace("dB", "", true).replace("db", "", true).trim()
-            val dbVal = cleanDbStr.toFloatOrNull() ?: 0.0f
+            var gainDb: Float? = null
+
+            // Search tag fields
+            val iterator = tag.fields
+            while (iterator.hasNext()) {
+                val field = iterator.next()
+                val fieldStr = field.toString()
+                if (fieldStr.contains("REPLAYGAIN_TRACK_GAIN", ignoreCase = true) ||
+                    fieldStr.contains("REPLAYGAIN_ALBUM_GAIN", ignoreCase = true)) {
+                    val match = dbRegex.find(fieldStr.substringAfter("REPLAYGAIN"))
+                    if (match != null) {
+                        gainDb = match.value.toFloatOrNull()
+                        if (gainDb != null) break
+                    }
+                }
+            }
+
+            if (gainDb == null) {
+                gainCache[filePath] = 1.0f
+                return 1.0f
+            }
+
+            // Pre-amp compensation (+6 dB) so tracks aren't overly quiet
+            val compensatedDb = gainDb + 6.0f
 
             // Linear multiplier: 10^(dB / 20)
-            val factor = (10.0.pow(dbVal / 20.0)).toFloat().coerceIn(0.1f, 1.0f)
+            val factor = (10.0.pow(compensatedDb / 20.0)).toFloat().coerceIn(0.5f, 1.25f)
             gainCache[filePath] = factor
-            Log.d("ReplayGainUtil", "ReplayGain for ${file.name}: $gainStr ($dbVal dB) -> Volume factor: $factor")
+            Log.d("ReplayGainUtil", "ReplayGain for ${file.name}: $gainDb dB (+6dB preamp) -> factor: $factor")
             factor
         } catch (e: Exception) {
             Log.w("ReplayGainUtil", "Could not parse ReplayGain for $filePath: ${e.message}")
