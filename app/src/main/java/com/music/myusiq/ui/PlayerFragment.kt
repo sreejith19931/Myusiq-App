@@ -385,6 +385,23 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
         gestureHelper.setupAlbumArt(ivFullAlbumArt)
         gestureHelper.setupLyricsBack(layoutLyricsBack)
         gestureHelper.setupLyricsRecyclerView(rvLyrics)
+
+        view?.findViewById<View>(R.id.btnPlayerHelp)?.setOnClickListener {
+            showPlayerGuideDialog()
+        }
+
+        // Show player guide automatically on first player view open
+        context?.let { ctx ->
+            val prefs = ctx.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+            if (!prefs.getBoolean("has_seen_player_guide", false)) {
+                view?.postDelayed({
+                    if (isAdded && context != null) {
+                        showPlayerGuideDialog()
+                        prefs.edit().putBoolean("has_seen_player_guide", true).apply()
+                    }
+                }, 500)
+            }
+        }
         
         // Ensure clicking lyrics or minimalist view flips back
         tvMinimalistLyric.setOnClickListener { 
@@ -569,6 +586,15 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
         }
     }
 
+    private fun showPlayerGuideDialog() {
+        val ctx = context ?: return
+        val dialogView = LayoutInflater.from(ctx).inflate(R.layout.dialog_player_guide, null)
+        MaterialAlertDialogBuilder(ctx)
+            .setView(dialogView)
+            .setPositiveButton(R.string.got_it) { dialog, _ -> dialog.dismiss() }
+            .show()
+    }
+
     private fun updateSongUI(song: Song?) {
         if (song == null) {
             tvFullTrackTitle.text = getString(R.string.no_track_playing)
@@ -577,12 +603,31 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
             tvCurrentTime.text = "0:00"
             ivFullAlbumArt.setImageResource(R.drawable.ic_music_note_2)
             ivBlurredBackground.visibility = View.GONE
+            view?.findViewById<View>(R.id.tvAudioQualityBadge)?.visibility = View.GONE
             return
         }
         
         tvFullTrackTitle.text = song.title
         tvFullArtistName.text = song.artist
-        tvFullTrackTitle.isSelected = true 
+        tvFullTrackTitle.isSelected = true
+
+        val ctx = context
+        if (ctx != null) {
+            val sharedPrefs = ctx.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+            val showBadge = sharedPrefs.getBoolean("show_audio_quality_badge", true)
+            val badgeView = view?.findViewById<View>(R.id.tvAudioQualityBadge)
+            val badgeText = view?.findViewById<TextView>(R.id.tvAudioQualityText)
+            if (showBadge) {
+                val qualityInfo = song.getAudioQualityInfo(ctx)
+                badgeText?.text = qualityInfo.badgeText
+                badgeView?.visibility = View.VISIBLE
+                badgeView?.setOnClickListener {
+                    TrackInfoBottomSheet.newInstance(song.id).show(childFragmentManager, "track_info")
+                }
+            } else {
+                badgeView?.visibility = View.GONE
+            }
+        }
 
         if (animationHelper.getCurrentAlphaOffset() < 0.01f && isAdded) {
             view?.post { if (isAdded) setTransitionAlpha(0f) }
@@ -1620,7 +1665,17 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
                     layoutCountdown.visibility = View.GONE
                 }
 
-                itemView.setOnClickListener { flipCard() }
+                itemView.setOnClickListener {
+                    val prefs = itemView.context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                    val isTapToSeekEnabled = prefs.getBoolean("tap_lyric_to_seek_enabled", true)
+                    if (isTapToSeekEnabled && lyric.timeMs >= 0) {
+                        val targetMs = (lyric.timeMs - lyricOffsetMs).coerceAtLeast(0L)
+                        viewModel.seekTo(targetMs.toInt())
+                        itemView.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+                    } else {
+                        flipCard()
+                    }
+                }
             }
 
             fun updateProgress(pos: Long, activeColor: Int) {

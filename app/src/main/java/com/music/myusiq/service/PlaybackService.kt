@@ -150,6 +150,7 @@ class PlaybackService : MediaLibraryService() {
 
     private var audioFocusRequest: AudioFocusRequest? = null
     private var duckingFactor = 1.0f
+    private var currentReplayGainFactor = 1.0f
     private var wasPlayingBeforeFocusLoss = false
 
     private val audioFocusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
@@ -181,10 +182,10 @@ class PlaybackService : MediaLibraryService() {
 
     private fun updateAllPlayersVolume() {
         if ((volumeAnimatorA?.isRunning != true) && (crossfadeAnimator?.isRunning != true)) {
-            playerA.volume = 1.0f * duckingFactor
+            playerA.volume = 1.0f * duckingFactor * currentReplayGainFactor
         }
         if ((volumeAnimatorB?.isRunning != true) && (crossfadeAnimator?.isRunning != true)) {
-            playerB.volume = 1.0f * duckingFactor
+            playerB.volume = 1.0f * duckingFactor * currentReplayGainFactor
         }
     }
 
@@ -215,7 +216,7 @@ class PlaybackService : MediaLibraryService() {
             addUpdateListener { 
                 val v = it.animatedValue as Float
                 // Less aggressive curve for crossfade: v * (2-v) is a smooth arch
-                player.volume = v * (2f - v) * duckingFactor
+                player.volume = v * (2f - v) * duckingFactor * currentReplayGainFactor
             }
             start()
         }
@@ -229,7 +230,7 @@ class PlaybackService : MediaLibraryService() {
             this.duration = duration
             addUpdateListener { 
                 val v = it.animatedValue as Float
-                player.volume = v * v * duckingFactor
+                player.volume = v * v * duckingFactor * currentReplayGainFactor
             }
             start()
         }
@@ -1189,14 +1190,18 @@ class PlaybackService : MediaLibraryService() {
                 val p = getSharedPreferences("app_prefs", MODE_PRIVATE)
                 val fadeInEnabled = p.getBoolean("audio_fade_in", false)
                 val crossfadeEnabled = p.getBoolean("crossfade_enabled", false)
+                val isReplayGainEnabled = p.getBoolean("replaygain_enabled", true)
                 
+                val currentPath = mediaItem?.mediaMetadata?.extras?.getString("path") ?: ""
+                currentReplayGainFactor = ReplayGainUtil.getVolumeFactorForFile(currentPath, isReplayGainEnabled)
+
                 if (crossfadeAnimator?.isRunning != true) {
                     if (fadeInEnabled || (crossfadeEnabled && reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO)) {
                         val fadeDuration = if (crossfadeEnabled) p.getFloat("crossfade_duration", 2.0f).toLong() * 1000L else 1000L
                         fadeIn(player, fadeDuration)
                     } else {
                         if (player === playerA) volumeAnimatorA?.cancel() else volumeAnimatorB?.cancel()
-                        player.volume = 1.0f * duckingFactor
+                        player.volume = 1.0f * duckingFactor * currentReplayGainFactor
                     }
                 }
                 

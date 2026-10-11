@@ -332,4 +332,26 @@
     <string name="perm_bt_desc">Connect to Bluetooth audio devices and headsets</string>
     <string name="perm_status_granted">Granted</string>
     <string name="perm_status_pending">Not Granted</string>
+
+    <!-- Phase 1: Smart Features & Player Guide -->
+    <string name="tap_lyric_to_seek">Tap Lyric Line to Seek</string>
+    <string name="tap_lyric_to_seek_desc">Tap any synchronized lyric line to jump audio playback directly to that timestamp</string>
+    <string name="show_audio_quality_badge">Audio Quality &amp; Hi-Res Badge</string>
+    <string name="show_audio_quality_badge_desc">Display format, bitrate, sample rate, and Hi-Res badges below track title</string>
+    <string name="replaygain_title">Volume Normalization (ReplayGain)</string>
+    <string name="replaygain_desc">Automatically balance track loudness using ID3/FLAC ReplayGain tags</string>
+    <string name="player_guide">Player Controls Guide</string>
+    <string name="player_guide_desc">View gestures and interactive controls guide</string>
+    <string name="player_guide_title">Myusiq Player Guide</string>
+    <string name="player_guide_album_art">Album Art &amp; Lyrics Flip</string>
+    <string name="player_guide_album_art_desc">Tap album artwork (or swipe up) to flip between Artwork, Synced Lyrics, and Waveform Visualizer.</string>
+    <string name="player_guide_tap_seek">Tap-to-Seek Lyrics</string>
+    <string name="player_guide_tap_seek_desc">Tap any line in synchronized lyrics to jump playback to that timestamp immediately.</string>
+    <string name="player_guide_eq">Audio Equalizer &amp; Presets</string>
+    <string name="player_guide_eq_desc">Tap the Equalizer chip to open 5-band EQ, Bass Boost, Reverb, and sound profile presets.</string>
+    <string name="player_guide_quality">Hi-Res Audio Badge</string>
+    <string name="player_guide_quality_desc">Check track sample rate, bit depth, and format (FLAC, 24-bit/96kHz, WAV) directly on the player.</string>
+    <string name="player_guide_dismiss">Swipe Down to Minimize</string>
+    <string name="player_guide_dismiss_desc">Drag down on the top handle or player card to minimize to the mini-player bar.</string>
+    <string name="got_it">Got it!</string>
 </resources>

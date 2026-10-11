@@ -289,6 +289,7 @@ class AnimationHelper(
     }
 
     fun animateButton(view: View) {
+        view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
         view.animate()
             .scaleX(0.85f)
             .scaleY(0.85f)

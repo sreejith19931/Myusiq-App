@@ -28,6 +28,65 @@ data class TrackDetailedInfo(
     val path: String,
 )
 
+data class AudioQualityInfo(
+    val format: String,
+    val sampleRateHz: Int,
+    val bitrateKbps: Int,
+    val isHiRes: Boolean,
+    val badgeText: String
+)
+
+fun Song.getAudioQualityInfo(context: Context): AudioQualityInfo {
+    val trackUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, this.id)
+    val retriever = MediaMetadataRetriever()
+    var sampleRate = 44100
+    var bitrate = 0
+    var mimeType = "audio/mp3"
+
+    try {
+        retriever.setDataSource(context, trackUri)
+        mimeType = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE) ?: "audio/mp3"
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_SAMPLERATE)?.toIntOrNull()?.let {
+                if (it > 0) sampleRate = it
+            }
+        }
+        retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)?.toIntOrNull()?.let {
+            if (it > 0) bitrate = it / 1000
+        }
+    } catch (_: Exception) {
+    } finally {
+        try { retriever.release() } catch (_: Exception) {}
+    }
+
+    val format = when {
+        mimeType.contains("flac", ignoreCase = true) || this.path.endsWith(".flac", ignoreCase = true) -> "FLAC"
+        mimeType.contains("wav", ignoreCase = true) || this.path.endsWith(".wav", ignoreCase = true) -> "WAV"
+        mimeType.contains("m4a", ignoreCase = true) || mimeType.contains("mp4", ignoreCase = true) || this.path.endsWith(".m4a", ignoreCase = true) -> "AAC"
+        mimeType.contains("ogg", ignoreCase = true) || this.path.endsWith(".ogg", ignoreCase = true) -> "OGG"
+        else -> mimeType.substringAfter("/").uppercase()
+    }
+
+    val isLossless = format == "FLAC" || format == "WAV" || format == "ALAC"
+    val isHiRes = sampleRate >= 48000 || (isLossless && (sampleRate >= 44100 || bitrate > 1000))
+
+    val sampleRateKhz = String.format(Locale.US, "%.1f kHz", sampleRate / 1000.0)
+    val badgeText = when {
+        isHiRes && isLossless -> "Hi-Res • $format • $sampleRateKhz"
+        isLossless -> "Lossless • $format"
+        bitrate > 0 -> "$format • $bitrate kbps"
+        else -> format
+    }
+
+    return AudioQualityInfo(
+        format = format,
+        sampleRateHz = sampleRate,
+        bitrateKbps = bitrate,
+        isHiRes = isHiRes,
+        badgeText = badgeText
+    )
+}
+
 fun fetchTrackDetailedInfo(context: Context, song: Song): TrackDetailedInfo {
     val trackUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id)
     val retriever = MediaMetadataRetriever()
