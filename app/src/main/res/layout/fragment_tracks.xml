@@ -141,6 +141,11 @@
                         android:paddingTop="8dp"
                         android:paddingBottom="24dp"
                         android:clipToPadding="false"
+                        app:fastScrollEnabled="true"
+                        app:fastScrollVerticalThumbDrawable="@drawable/fastscroll_thumb"
+                        app:fastScrollVerticalTrackDrawable="@drawable/fastscroll_track"
+                        app:fastScrollHorizontalThumbDrawable="@drawable/fastscroll_thumb"
+                        app:fastScrollHorizontalTrackDrawable="@drawable/fastscroll_track"
                         tools:listitem="@layout/item_track" />
 
                     <LinearLayout
