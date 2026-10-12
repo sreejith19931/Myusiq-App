@@ -119,6 +119,17 @@ class AppearanceSettingsFragment : Fragment(R.layout.fragment_settings_appearanc
             switchBlurredBackground.isChecked = useBlurredBg
             switchAppTypography.isChecked = useCustomFont
 
+            val switchGlassmorphism = view.findViewById<MaterialSwitch>(R.id.switchGlassmorphismPlayer)
+            val useGlass = themeManager.useGlassmorphismPlayerFlow.first()
+            switchGlassmorphism?.isChecked = useGlass
+            switchGlassmorphism?.setOnCheckedChangeListener { _, isChecked ->
+                if (isInitialSetup) return@setOnCheckedChangeListener
+                viewLifecycleOwner.lifecycleScope.launch {
+                    themeManager.saveUseGlassmorphismPlayer(isChecked)
+                    viewModel.notifySettingsChanged()
+                }
+            }
+
             // FFT
             val sharedPreferences = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
             switchFftVisualizer.isChecked = sharedPreferences.getBoolean("fft_visualizer_enabled", false)

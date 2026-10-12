@@ -340,6 +340,12 @@
     <string name="show_audio_quality_badge_desc">Display format, bitrate, sample rate, and Hi-Res badges below track title</string>
     <string name="replaygain_title">Volume Normalization (ReplayGain)</string>
     <string name="replaygain_desc">Automatically balance track loudness using ID3/FLAC ReplayGain tags</string>
+    <string name="glassmorphism_player">Glassmorphism Player Controls</string>
+    <string name="glassmorphism_player_desc">Frosted translucent playback control deck</string>
+    <string name="lyric_focus_blur">Lyrics Depth Focus Blur</string>
+    <string name="lyric_focus_blur_desc">Blur inactive lyric lines and highlight active line</string>
+    <string name="autoplay_song_radio">Autoplay Song Radio</string>
+    <string name="autoplay_song_radio_desc">Automatically queue matching songs when reaching the end of queue</string>
     <string name="player_guide">Player Controls Guide</string>
     <string name="player_guide_desc">View gestures and interactive controls guide</string>
     <string name="player_guide_title">Myusiq Player Guide</string>

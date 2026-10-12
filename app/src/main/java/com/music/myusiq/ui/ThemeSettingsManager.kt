@@ -24,6 +24,8 @@ class ThemeSettingsManager(private val context: Context) {
         val USE_LYRIC_OVERLAY_KEY = booleanPreferencesKey("use_lyric_overlay")
         val USE_SINGLE_LINE_LYRICS_KEY = booleanPreferencesKey("use_single_line_lyrics")
         val USE_CUSTOM_FONT_KEY = booleanPreferencesKey("use_custom_font")
+        val USE_GLASSMORPHISM_PLAYER_KEY = booleanPreferencesKey("use_glassmorphism_player")
+        val USE_LYRIC_FOCUS_BLUR_KEY = booleanPreferencesKey("use_lyric_focus_blur")
     }
 
     val themeModeFlow: Flow<String> = context.dataStore.data.map { prefs ->
@@ -54,6 +56,14 @@ class ThemeSettingsManager(private val context: Context) {
         prefs[USE_CUSTOM_FONT_KEY] ?: true
     }
 
+    val useGlassmorphismPlayerFlow: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[USE_GLASSMORPHISM_PLAYER_KEY] ?: true
+    }
+
+    val useLyricFocusBlurFlow: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[USE_LYRIC_FOCUS_BLUR_KEY] ?: true
+    }
+
     suspend fun saveThemeMode(mode: String) {
         context.dataStore.edit { prefs -> prefs[THEME_MODE_KEY] = mode }
     }
@@ -80,6 +90,14 @@ class ThemeSettingsManager(private val context: Context) {
 
     suspend fun saveUseCustomFont(enabled: Boolean) {
         context.dataStore.edit { prefs -> prefs[USE_CUSTOM_FONT_KEY] = enabled }
+    }
+
+    suspend fun saveUseGlassmorphismPlayer(enabled: Boolean) {
+        context.dataStore.edit { prefs -> prefs[USE_GLASSMORPHISM_PLAYER_KEY] = enabled }
+    }
+
+    suspend fun saveUseLyricFocusBlur(enabled: Boolean) {
+        context.dataStore.edit { prefs -> prefs[USE_LYRIC_FOCUS_BLUR_KEY] = enabled }
     }
 
     fun applyThemeMode(mode: String) {

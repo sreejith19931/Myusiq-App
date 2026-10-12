@@ -29,6 +29,7 @@ class LyricsSettingsFragment : Fragment(R.layout.fragment_settings_lyrics) {
         val switchOverlay = view.findViewById<MaterialSwitch>(R.id.switchLyricOverlay)
         val switchMinimalist = view.findViewById<MaterialSwitch>(R.id.switchSingleLineLyrics)
         val switchTapToSeek = view.findViewById<MaterialSwitch>(R.id.switchTapToSeekLyrics)
+        val switchFocusBlur = view.findViewById<MaterialSwitch>(R.id.switchLyricFocusBlur)
 
         val appPrefs = requireContext().getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
 
@@ -36,6 +37,7 @@ class LyricsSettingsFragment : Fragment(R.layout.fragment_settings_lyrics) {
             switchOverlay.isChecked = themeManager.useLyricOverlayFlow.first()
             switchMinimalist.isChecked = themeManager.useSingleLineLyricsFlow.first()
             switchTapToSeek.isChecked = appPrefs.getBoolean("tap_lyric_to_seek_enabled", true)
+            switchFocusBlur?.isChecked = themeManager.useLyricFocusBlurFlow.first()
         }
 
         switchOverlay.setOnCheckedChangeListener { _, isChecked ->
@@ -52,6 +54,12 @@ class LyricsSettingsFragment : Fragment(R.layout.fragment_settings_lyrics) {
 
         switchTapToSeek.setOnCheckedChangeListener { _, isChecked ->
             appPrefs.edit().putBoolean("tap_lyric_to_seek_enabled", isChecked).apply()
+        }
+
+        switchFocusBlur?.setOnCheckedChangeListener { _, isChecked ->
+            viewLifecycleOwner.lifecycleScope.launch {
+                themeManager.saveUseLyricFocusBlur(isChecked)
+            }
         }
     }
 }
