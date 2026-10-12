@@ -389,19 +389,6 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
         view?.findViewById<View>(R.id.btnPlayerHelp)?.setOnClickListener {
             showPlayerGuideDialog()
         }
-
-        // Show player guide automatically on first player view open
-        context?.let { ctx ->
-            val prefs = ctx.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-            if (!prefs.getBoolean("has_seen_player_guide", false)) {
-                view?.postDelayed({
-                    if (isAdded && context != null) {
-                        showPlayerGuideDialog()
-                        prefs.edit().putBoolean("has_seen_player_guide", true).apply()
-                    }
-                }, 500)
-            }
-        }
         
         // Ensure clicking lyrics or minimalist view flips back
         tvMinimalistLyric.setOnClickListener { 
