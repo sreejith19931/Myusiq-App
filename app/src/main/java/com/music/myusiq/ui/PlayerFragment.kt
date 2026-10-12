@@ -157,6 +157,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
     private var lastAnimatedSongId: Long = -1L
     private var isShowingRemainingTime = false
     private var isBlurredModeCached: Boolean = false
+    private var isLyricFocusBlurCached: Boolean = true
     private var lyricsPromptDialog: androidx.appcompat.app.AlertDialog? = null
 
     fun setCustomMorphStart(x: Float, y: Float, size: Float) {
@@ -559,6 +560,10 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
                 } }
                 launch { themeManager.useLyricOverlayFlow.collectLatest { updateLyricsVisibility() } }
                 launch { themeManager.useSingleLineLyricsFlow.collectLatest { updateLyricsVisibility() } }
+                launch { themeManager.useLyricFocusBlurFlow.collectLatest { 
+                    isLyricFocusBlurCached = it
+                    lyricsAdapter.notifyDataSetChanged()
+                } }
                 launch { themeManager.themeModeFlow.collectLatest { 
                     // Re-apply palette when theme mode changes to update adaptive colors
                     ivFullAlbumArt.drawable?.let { drawable ->
@@ -1642,7 +1647,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
                 tvLine.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, textSizePx)
                 tvLine.alpha = alpha
                 tvLine.setTypeface(null, if (isActive) Typeface.BOLD else Typeface.NORMAL)
-                tvLine.setActive(isActive)
+                tvLine.setActive(isActive, isLyricFocusBlurCached)
                 
                 if (isActive && lyric.durationMs > 0) {
                     val progress = (viewModel.currentPosition.value + lyricOffsetMs - lyric.timeMs).toFloat() / lyric.durationMs

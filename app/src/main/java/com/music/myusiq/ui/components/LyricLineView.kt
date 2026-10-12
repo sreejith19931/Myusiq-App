@@ -7,6 +7,7 @@ import android.graphics.LinearGradient
 import android.graphics.Shader
 import android.util.AttributeSet
 import androidx.appcompat.widget.AppCompatTextView
+import com.music.myusiq.utils.applyBlurEffect
 
 class LyricLineView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0,
@@ -28,15 +29,23 @@ class LyricLineView @JvmOverloads constructor(
         invalidate()
     }
 
-    fun setActive(isActive: Boolean, useGlow: Boolean = true) {
+    fun setActive(isActive: Boolean, useFocusBlur: Boolean = true) {
         val targetScale = if (isActive) 1.08f else 1.0f
         if (scaleX != targetScale) {
             animate().scaleX(targetScale).scaleY(targetScale).setDuration(220).start()
         }
-        if (isActive && useGlow) {
-            setShadowLayer(14f, 0f, 0f, activeColor)
+
+        if (useFocusBlur) {
+            if (isActive) {
+                setShadowLayer(16f, 0f, 0f, activeColor)
+                this.applyBlurEffect(0f)
+            } else {
+                setShadowLayer(0f, 0f, 0f, Color.TRANSPARENT)
+                this.applyBlurEffect(6f)
+            }
         } else {
             setShadowLayer(0f, 0f, 0f, Color.TRANSPARENT)
+            this.applyBlurEffect(0f)
         }
     }
 
