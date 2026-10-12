@@ -94,6 +94,7 @@ class AlbumsAdapter(
                     Glide.with(context)
                         .asBitmap()
                         .load(modelToLoad)
+                        .override(120, 120)
                         .placeholder(R.drawable.ic_music_note_2)
                         .error(R.drawable.ic_music_note_2)
                         .into(
@@ -112,6 +113,7 @@ class AlbumsAdapter(
                 } else {
                     Glide.with(context)
                         .load(modelToLoad)
+                        .override(300, 300)
                         .placeholder(R.drawable.ic_music_note_2)
                         .error(R.drawable.ic_music_note_2)
                         .into(holder.ivAlbumArt)
