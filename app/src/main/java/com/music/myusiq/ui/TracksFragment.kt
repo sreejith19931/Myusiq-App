@@ -292,6 +292,13 @@ class TracksFragment : Fragment() {
                         if (fabShuffleAll?.visibility != View.VISIBLE) fabShuffleAll?.show()
                         if (fabGoToTop?.visibility == View.VISIBLE) fabGoToTop?.visibility = View.GONE
                     }
+
+                    val currentList = trackAdapter?.currentList
+                    if (currentList != null && firstVisible in currentList.indices) {
+                        val currentSong = currentList[firstVisible].song
+                        val initial = currentSong.title.trim().firstOrNull() ?: '#'
+                        view?.findViewById<com.music.myusiq.ui.components.AlphabetIndexBar>(R.id.alphabetIndexBar)?.setSelectedLetter(initial)
+                    }
                 }
             })
         }

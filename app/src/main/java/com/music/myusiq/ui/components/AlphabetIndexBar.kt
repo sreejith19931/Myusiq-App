@@ -11,6 +11,7 @@ import android.view.View
 import android.widget.TextView
 import com.google.android.material.card.MaterialCardView
 import com.music.myusiq.utils.ThemeUtils
+import kotlin.math.abs
 
 class AlphabetIndexBar @JvmOverloads constructor(
     context: Context,
@@ -47,6 +48,16 @@ class AlphabetIndexBar @JvmOverloads constructor(
         invalidate()
     }
 
+    fun setSelectedLetter(letter: Char) {
+        val uppercase = if (letter.isLetter()) letter.uppercaseChar() else '#'
+        val index = alphabet.indexOf(uppercase)
+        val newIndex = if (index != -1) index else alphabet.indexOf('#')
+        if (selectedIndex != newIndex) {
+            selectedIndex = newIndex
+            invalidate()
+        }
+    }
+
     fun attachBubbleViews(card: MaterialCardView, text: TextView) {
         this.bubbleCard = card
         this.bubbleText = text
@@ -61,21 +72,53 @@ class AlphabetIndexBar @JvmOverloads constructor(
         val activeColor = ThemeUtils.getThemeColor(context, androidx.appcompat.R.attr.colorPrimary)
         val inactiveColor = Color.parseColor("#4D808080")
 
-        activePaint.color = activeColor
-        activePaint.textSize = (itemHeight * 0.7f).coerceIn(10f * density, 16f * density)
+        val baseActiveSize = (itemHeight * 0.65f).coerceIn(10f * density, 14f * density)
+        val baseInactiveSize = (itemHeight * 0.55f).coerceIn(8f * density, 12f * density)
 
-        inactivePaint.color = inactiveColor
-        inactivePaint.textSize = (itemHeight * 0.6f).coerceIn(8f * density, 14f * density)
-
-        val x = width / 2f
+        val defaultX = width / 2f
 
         for (i in alphabet.indices) {
             val letter = alphabet[i]
             val isActive = activePositions.containsKey(letter)
             val paint = if (isActive) activePaint else inactivePaint
 
+            // Fisheye Wave Zoom Scale & Pop-Out Shift
+            val scaleFactor: Float
+            val xShift: Float
+
+            if (selectedIndex != -1) {
+                val dist = abs(i - selectedIndex)
+                when (dist) {
+                    0 -> {
+                        scaleFactor = 2.0f // Active letter enlarged 2.0x!
+                        xShift = -12f * density
+                    }
+                    1 -> {
+                        scaleFactor = 1.35f
+                        xShift = -6f * density
+                    }
+                    2 -> {
+                        scaleFactor = 1.15f
+                        xShift = -2f * density
+                    }
+                    else -> {
+                        scaleFactor = 1.0f
+                        xShift = 0f
+                    }
+                }
+            } else {
+                scaleFactor = 1.0f
+                xShift = 0f
+            }
+
+            paint.color = if (isActive) activeColor else inactiveColor
+            val baseSize = if (isActive) baseActiveSize else baseInactiveSize
+            paint.textSize = baseSize * scaleFactor
+
+            val drawX = defaultX + xShift
             val y = (i * itemHeight) + (itemHeight / 2f) - ((paint.descent() + paint.ascent()) / 2f)
-            canvas.drawText(letter.toString(), x, y, paint)
+
+            canvas.drawText(letter.toString(), drawX, y, paint)
         }
     }
 
@@ -98,7 +141,7 @@ class AlphabetIndexBar @JvmOverloads constructor(
                         onLetterSelectedListener?.invoke(pos, letter)
                     } else {
                         // Find nearest active letter
-                        val nearestEntry = activePositions.entries.minByOrNull { kotlin.math.abs(alphabet.indexOf(it.key) - index) }
+                        val nearestEntry = activePositions.entries.minByOrNull { abs(alphabet.indexOf(it.key) - index) }
                         if (nearestEntry != null) {
                             showBubble(letter, isInactive = true)
                             onLetterSelectedListener?.invoke(nearestEntry.value, nearestEntry.key)
@@ -109,7 +152,6 @@ class AlphabetIndexBar @JvmOverloads constructor(
                 return true
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                selectedIndex = -1
                 hideBubble()
                 invalidate()
                 return true
@@ -128,7 +170,7 @@ class AlphabetIndexBar @JvmOverloads constructor(
 
     private fun hideBubble() {
         val card = bubbleCard ?: return
-        card.animate().alpha(0f).setDuration(150).withEndAction {
+        card.animate().alpha(0f).setDuration(200).withEndAction {
             card.visibility = GONE
             card.alpha = 1.0f
         }.start()
