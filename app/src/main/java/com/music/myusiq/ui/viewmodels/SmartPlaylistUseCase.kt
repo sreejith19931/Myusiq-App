@@ -2,7 +2,7 @@ package com.music.myusiq.ui.viewmodels
 
 import com.music.myusiq.data.MusicRepository
 import com.music.myusiq.domain.models.Song
-import com.music.myusiq.utils.TransliterationUtil
+import com.music.myusiq.utils.MusicEnergyAnalyzer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -79,7 +79,7 @@ class SmartPlaylistUseCase(
     suspend fun getDecadeMix(originalTrackList: List<Song>, decadePrefix: String): List<Song> {
         return withContext(Dispatchers.IO) {
             originalTrackList.filter { song ->
-                val year = song.dateAdded.toString() // Or override year if parsed
+                val year = song.dateAdded.toString()
                 year.contains(decadePrefix)
             }.shuffled().take(50)
         }
@@ -100,90 +100,51 @@ class SmartPlaylistUseCase(
         return withContext(Dispatchers.IO) {
             if (originalTrackList.isEmpty()) return@withContext emptyList()
 
-            // Multilingual Keyword Dictionaries
-            val energizeKeywords = listOf(
-                "rock", "pop", "dance", "edm", "metal", "electronic", "hip hop", "rap", "workout", "gym", "power", "energy", "hype", "club", "upbeat", "pump", "fitness", "motivation", "punk", "synth",
-                "aaghosham", "kalyanam", "aatam", "kondattam", "bhangra", "gabru", "gaddi", "aata", "veduka", "nacha", "masti", "hungama", "fiesta", "baile"
-            )
-            val relaxKeywords = listOf(
-                "chill", "relax", "sleep", "piano", "acoustic", "lofi", "lo-fi", "ambient", "meditation", "calm", "soft", "quiet", "peace", "jazz", "classical", "instrumental", "sunset", "spa", "zen", "lullaby",
-                "shanthi", "chaarathu", "swapnam", "amaidhi", "nenjame", "prasanthatha", "sukoon", "sueño"
-            )
-            val partyKeywords = listOf(
-                "party", "dance", "club", "house", "disco", "remix", "dj", "edm", "groove", "funk", "celebration", "festival", "boogie", "techno",
-                "masti", "bhangra", "aatam", "kondattam", "aaghosham", "aata", "veduka", "fiesta", "baile", "hungama"
-            )
-            val focusKeywords = listOf(
-                "study", "focus", "instrumental", "classical", "ambient", "soundtrack", "ost", "lofi", "lo-fi", "piano", "coding", "chillhop", "concentration",
-                "shanthi", "amaidhi", "prasanthatha", "dhyan"
-            )
-            val romanceKeywords = listOf(
-                "love", "romantic", "romance", "heart", "ballad", "duet", "kiss", "forever", "sweet", "darling", "baby", "soul", "r&b", "passion", "valentine", "honey", "wedding", "desire", "affection", "amour", "beloved", "crush", "lovers", "serenade", "sweetheart", "tender",
-                "premam", "sneham", "paattu", "kadhal", "anbu", "aasai", "pyaar", "dil", "dosti", "yaari", "kudi", "prema", "manasu", "ishq", "mohabbat", "humsafar", "amor", "corazon", "pasion"
-            )
-
-            val targetKeywords = when (mood.lowercase()) {
-                "energize" -> energizeKeywords
-                "relax" -> relaxKeywords
-                "party" -> partyKeywords
-                "focus" -> focusKeywords
-                "romance" -> romanceKeywords
-                else -> emptyList()
+            // Retrieve stored library track entities with waveform energy scores
+            val libraryTrackEntities = try {
+                musicRepository.getAllLibraryTracksSync().associateBy { it.id }
+            } catch (_: Exception) {
+                emptyMap()
             }
 
-            fun matchesKeyword(text: String, keyword: String): Boolean {
-                return if (keyword.contains("-") || keyword.contains(" ")) {
-                    text.contains(keyword, ignoreCase = true)
+            val targetMood = mood.lowercase()
+
+            val matchedSongs = originalTrackList.filter { song ->
+                val trackEntity = libraryTrackEntities[song.id.toString()]
+                
+                // 1. Determine physical audio waveform energy score (1-10)
+                var energy = trackEntity?.energyScore ?: -1
+                if (energy == -1 && !trackEntity?.waveformAmplitudes.isNullOrBlank()) {
+                    energy = MusicEnergyAnalyzer.analyze(trackEntity.waveformAmplitudes)
+                }
+
+                // 2. Strict Physical Audio Waveform Energy Boundaries
+                if (energy != -1) {
+                    when (targetMood) {
+                        "energize", "party" -> energy in 7..10
+                        "relax" -> energy in 1..4
+                        "focus" -> energy in 2..5
+                        "romance" -> energy in 2..6 // Hard rejection: Energy >= 7 is strictly excluded from Romance!
+                        else -> true
+                    }
                 } else {
-                    val regex = Regex("\\b${Regex.escape(keyword)}\\b", RegexOption.IGNORE_CASE)
-                    regex.containsMatchIn(text)
+                    // Fallback for unanalyzed tracks based on genre acousticness heuristics
+                    val genre = song.genre.lowercase()
+                    val title = song.title.lowercase()
+                    val isHeavyOrFastGenre = genre.contains("rock") || genre.contains("metal") || 
+                        genre.contains("dance") || genre.contains("edm") || genre.contains("rap") || 
+                        genre.contains("hip hop") || genre.contains("house") || genre.contains("techno")
+
+                    when (targetMood) {
+                        "energize", "party" -> isHeavyOrFastGenre || genre.contains("pop") || title.contains("bhangra") || title.contains("party")
+                        "relax", "focus" -> !isHeavyOrFastGenre && (genre.contains("chill") || genre.contains("ambient") || genre.contains("acoustic") || genre.contains("classical") || genre.contains("jazz") || genre.contains("piano") || genre.contains("lofi"))
+                        "romance" -> !isHeavyOrFastGenre && (genre.contains("romance") || genre.contains("r&b") || genre.contains("ballad") || genre.contains("soul") || genre.contains("love") || genre.contains("romantic"))
+                        else -> true
+                    }
                 }
             }
 
-            suspend fun scoreSong(song: Song): Int {
-                var score = 0
-                val title = song.title.lowercase()
-                val artist = song.artist.lowercase()
-                val album = song.album.lowercase()
-                val genre = song.genre.lowercase()
-
-                // Extract lyrics and transliterate non-Latin scripts (Devanagari, Tamil, Malayalam, etc.) to Romanized Latin offline
-                val rawLyrics = musicRepository.getLyricsForPath(song.path)?.rawLyrics ?: ""
-                val transliteratedLyrics = if (rawLyrics.isNotBlank()) TransliterationUtil.transliterate(rawLyrics).lowercase() else ""
-
-                val fullText = "$title $artist $album $genre $transliteratedLyrics"
-
-                targetKeywords.forEach { kw ->
-                    if (matchesKeyword(fullText, kw)) {
-                        score += 3
-                    }
-                }
-
-                when (mood.lowercase()) {
-                    "energize" -> {
-                        if (genre.contains("rock") || genre.contains("metal") || genre.contains("dance") || genre.contains("edm") || genre.contains("pop") || genre.contains("rap") || genre.contains("hip hop")) score += 4
-                    }
-                    "relax" -> {
-                        if (genre.contains("chill") || genre.contains("ambient") || genre.contains("acoustic") || genre.contains("classical") || genre.contains("jazz") || genre.contains("piano") || genre.contains("lo-fi") || genre.contains("lofi")) score += 4
-                    }
-                    "party" -> {
-                        if (genre.contains("dance") || genre.contains("house") || genre.contains("disco") || genre.contains("club") || genre.contains("edm") || genre.contains("techno")) score += 4
-                    }
-                    "focus" -> {
-                        if (genre.contains("instrumental") || genre.contains("soundtrack") || genre.contains("ost") || genre.contains("classical") || genre.contains("ambient") || genre.contains("lofi")) score += 4
-                    }
-                    "romance" -> {
-                        if (genre.contains("romance") || genre.contains("r&b") || genre.contains("ballad") || genre.contains("soul") || genre.contains("love") || genre.contains("romantic")) score += 4
-                    }
-                }
-
-                return score
-            }
-
-            val scored = originalTrackList.map { song -> song to scoreSong(song) }
-            val matched = scored.filter { it.second > 0 }.sortedByDescending { it.second }.map { it.first }
-
-            matched.shuffled().take(50)
+            matchedSongs.shuffled().take(50)
         }
     }
 }

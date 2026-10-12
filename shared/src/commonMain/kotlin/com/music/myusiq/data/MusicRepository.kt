@@ -89,6 +89,7 @@ class MusicRepository(
     suspend fun updateLyricsPath(oldPath: String, newPath: String) = songDao.updateLyricsPath(oldPath, newPath)
     suspend fun upsertTrack(track: TrackEntity) = playlistDao.insertTrack(track)
     fun getFavoriteTracks() = playlistDao.getFavoriteTracks()
+    suspend fun getAllLibraryTracksSync() = playlistDao.getAllLibraryTracksSync()
 
     fun getAllPlaylists() = playlistDao.getAllPlaylists()
     fun getPlaylistsWithTracks() = playlistDao.getPlaylistsWithTracks()
