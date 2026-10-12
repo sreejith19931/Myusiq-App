@@ -295,6 +295,33 @@ class TracksFragment : Fragment() {
                 }
             })
         }
+
+        val alphabetIndexBar = view?.findViewById<com.music.myusiq.ui.components.AlphabetIndexBar>(R.id.alphabetIndexBar)
+        val cardAlphabetBubble = view?.findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardAlphabetBubble)
+        val tvAlphabetBubbleText = view?.findViewById<TextView>(R.id.tvAlphabetBubbleText)
+
+        if (alphabetIndexBar != null && cardAlphabetBubble != null && tvAlphabetBubbleText != null) {
+            alphabetIndexBar.attachBubbleViews(cardAlphabetBubble, tvAlphabetBubbleText)
+            alphabetIndexBar.onLetterSelectedListener = { pos, _ ->
+                (rvTracks?.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(pos, 0)
+            }
+        }
+    }
+
+    private fun updateActiveAlphabetIndexes(songs: List<Song>) {
+        val map = mutableMapOf<Char, Int>()
+        for (i in songs.indices) {
+            val title = songs[i].title.trim()
+            val initial = if (title.isNotEmpty() && title.first().isLetter()) {
+                title.first().uppercaseChar()
+            } else {
+                '#'
+            }
+            if (!map.containsKey(initial)) {
+                map[initial] = i
+            }
+        }
+        view?.findViewById<com.music.myusiq.ui.components.AlphabetIndexBar>(R.id.alphabetIndexBar)?.updateActivePositions(map)
     }
 
     private fun navigateToTrimmer(song: Song) {
@@ -431,6 +458,7 @@ class TracksFragment : Fragment() {
                                 rvTracks?.scrollToPosition(0)
                             }
                         }
+                        updateActiveAlphabetIndexes(uiModels.map { it.song })
                         
                         lastSortOrder = currentOrder
                         lastSortDirection = currentDir
