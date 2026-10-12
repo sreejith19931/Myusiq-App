@@ -17,8 +17,8 @@ android {
         applicationId = "com.music.myusiq.wear"
         minSdk = 26
         targetSdk = 37
-        versionCode = 10104
-        versionName = "1.1.2-beta4"
+        versionCode = 10200
+        versionName = "1.2.0-beta1"
     }
 
     signingConfigs {
