@@ -80,7 +80,7 @@ class AlphabetIndexBar @JvmOverloads constructor(
         val baseActiveSize = (itemHeight * 0.65f).coerceIn(10f * density, 14f * density)
         val baseInactiveSize = (itemHeight * 0.55f).coerceIn(8f * density, 12f * density)
 
-        val defaultX = width / 2f
+        val defaultX = width - (16f * density)
         val activeIndex = if (selectedFloatIndex >= 0f) selectedFloatIndex else selectedIndex.toFloat()
 
         for (i in alphabet.indices) {
@@ -97,7 +97,7 @@ class AlphabetIndexBar @JvmOverloads constructor(
                 if (dist <= 2.5f) {
                     val influence = (1.0f - (dist / 2.5f)).coerceIn(0f, 1f)
                     scaleFactor = 1.0f + (1.2f * influence) // Enlarges up to 2.2x smoothly!
-                    xShift = -16f * density * influence // Pops out up to -16dp
+                    xShift = -14f * density * influence // Pops out up to -14dp
                 } else {
                     scaleFactor = 1.0f
                     xShift = 0f
@@ -111,7 +111,7 @@ class AlphabetIndexBar @JvmOverloads constructor(
             val baseSize = if (isActive) baseActiveSize else baseInactiveSize
             paint.textSize = baseSize * scaleFactor
 
-            val drawX = defaultX + xShift
+            val drawX = (defaultX + xShift).coerceAtLeast(14f * density)
             val y = (i * itemHeight) + (itemHeight / 2f) - ((paint.descent() + paint.ascent()) / 2f)
 
             canvas.drawText(letter.toString(), drawX, y, paint)
