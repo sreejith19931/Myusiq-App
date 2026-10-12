@@ -230,6 +230,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
 
         onBackPressedDispatcher.addCallback(this, backPressedCallback)
+
+        ChangelogManager.checkAndShowChangelog(this)
     }
 
     private fun setupUI() {
