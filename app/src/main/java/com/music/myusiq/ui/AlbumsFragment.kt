@@ -93,6 +93,20 @@ class AlbumsFragment : Fragment() {
 
         setupSearch()
 
+        context?.let { ctx ->
+            PageGuideManager.showGuideIfNeeded(
+                ctx,
+                pageKey = "albums",
+                pageTitle = "Albums Page Guide",
+                headerIconRes = R.drawable.ic_album,
+                features = listOf(
+                    GuideFeatureItem(R.drawable.ic_grid_view, "Grid & List Toggle", "Tap the top layout icon to toggle between visual grid cards and detailed album list mode."),
+                    GuideFeatureItem(R.drawable.ic_palette, "Adaptive Album Colors", "Tap any album card to open its tracks with dynamic palette background colors."),
+                    GuideFeatureItem(R.drawable.ic_sort, "Album Sorting", "Sort albums alphabetically, by artist, track count, or recently added.")
+                )
+            )
+        }
+
         searchBar?.setOnMenuItemClickListener { menuItem ->
             if (menuItem.itemId == R.id.action_clear) {
                 searchBar?.setText("")

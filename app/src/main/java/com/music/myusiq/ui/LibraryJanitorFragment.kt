@@ -76,6 +76,20 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
         btnCleanDuplicates.setOnClickListener { showCleanDuplicatesDialog() }
         btnFindMissingArt.setOnClickListener { startAutoFix() }
         btnRepairUnknown.setOnClickListener { startRepairUnknown() }
+
+        context?.let { ctx ->
+            PageGuideManager.showGuideIfNeeded(
+                ctx,
+                pageKey = "janitor",
+                pageTitle = "Library Janitor Guide",
+                headerIconRes = R.drawable.ic_edit,
+                features = listOf(
+                    GuideFeatureItem(R.drawable.ic_edit, "Duplicate Track Cleaner", "Scan your device for duplicate audio files and clean up redundant tracks."),
+                    GuideFeatureItem(R.drawable.ic_album, "High-Res Artwork Scraper", "Search online databases for official album artwork and embed 1000x1000 covers into ID3/FLAC tags."),
+                    GuideFeatureItem(R.drawable.ic_tracks, "Identify Unknown Tracks", "Automatically identify messy file titles and resolve missing artist/album metadata.")
+                )
+            )
+        }
     }
 
     private fun setupObservers() {

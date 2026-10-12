@@ -947,6 +947,19 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
 
             waveformSeekBar.setColors(accent, ColorUtils.setAlphaComponent(accent, 60))
 
+            // Help Question Icon & Audio Quality Badge Colors Sync
+            val btnHelp = view?.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnPlayerHelp)
+            btnHelp?.setIconTint(ColorStateList.valueOf(accent))
+
+            val tvQualityText = view?.findViewById<TextView>(R.id.tvAudioQualityText)
+            val ivQualityIcon = view?.findViewById<ImageView>(R.id.ivAudioQualityIcon)
+            val cardQualityBadge = view?.findViewById<com.google.android.material.card.MaterialCardView>(R.id.tvAudioQualityBadge)
+            
+            tvQualityText?.setTextColor(onBg)
+            ivQualityIcon?.imageTintList = ColorStateList.valueOf(accent)
+            cardQualityBadge?.setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 30))
+            cardQualityBadge?.strokeColor = ColorUtils.setAlphaComponent(accent, 80)
+
             if (!isAdded) return@launch
 
             listOf(btnNext, btnPrevious, btnRewind, btnForward, btnVolumeToggle, btnSleepTimer, btnMoreLikeThis, btnDrivingMode,

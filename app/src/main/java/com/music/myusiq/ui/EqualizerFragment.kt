@@ -108,6 +108,20 @@ class EqualizerFragment : Fragment(R.layout.fragment_equalizer) {
             buildPresetInterfaceList()
         }
         buildPresetInterfaceList()
+
+        context?.let { ctx ->
+            com.music.myusiq.utils.PageGuideManager.showGuideIfNeeded(
+                ctx,
+                pageKey = "equalizer",
+                pageTitle = "Equalizer Guide",
+                headerIconRes = R.drawable.ic_equalizer,
+                features = listOf(
+                    com.music.myusiq.utils.GuideFeatureItem(R.drawable.ic_equalizer, "Hardware Profile Auto-Switching", "Myusiq remembers separate EQ settings when using Device Speaker, Wired Headphones, or Bluetooth Audio."),
+                    com.music.myusiq.utils.GuideFeatureItem(R.drawable.ic_speed, "Sound Profiles & Presets", "Tap sound profile chips (Bass Boost, Vocal Focus, Rock, Classical) to quickly switch frequency balances."),
+                    com.music.myusiq.utils.GuideFeatureItem(R.drawable.ic_volume_up, "5-Band Slider Control", "Select Custom to manually adjust individual frequency slider bands with smooth animated thumbs.")
+                )
+            )
+        }
     }
 
     @SuppressLint("UseKtx")

@@ -124,6 +124,20 @@ class TracksFragment : Fragment() {
 
         // Sorting dialog logic
         btnSort?.setOnClickListener { showSortPopup() }
+
+        context?.let { ctx ->
+            PageGuideManager.showGuideIfNeeded(
+                ctx,
+                pageKey = "tracks",
+                pageTitle = "Tracks Page Guide",
+                headerIconRes = R.drawable.ic_tracks,
+                features = listOf(
+                    GuideFeatureItem(R.drawable.ic_fast_forward, "A-Z FastScroller", "Drag the vertical thumb handle on the right edge to jump alphabetically through tracks."),
+                    GuideFeatureItem(R.drawable.ic_edit, "Batch Selection Mode", "Long-press any track to enter multi-select mode for editing, deleting, or adding multiple songs to playlists."),
+                    GuideFeatureItem(R.drawable.ic_shuffle, "Shuffle All FAB", "Tap the floating shuffle button to start a random mix of all local tracks instantly.")
+                )
+            )
+        }
     }
 
     private fun toggleSelectionMode() {
