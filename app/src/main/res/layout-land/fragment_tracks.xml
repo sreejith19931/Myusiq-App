@@ -103,14 +103,10 @@
                     android:id="@+id/rvTracks"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:paddingHorizontal="16dp"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="36dp"
                     android:paddingBottom="16dp"
                     android:clipToPadding="false"
-                    app:fastScrollEnabled="true"
-                    app:fastScrollVerticalThumbDrawable="@drawable/fastscroll_thumb"
-                    app:fastScrollVerticalTrackDrawable="@drawable/fastscroll_track"
-                    app:fastScrollHorizontalThumbDrawable="@drawable/fastscroll_thumb"
-                    app:fastScrollHorizontalTrackDrawable="@drawable/fastscroll_track"
                     tools:listitem="@layout/item_track" />
 
             </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

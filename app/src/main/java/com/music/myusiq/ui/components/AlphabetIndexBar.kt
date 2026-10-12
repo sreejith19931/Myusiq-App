@@ -19,7 +19,7 @@ class AlphabetIndexBar @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
-    private val alphabet = arrayOf(
+    val alphabet = arrayOf(
         'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
         'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
         'U', 'V', 'W', 'X', 'Y', 'Z', '#'
@@ -39,6 +39,7 @@ class AlphabetIndexBar @JvmOverloads constructor(
     }
 
     private var selectedIndex = -1
+    private var selectedFloatIndex = -1f
     private var bubbleCard: MaterialCardView? = null
     private var bubbleText: TextView? = null
 
@@ -51,9 +52,13 @@ class AlphabetIndexBar @JvmOverloads constructor(
     fun setSelectedLetter(letter: Char) {
         val uppercase = if (letter.isLetter()) letter.uppercaseChar() else '#'
         val index = alphabet.indexOf(uppercase)
-        val newIndex = if (index != -1) index else alphabet.indexOf('#')
-        if (selectedIndex != newIndex) {
-            selectedIndex = newIndex
+        val targetIndex = if (index != -1) index else alphabet.indexOf('#')
+        setSelectedFloatIndex(targetIndex.toFloat())
+    }
+
+    fun setSelectedFloatIndex(floatIndex: Float) {
+        if (selectedFloatIndex != floatIndex) {
+            selectedFloatIndex = floatIndex
             invalidate()
         }
     }
@@ -76,6 +81,7 @@ class AlphabetIndexBar @JvmOverloads constructor(
         val baseInactiveSize = (itemHeight * 0.55f).coerceIn(8f * density, 12f * density)
 
         val defaultX = width / 2f
+        val activeIndex = if (selectedFloatIndex >= 0f) selectedFloatIndex else selectedIndex.toFloat()
 
         for (i in alphabet.indices) {
             val letter = alphabet[i]
@@ -86,25 +92,15 @@ class AlphabetIndexBar @JvmOverloads constructor(
             val scaleFactor: Float
             val xShift: Float
 
-            if (selectedIndex != -1) {
-                val dist = abs(i - selectedIndex)
-                when (dist) {
-                    0 -> {
-                        scaleFactor = 2.0f // Active letter enlarged 2.0x!
-                        xShift = -12f * density
-                    }
-                    1 -> {
-                        scaleFactor = 1.35f
-                        xShift = -6f * density
-                    }
-                    2 -> {
-                        scaleFactor = 1.15f
-                        xShift = -2f * density
-                    }
-                    else -> {
-                        scaleFactor = 1.0f
-                        xShift = 0f
-                    }
+            if (activeIndex >= 0f) {
+                val dist = abs(i.toFloat() - activeIndex)
+                if (dist <= 2.5f) {
+                    val influence = (1.0f - (dist / 2.5f)).coerceIn(0f, 1f)
+                    scaleFactor = 1.0f + (1.2f * influence) // Enlarges up to 2.2x smoothly!
+                    xShift = -16f * density * influence // Pops out up to -16dp
+                } else {
+                    scaleFactor = 1.0f
+                    xShift = 0f
                 }
             } else {
                 scaleFactor = 1.0f
@@ -126,29 +122,34 @@ class AlphabetIndexBar @JvmOverloads constructor(
         if (alphabet.isEmpty() || height <= 0) return false
 
         val itemHeight = height.toFloat() / alphabet.size
-        val index = (event.y / itemHeight).toInt().coerceIn(0, alphabet.size - 1)
 
         when (event.action) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
-                if (index != selectedIndex) {
-                    selectedIndex = index
-                    val letter = alphabet[index]
-                    val pos = activePositions[letter]
+                val floatIndex = (event.y / itemHeight).coerceIn(0f, (alphabet.size - 1).toFloat())
+                selectedFloatIndex = floatIndex
+                val index = floatIndex.toInt().coerceIn(0, alphabet.size - 1)
+                val letter = alphabet[index]
+                val pos = activePositions[letter]
 
-                    if (pos != null) {
+                if (pos != null) {
+                    if (index != selectedIndex) {
                         performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
-                        showBubble(letter)
-                        onLetterSelectedListener?.invoke(pos, letter)
-                    } else {
-                        // Find nearest active letter
-                        val nearestEntry = activePositions.entries.minByOrNull { abs(alphabet.indexOf(it.key) - index) }
-                        if (nearestEntry != null) {
-                            showBubble(letter, isInactive = true)
-                            onLetterSelectedListener?.invoke(nearestEntry.value, nearestEntry.key)
-                        }
+                        selectedIndex = index
                     }
-                    invalidate()
+                    showBubble(letter)
+                    onLetterSelectedListener?.invoke(pos, letter)
+                } else {
+                    val nearestEntry = activePositions.entries.minByOrNull { abs(alphabet.indexOf(it.key) - index) }
+                    if (nearestEntry != null) {
+                        if (index != selectedIndex) {
+                            performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+                            selectedIndex = index
+                        }
+                        showBubble(letter, isInactive = true)
+                        onLetterSelectedListener?.invoke(nearestEntry.value, nearestEntry.key)
+                    }
                 }
+                invalidate()
                 return true
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
