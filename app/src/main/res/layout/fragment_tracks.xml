@@ -119,6 +119,8 @@
             android:layout_height="0dp"
             android:layout_marginTop="12dp"
             android:background="@android:color/transparent"
+            android:clipChildren="false"
+            android:clipToPadding="false"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -127,18 +129,22 @@
             <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
                 android:id="@+id/swipeRefreshTracks"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="match_parent"
+                android:clipChildren="false"
+                android:clipToPadding="false">
 
                 <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent">
+                    android:layout_height="match_parent"
+                    android:clipChildren="false"
+                    android:clipToPadding="false">
 
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/rvTracks"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:paddingStart="8dp"
-                        android:paddingEnd="36dp"
+                        android:paddingEnd="48dp"
                         android:paddingTop="8dp"
                         android:paddingBottom="24dp"
                         android:clipToPadding="false"
@@ -233,7 +239,7 @@
 
             <com.music.myusiq.ui.components.AlphabetIndexBar
                 android:id="@+id/alphabetIndexBar"
-                android:layout_width="36dp"
+                android:layout_width="48dp"
                 android:layout_height="0dp"
                 android:layout_marginVertical="12dp"
                 android:elevation="16dp"
