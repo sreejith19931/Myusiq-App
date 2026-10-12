@@ -28,10 +28,15 @@ class LyricLineView @JvmOverloads constructor(
         invalidate()
     }
 
-    fun setActive(isActive: Boolean) {
-        val targetScale = if (isActive) 1.05f else 1.0f
+    fun setActive(isActive: Boolean, useGlow: Boolean = true) {
+        val targetScale = if (isActive) 1.08f else 1.0f
         if (scaleX != targetScale) {
-            animate().scaleX(targetScale).scaleY(targetScale).setDuration(200).start()
+            animate().scaleX(targetScale).scaleY(targetScale).setDuration(220).start()
+        }
+        if (isActive && useGlow) {
+            setShadowLayer(14f, 0f, 0f, activeColor)
+        } else {
+            setShadowLayer(0f, 0f, 0f, Color.TRANSPARENT)
         }
     }
 

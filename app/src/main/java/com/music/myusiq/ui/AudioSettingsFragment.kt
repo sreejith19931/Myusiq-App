@@ -120,6 +120,14 @@ class AudioSettingsFragment : Fragment(R.layout.fragment_settings_audio) {
             viewModel.notifySettingsChanged()
         }
 
+        // Autoplay Song Radio
+        val switchAutoplay = view.findViewById<MaterialSwitch>(R.id.switchAutoplayRadio)
+        switchAutoplay?.isChecked = sharedPreferences.getBoolean("autoplay_song_radio", true)
+        switchAutoplay?.setOnCheckedChangeListener { _, isChecked ->
+            sharedPreferences.edit { putBoolean("autoplay_song_radio", isChecked) }
+            viewModel.notifySettingsChanged()
+        }
+
         // Player Guide
         view.findViewById<View>(R.id.rowPlayerGuide).setOnClickListener {
             val dialogView = android.view.LayoutInflater.from(requireContext()).inflate(R.layout.dialog_player_guide, null)
