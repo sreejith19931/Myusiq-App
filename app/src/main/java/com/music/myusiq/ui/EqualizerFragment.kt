@@ -131,8 +131,9 @@ class EqualizerFragment : Fragment(R.layout.fragment_equalizer) {
         val safeContext = context ?: return
         val safeAppContext = safeContext.applicationContext
         val currentlySavedPreset = EqualizerManager.getActivePresetForProfile(safeAppContext)
+        val allPresets = EqualizerManager.getAllPresets(safeAppContext)
 
-        for (presetName in EqualizerManager.presetsMap.keys) {
+        for (presetName in allPresets.keys) {
             val chip = Chip(safeContext).apply {
                 text = presetName
                 // We resolve the theme attribute to ensure it picks up our custom font overlay

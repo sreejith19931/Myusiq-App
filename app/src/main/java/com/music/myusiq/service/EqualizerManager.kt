@@ -99,7 +99,8 @@ object EqualizerManager {
                         it.setBandLevel(bandIndex, savedLevel.toShort())
                     }
                 } else {
-                    presetsMap[presetName]?.let { gains ->
+                    val all = getAllPresets(context)
+                    all[presetName]?.let { gains ->
                         for (i in 0 until it.numberOfBands) {
                             val gain = if (i < gains.size) gains[i] else 0.toShort()
                             it.setBandLevel(i.toShort(), gain)
@@ -108,6 +109,56 @@ object EqualizerManager {
                 }
             } catch (e: Exception) { Log.e("EqualizerManager", "Error applying settings to instance", e) }
         }
+    }
+
+    fun getUserCustomPresets(context: Context): Map<String, ShortArray> {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val jsonStr = prefs.getString("user_custom_presets_json", "{}") ?: "{}"
+        val map = mutableMapOf<String, ShortArray>()
+        try {
+            val json = org.json.JSONObject(jsonStr)
+            val keys = json.keys()
+            while (keys.hasNext()) {
+                val key = keys.next()
+                val array = json.getJSONArray(key)
+                val shorts = ShortArray(array.length())
+                for (i in 0 until array.length()) {
+                    shorts[i] = array.getInt(i).toShort()
+                }
+                map[key] = shorts
+            }
+        } catch (_: Exception) {}
+        return map
+    }
+
+    fun saveUserCustomPreset(context: Context, presetName: String, bandLevels: ShortArray) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val current = getUserCustomPresets(context).toMutableMap()
+        current[presetName] = bandLevels
+        val json = org.json.JSONObject()
+        current.forEach { (k, v) ->
+            val arr = org.json.JSONArray()
+            v.forEach { arr.put(it.toInt()) }
+            json.put(k, arr)
+        }
+        prefs.edit { putString("user_custom_presets_json", json.toString()) }
+    }
+
+    fun deleteUserCustomPreset(context: Context, presetName: String) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val current = getUserCustomPresets(context).toMutableMap()
+        current.remove(presetName)
+        val json = org.json.JSONObject()
+        current.forEach { (k, v) ->
+            val arr = org.json.JSONArray()
+            v.forEach { arr.put(it.toInt()) }
+            json.put(k, arr)
+        }
+        prefs.edit { putString("user_custom_presets_json", json.toString()) }
+    }
+
+    fun getAllPresets(context: Context): Map<String, ShortArray> {
+        return presetsMap + getUserCustomPresets(context)
     }
 
     fun updateDetectedHardwareRoute(profileIndex: Int) {
