@@ -34,9 +34,17 @@ class AboutFragment : Fragment(R.layout.fragment_about) {
 
         try {
             val packageInfo = requireContext().packageManager.getPackageInfo(requireContext().packageName, 0)
+            val isBeta = packageInfo.versionName?.lowercase()?.contains("beta") == true || requireContext().packageName.endsWith(".beta")
+            
+            val appTitle = if (isBeta) "Myusiq (beta)" else "Myusiq"
+            view.findViewById<TextView>(R.id.tvAboutAppName)?.text = appTitle
             
             // Version
-            view.findViewById<TextView>(R.id.tvAboutVersion).text = getString(R.string.version_format, packageInfo.versionName)
+            view.findViewById<TextView>(R.id.tvAboutVersion).text = if (isBeta) {
+                "Version ${packageInfo.versionName} (beta)"
+            } else {
+                getString(R.string.version_format, packageInfo.versionName)
+            }
             
             // Maintainer
             view.findViewById<TextView>(R.id.tvAboutMaintainer).text = getString(R.string.maintainer_value)
