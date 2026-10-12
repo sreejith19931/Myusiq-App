@@ -190,6 +190,7 @@ class PlaylistsFragment : Fragment(R.layout.fragment_playlists) {
                     allItems.add(SmartPlaylist(getString(R.string.recently_added), R.drawable.ic_refresh))
                     allItems.add(SmartPlaylist(getString(R.string.most_popular), R.drawable.ic_heart_filled))
                     allItems.add(SmartPlaylist(getString(R.string.morning_mix), R.drawable.ic_light_mode))
+                    allItems.add(SmartPlaylist("Evening Chill", R.drawable.ic_dark_mode))
                     allItems.add(SmartPlaylist(getString(R.string.top_artists_mix), R.drawable.ic_playlist))
                     allItems.add(SmartPlaylist(getString(R.string.forgotten_favorites), R.drawable.ic_featured_playlist))
                     allItems.add(SmartPlaylist(getString(R.string.discover), R.drawable.ic_music_note_2))

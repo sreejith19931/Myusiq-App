@@ -190,6 +190,7 @@ class PlaylistDetailsFragment : Fragment(R.layout.fragment_tracks) {
                             "Recently Added" -> viewModel.getRecentlyAddedTracks()
                             "Most Popular" -> viewModel.getMostPopularTracks()
                             "Morning Mix" -> viewModel.getMorningMix()
+                            "Evening Chill" -> viewModel.getEveningMix()
                             "Top Artists Mix" -> viewModel.getTopArtistsMix()
                             "Forgotten Favorites" -> viewModel.getForgottenFavorites()
                             "Discover" -> viewModel.getDiscoverMix()

@@ -1370,6 +1370,8 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     suspend fun getMorningMix(): List<Song> = smartPlaylistUseCase.getMorningMix(originalTrackList)
 
+    suspend fun getEveningMix(): List<Song> = smartPlaylistUseCase.getEveningMix(originalTrackList)
+
     suspend fun getTopArtistsMix(): List<Song> = smartPlaylistUseCase.getTopArtistsMix(originalTrackList)
 
     suspend fun getForgottenFavorites(): List<Song> = smartPlaylistUseCase.getForgottenFavorites(originalTrackList)
