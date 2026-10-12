@@ -1031,8 +1031,15 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
                 // Showing Lyrics Card
                 tvLyricOverlay.isVisible = false
                 tvLyricOverlay.alpha = 0f
-                tvMinimalistLyric.isVisible = useMinimalist
-                rvLyrics.isVisible = !useMinimalist
+                tvMinimalistLyric.isVisible = useMinimalist && currentLyrics.isNotEmpty()
+                rvLyrics.isVisible = !useMinimalist && currentLyrics.isNotEmpty()
+
+                if (currentLyrics.isEmpty() && layoutLyricsLoading.visibility != View.VISIBLE) {
+                    layoutLyricsError.visibility = View.VISIBLE
+                } else if (currentLyrics.isNotEmpty()) {
+                    layoutLyricsError.visibility = View.GONE
+                    layoutLyricsLoading.visibility = View.GONE
+                }
             } else {
                 // Showing Album Art
                 val hasOverlayText = tvLyricOverlay.text.isNotBlank()
@@ -1257,6 +1264,12 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
         btnLyricsPoster.alpha = if (sorted.isNotEmpty()) 1.0f else 0.38f
         lyricsAdapter.notifyDataSetChanged()
         rvLyrics.scrollToPosition(0)
+
+        if (sorted.isNotEmpty()) {
+            layoutLyricsLoading.visibility = View.GONE
+            layoutLyricsError.visibility = View.GONE
+        }
+        updateLyricsVisibility()
     }
 
     private fun updateActiveLyric(pos: Int) {
