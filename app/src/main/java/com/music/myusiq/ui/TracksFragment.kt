@@ -297,7 +297,20 @@ class TracksFragment : Fragment() {
                     if (currentList != null && firstVisible in currentList.indices) {
                         val currentSong = currentList[firstVisible].song
                         val initial = currentSong.title.trim().firstOrNull() ?: '#'
-                        view?.findViewById<com.music.myusiq.ui.components.AlphabetIndexBar>(R.id.alphabetIndexBar)?.setSelectedLetter(initial)
+                        
+                        val indexBar = view?.findViewById<com.music.myusiq.ui.components.AlphabetIndexBar>(R.id.alphabetIndexBar)
+                        if (indexBar != null) {
+                            val charIndex = indexBar.alphabet.indexOf(if (initial.isLetter()) initial.uppercaseChar() else '#')
+                            if (charIndex != -1) {
+                                val firstView = (layoutManager as? LinearLayoutManager)?.findViewByPosition(firstVisible)
+                                val itemOffsetFraction = if (firstView != null && firstView.height > 0) {
+                                    (-firstView.top.toFloat() / firstView.height.toFloat()).coerceIn(0f, 1f)
+                                } else 0f
+                                
+                                val floatIndex = charIndex + (itemOffsetFraction * 0.3f)
+                                indexBar.setSelectedFloatIndex(floatIndex)
+                            }
+                        }
                     }
                 }
             })
