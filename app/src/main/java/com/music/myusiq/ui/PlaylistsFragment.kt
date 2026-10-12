@@ -35,9 +35,7 @@ import com.music.myusiq.domain.models.*
 import com.music.myusiq.data.AppDatabase
 import com.music.myusiq.data.dao.PlaylistDao
 import com.music.myusiq.ui.viewmodels.PlaybackViewModel
-import com.music.myusiq.utils.ReplayInfo
-import com.music.myusiq.utils.ReplayManager
-import com.music.myusiq.utils.ThemeUtils
+import com.music.myusiq.utils.*
 import com.music.myusiq.DatabaseProvider
 import com.music.myusiq.MainApplication
 import com.music.myusiq.R
@@ -66,6 +64,20 @@ class PlaylistsFragment : Fragment(R.layout.fragment_playlists) {
         val header = view.findViewById<View>(R.id.playlistsHeader)
         header.findViewById<TextView>(R.id.tvHeaderTitle).text = getString(R.string.playlists)
         tvHeaderSubtitle = header.findViewById(R.id.tvHeaderSubtitle)
+
+        context?.let { ctx ->
+            PageGuideManager.showGuideIfNeeded(
+                ctx,
+                pageKey = "playlists",
+                pageTitle = "Playlists & Smart Mixes Guide",
+                headerIconRes = R.drawable.ic_playlist,
+                features = listOf(
+                    GuideFeatureItem(R.drawable.ic_speed, "Smart AI Auto-Mixes", "Enjoy auto-generated Morning Mix, Top Artists, Forgotten Favorites, and Discover mixes."),
+                    GuideFeatureItem(R.drawable.ic_heart_filled, "Mood Playlists", "Tap Mood mixes (Energize, Relax, Party, Focus, Romance) to instantly load matching tracks."),
+                    GuideFeatureItem(R.drawable.ic_add, "Custom Playlists", "Tap the floating '+' button to create user playlists and organize your audio collection.")
+                )
+            )
+        }
 
         adapter = PlaylistsAdapter(
             onPlaylistClick = { item, transitionView, position ->

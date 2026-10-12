@@ -25,6 +25,7 @@ import com.music.myusiq.domain.models.FolderItem
 import com.music.myusiq.R
 import com.music.myusiq.ui.adapters.FolderAdapter
 import com.music.myusiq.ui.viewmodels.PlaybackViewModel
+import com.music.myusiq.utils.*
 
 class FoldersFragment : Fragment(R.layout.fragment_folders) {
     private val viewModel: PlaybackViewModel by activityViewModels()
@@ -54,6 +55,20 @@ class FoldersFragment : Fragment(R.layout.fragment_folders) {
         rvSearchResults = view.findViewById(R.id.rvSearchResults)
         layoutSearchEmptyState = view.findViewById(R.id.layoutSearchEmptyState)
         layoutEmptyState = view.findViewById(R.id.layoutEmptyState)
+
+        context?.let { ctx ->
+            PageGuideManager.showGuideIfNeeded(
+                ctx,
+                pageKey = "folders",
+                pageTitle = "Folders Browser Guide",
+                headerIconRes = R.drawable.ic_folder,
+                features = listOf(
+                    GuideFeatureItem(R.drawable.ic_folder, "Directory Browsing", "Browse tracks directly by phone storage directories and SD card folders."),
+                    GuideFeatureItem(R.drawable.ic_edit, "Folder Inclusion & Exclusion", "Toggle folder checkboxes to include or exclude specific directories (e.g. ringtones or voice notes) from media scans."),
+                    GuideFeatureItem(R.drawable.ic_play, "Play Entire Folder", "Tap the folder play icon to instantly play all tracks contained inside that directory.")
+                )
+            )
+        }
         
         val btnToggleView = view.findViewById<ImageView>(R.id.btnToggleView)
 

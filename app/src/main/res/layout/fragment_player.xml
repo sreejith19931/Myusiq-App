@@ -522,6 +522,7 @@
             android:paddingVertical="4dp">
 
             <ImageView
+                android:id="@+id/ivAudioQualityIcon"
                 android:layout_width="14dp"
                 android:layout_height="14dp"
                 android:layout_marginEnd="6dp"
