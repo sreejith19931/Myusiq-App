@@ -679,6 +679,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun initController(context: Context) {
+        if (controllerFuture != null || mediaController != null) return
         try {
             val sessionToken = SessionToken(context, ComponentName(context, PlaybackService::class.java))
             controllerFuture = MediaController.Builder(context, sessionToken).buildAsync()
@@ -708,11 +709,14 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                     refreshAudioSessionId()
                     
                     // If there's a pending playback from an early click, execute it now
-                    pendingPlayback?.let { (list, index) ->
-                        Log.i("PlaybackViewModel", "Executing pending playback for ${list.getOrNull(index)?.title}")
-                        playSong(list, index)
+                    val pending = pendingPlayback
+                    if (pending != null) {
                         pendingPlayback = null
-                    } ?: run {
+                        restoreJob?.cancel()
+                        restoreJob = null
+                        Log.i("PlaybackViewModel", "Executing pending playback for ${pending.first.getOrNull(pending.second)?.title}")
+                        playSong(pending.first, pending.second, playImmediately = true)
+                    } else {
                         restoreLastPlayedTrack()
                     }
                     

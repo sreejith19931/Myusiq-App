@@ -21,11 +21,32 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp" />
 
-        <LinearLayout
+        <!-- Scanner & Filters Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Scanner &amp; Filters"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:textColor="?attr/colorPrimary"
+            android:textStyle="bold"
+            android:layout_marginStart="8dp"
+            android:layout_marginBottom="8dp"
+            tools:ignore="HardcodedText" />
+
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="4dp">
+            android:layout_marginBottom="20dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="?attr/colorOutlineVariant"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerLow">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
 
                 <!-- Rescan -->
                 <LinearLayout
@@ -59,9 +80,10 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/rescan_library"
+                            android:text="Scan device storage for new or updated songs"
                             android:textAppearance="?attr/textAppearanceBodySmall"
-                            android:textColor="?attr/colorOnSurfaceVariant" />
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            tools:ignore="HardcodedText" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -96,7 +118,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Hide tracks under 30 seconds"
+                            android:text="Hide ringtones and short clips under 30s"
                             android:textAppearance="?attr/textAppearanceBodySmall"
                             android:textColor="?attr/colorOnSurfaceVariant"
                             tools:ignore="HardcodedText" />
@@ -137,7 +159,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Search for missing art and tags for new songs"
+                            android:text="Automatically fetch missing album art and track tags"
                             android:textAppearance="?attr/textAppearanceBodySmall"
                             android:textColor="?attr/colorOnSurfaceVariant"
                             tools:ignore="HardcodedText" />
@@ -148,53 +170,77 @@
                         android:layout_height="wrap_content" />
                 </LinearLayout>
 
-                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorOutlineVariant" android:layout_marginHorizontal="16dp"/>
-
-                <!-- Janitor -->
-                <LinearLayout
-                    android:id="@+id/rowLibraryJanitor"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="12dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true">
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_sort"
-                        android:layout_marginEnd="16dp"
-                        android:importantForAccessibility="no"
-                        app:tint="?attr/colorError" />
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/library_janitor"
-                            android:textAppearance="?attr/textAppearanceBodyLarge"
-                            android:textStyle="bold"
-                            android:textColor="?attr/colorError" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/library_janitor_desc"
-                            android:textAppearance="?attr/textAppearanceBodySmall"
-                            android:textColor="?attr/colorOnSurfaceVariant" />
-                    </LinearLayout>
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_arrow_right"
-                        android:importantForAccessibility="no"
-                        app:tint="?attr/colorOnSurfaceVariant" />
-                </LinearLayout>
-
             </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Storage & Maintenance Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Storage &amp; Cleanup"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:textColor="?attr/colorPrimary"
+            android:textStyle="bold"
+            android:layout_marginStart="8dp"
+            android:layout_marginBottom="8dp"
+            tools:ignore="HardcodedText" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="?attr/colorOutlineVariant"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerLow">
+
+            <!-- Janitor -->
+            <LinearLayout
+                android:id="@+id/rowLibraryJanitor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="12dp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_sort"
+                    android:layout_marginEnd="16dp"
+                    android:importantForAccessibility="no"
+                    app:tint="?attr/colorError" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/library_janitor"
+                        android:textAppearance="?attr/textAppearanceBodyLarge"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorError" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/library_janitor_desc"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+                </LinearLayout>
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:importantForAccessibility="no"
+                    app:tint="?attr/colorOnSurfaceVariant" />
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
     </LinearLayout>
 </ScrollView>

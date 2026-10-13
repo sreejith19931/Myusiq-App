@@ -21,11 +21,32 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp" />
 
-        <LinearLayout
+        <!-- Sound & Equalizer Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sound &amp; Audio Processing"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:textColor="?attr/colorPrimary"
+            android:textStyle="bold"
+            android:layout_marginStart="8dp"
+            android:layout_marginBottom="8dp"
+            tools:ignore="HardcodedText" />
+
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="4dp">
+            android:layout_marginBottom="20dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="?attr/colorOutlineVariant"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerLow">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
 
                 <!-- Equalizer -->
                 <LinearLayout
@@ -73,108 +94,7 @@
 
                 <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorOutlineVariant" android:layout_marginHorizontal="16dp"/>
 
-                <!-- Crossfade -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="12dp">
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_refresh"
-                            android:layout_marginEnd="16dp"
-                            android:importantForAccessibility="no"
-                            app:tint="?attr/colorOnSurfaceVariant" />
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/audio_crossfade"
-                                android:textAppearance="?attr/textAppearanceBodyLarge"
-                                android:textStyle="bold" />
-                            <TextView
-                                android:id="@+id/tvCrossfadeDesc"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                tools:text="Smooth overlap between tracks (2s)"
-                                android:textAppearance="?attr/textAppearanceBodySmall"
-                                android:textColor="?attr/colorOnSurfaceVariant" />
-                        </LinearLayout>
-                        <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/switchCrossfade"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" />
-                    </LinearLayout>
-                    <com.google.android.material.slider.Slider
-                        android:id="@+id/sliderCrossfade"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="40dp"
-                        android:valueFrom="1.0"
-                        android:valueTo="10.0"
-                        android:stepSize="1.0"
-                        android:value="2.0"
-                        android:visibility="gone"
-                        tools:visibility="visible" />
-                </LinearLayout>
-
-                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorOutlineVariant" android:layout_marginHorizontal="16dp"/>
-
-                <!-- Bluetooth Auto-Actions -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="12dp">
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_play"
-                            android:layout_marginEnd="16dp"
-                            android:importantForAccessibility="no"
-                            app:tint="?attr/colorOnSurfaceVariant" />
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/bt_auto_resume"
-                                android:textAppearance="?attr/textAppearanceBodyLarge"
-                                android:textStyle="bold" />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/bt_auto_resume_desc"
-                                android:textAppearance="?attr/textAppearanceBodySmall"
-                                android:textColor="?attr/colorOnSurfaceVariant" />
-                        </LinearLayout>
-                        <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/switchBtResume"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorOutlineVariant" android:layout_marginHorizontal="16dp"/>
-
+                <!-- ReplayGain -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -184,7 +104,7 @@
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:src="@drawable/ic_pause"
+                        android:src="@drawable/ic_volume_up"
                         android:layout_marginEnd="16dp"
                         android:importantForAccessibility="no"
                         app:tint="?attr/colorOnSurfaceVariant" />
@@ -196,18 +116,18 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/unplug_auto_pause"
+                            android:text="@string/replaygain_title"
                             android:textAppearance="?attr/textAppearanceBodyLarge"
                             android:textStyle="bold" />
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/unplug_auto_pause_desc"
+                            android:text="@string/replaygain_desc"
                             android:textAppearance="?attr/textAppearanceBodySmall"
                             android:textColor="?attr/colorOnSurfaceVariant" />
                     </LinearLayout>
                     <com.google.android.material.materialswitch.MaterialSwitch
-                        android:id="@+id/switchUnplugPause"
+                        android:id="@+id/switchReplayGain"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content" />
                 </LinearLayout>
@@ -292,6 +212,131 @@
                         android:layout_height="wrap_content" />
                 </LinearLayout>
 
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Playback & Queue Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Playback &amp; Queue"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:textColor="?attr/colorPrimary"
+            android:textStyle="bold"
+            android:layout_marginStart="8dp"
+            android:layout_marginBottom="8dp"
+            tools:ignore="HardcodedText" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="?attr/colorOutlineVariant"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerLow">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Crossfade -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_refresh"
+                            android:layout_marginEnd="16dp"
+                            android:importantForAccessibility="no"
+                            app:tint="?attr/colorOnSurfaceVariant" />
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/audio_crossfade"
+                                android:textAppearance="?attr/textAppearanceBodyLarge"
+                                android:textStyle="bold" />
+                            <TextView
+                                android:id="@+id/tvCrossfadeDesc"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                tools:text="Smooth overlap between tracks (2s)"
+                                android:textAppearance="?attr/textAppearanceBodySmall"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
+                        </LinearLayout>
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/switchCrossfade"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/sliderCrossfade"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="40dp"
+                        android:valueFrom="1.0"
+                        android:valueTo="10.0"
+                        android:stepSize="1.0"
+                        android:value="2.0"
+                        android:visibility="gone"
+                        tools:visibility="visible" />
+                </LinearLayout>
+
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorOutlineVariant" android:layout_marginHorizontal="16dp"/>
+
+                <!-- Autoplay Song Radio -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="12dp">
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_shuffle"
+                        android:layout_marginEnd="16dp"
+                        android:importantForAccessibility="no"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/autoplay_song_radio"
+                            android:textAppearance="?attr/textAppearanceBodyLarge"
+                            android:textStyle="bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/autoplay_song_radio_desc"
+                            android:textAppearance="?attr/textAppearanceBodySmall"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                    </LinearLayout>
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchAutoplayRadio"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
                 <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorOutlineVariant" android:layout_marginHorizontal="16dp"/>
 
                 <!-- Shake to Shuffle -->
@@ -332,7 +377,143 @@
                         android:layout_height="wrap_content" />
                 </LinearLayout>
 
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Hardware & Connectivity Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Hardware &amp; Devices"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:textColor="?attr/colorPrimary"
+            android:textStyle="bold"
+            android:layout_marginStart="8dp"
+            android:layout_marginBottom="8dp"
+            tools:ignore="HardcodedText" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="?attr/colorOutlineVariant"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerLow">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Bluetooth Auto-Resume -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="12dp">
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_play"
+                        android:layout_marginEnd="16dp"
+                        android:importantForAccessibility="no"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/bt_auto_resume"
+                            android:textAppearance="?attr/textAppearanceBodyLarge"
+                            android:textStyle="bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/bt_auto_resume_desc"
+                            android:textAppearance="?attr/textAppearanceBodySmall"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                    </LinearLayout>
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchBtResume"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
                 <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorOutlineVariant" android:layout_marginHorizontal="16dp"/>
+
+                <!-- Unplug Auto-Pause -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="12dp">
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_pause"
+                        android:layout_marginEnd="16dp"
+                        android:importantForAccessibility="no"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/unplug_auto_pause"
+                            android:textAppearance="?attr/textAppearanceBodyLarge"
+                            android:textStyle="bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/unplug_auto_pause_desc"
+                            android:textAppearance="?attr/textAppearanceBodySmall"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                    </LinearLayout>
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchUnplugPause"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Display & Guides Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Display &amp; Guides"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:textColor="?attr/colorPrimary"
+            android:textStyle="bold"
+            android:layout_marginStart="8dp"
+            android:layout_marginBottom="8dp"
+            tools:ignore="HardcodedText" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="?attr/colorOutlineVariant"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerLow">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
 
                 <!-- Audio Quality Badge -->
                 <LinearLayout
@@ -368,86 +549,6 @@
                     </LinearLayout>
                     <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchAudioQualityBadge"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
-                </LinearLayout>
-
-                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorOutlineVariant" android:layout_marginHorizontal="16dp"/>
-
-                <!-- ReplayGain -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="12dp">
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_volume_up"
-                        android:layout_marginEnd="16dp"
-                        android:importantForAccessibility="no"
-                        app:tint="?attr/colorOnSurfaceVariant" />
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/replaygain_title"
-                            android:textAppearance="?attr/textAppearanceBodyLarge"
-                            android:textStyle="bold" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/replaygain_desc"
-                            android:textAppearance="?attr/textAppearanceBodySmall"
-                            android:textColor="?attr/colorOnSurfaceVariant" />
-                    </LinearLayout>
-                    <com.google.android.material.materialswitch.MaterialSwitch
-                        android:id="@+id/switchReplayGain"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
-                </LinearLayout>
-
-                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorOutlineVariant" android:layout_marginHorizontal="16dp"/>
-
-                <!-- Autoplay Song Radio -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="12dp">
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_shuffle"
-                        android:layout_marginEnd="16dp"
-                        android:importantForAccessibility="no"
-                        app:tint="?attr/colorOnSurfaceVariant" />
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/autoplay_song_radio"
-                            android:textAppearance="?attr/textAppearanceBodyLarge"
-                            android:textStyle="bold" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/autoplay_song_radio_desc"
-                            android:textAppearance="?attr/textAppearanceBodySmall"
-                            android:textColor="?attr/colorOnSurfaceVariant" />
-                    </LinearLayout>
-                    <com.google.android.material.materialswitch.MaterialSwitch
-                        android:id="@+id/switchAutoplayRadio"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content" />
                 </LinearLayout>
@@ -499,5 +600,7 @@
                 </LinearLayout>
 
             </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
     </LinearLayout>
 </ScrollView>

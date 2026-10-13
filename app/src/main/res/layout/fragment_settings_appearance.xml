@@ -21,11 +21,32 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp" />
 
-        <LinearLayout
+        <!-- Theme & Colors Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Theme &amp; Colors"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:textColor="?attr/colorPrimary"
+            android:textStyle="bold"
+            android:layout_marginStart="8dp"
+            android:layout_marginBottom="8dp"
+            tools:ignore="HardcodedText" />
+
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="4dp">
+            android:layout_marginBottom="20dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="?attr/colorOutlineVariant"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerLow">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
 
                 <!-- Theme Mode -->
                 <LinearLayout
@@ -125,7 +146,35 @@
                     <include layout="@layout/layout_settings_swatches" />
                 </LinearLayout>
 
-                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorOutlineVariant" android:layout_marginHorizontal="16dp"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Player & Visuals Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Now Playing &amp; Visuals"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:textColor="?attr/colorPrimary"
+            android:textStyle="bold"
+            android:layout_marginStart="8dp"
+            android:layout_marginBottom="8dp"
+            tools:ignore="HardcodedText" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="?attr/colorOutlineVariant"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerLow">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
 
                 <!-- Adaptive Colors -->
                 <LinearLayout
@@ -207,86 +256,6 @@
 
                 <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorOutlineVariant" android:layout_marginHorizontal="16dp"/>
 
-                <!-- Waveform -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="12dp">
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_realtime_wave"
-                        android:layout_marginEnd="16dp"
-                        android:importantForAccessibility="no"
-                        app:tint="?attr/colorOnSurfaceVariant" />
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/real_time_waveform"
-                            android:textAppearance="?attr/textAppearanceBodyLarge"
-                            android:textStyle="bold" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/waveform_desc"
-                            android:textAppearance="?attr/textAppearanceBodySmall"
-                            android:textColor="?attr/colorOnSurfaceVariant" />
-                    </LinearLayout>
-                    <com.google.android.material.materialswitch.MaterialSwitch
-                        android:id="@+id/switchFftVisualizer"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
-                </LinearLayout>
-
-                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorOutlineVariant" android:layout_marginHorizontal="16dp"/>
-
-                <!-- App Typography -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="12dp">
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_settings"
-                        android:layout_marginEnd="16dp"
-                        android:importantForAccessibility="no"
-                        app:tint="?attr/colorOnSurfaceVariant" />
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/app_typography"
-                            android:textAppearance="?attr/textAppearanceBodyLarge"
-                            android:textStyle="bold" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/app_typography_desc"
-                            android:textAppearance="?attr/textAppearanceBodySmall"
-                            android:textColor="?attr/colorOnSurfaceVariant" />
-                    </LinearLayout>
-                    <com.google.android.material.materialswitch.MaterialSwitch
-                        android:id="@+id/switchAppTypography"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
-                </LinearLayout>
-
-                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorOutlineVariant" android:layout_marginHorizontal="16dp"/>
-
                 <!-- Glassmorphism Player -->
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -325,6 +294,110 @@
                         android:layout_height="wrap_content" />
                 </LinearLayout>
 
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorOutlineVariant" android:layout_marginHorizontal="16dp"/>
+
+                <!-- FFT Waveform Visualizer -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="12dp">
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_equalizer"
+                        android:layout_marginEnd="16dp"
+                        android:importantForAccessibility="no"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/real_time_waveform"
+                            android:textAppearance="?attr/textAppearanceBodyLarge"
+                            android:textStyle="bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/waveform_desc"
+                            android:textAppearance="?attr/textAppearanceBodySmall"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                    </LinearLayout>
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchFftVisualizer"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
             </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Typography Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Typography"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:textColor="?attr/colorPrimary"
+            android:textStyle="bold"
+            android:layout_marginStart="8dp"
+            android:layout_marginBottom="8dp"
+            tools:ignore="HardcodedText" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="?attr/colorOutlineVariant"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerLow">
+
+            <!-- App Typography -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="12dp">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_edit"
+                    android:layout_marginEnd="16dp"
+                    android:importantForAccessibility="no"
+                    app:tint="?attr/colorOnSurfaceVariant" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/app_typography"
+                        android:textAppearance="?attr/textAppearanceBodyLarge"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/app_typography_desc"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+                </LinearLayout>
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchAppTypography"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
     </LinearLayout>
 </ScrollView>
