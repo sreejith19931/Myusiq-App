@@ -68,6 +68,7 @@ class TracksFragment : Fragment() {
     private var layoutShimmer: View? = null
     private var btnBack: View? = null
     private var isSelectionMode = false
+    private var activeAlphabetMap: Map<Char, Int> = emptyMap()
     private val selectedSongs = MutableStateFlow<Set<Long>>(emptySet())
 
     private var lastSortOrder: PlaybackViewModel.TrackSortOrder? = null
@@ -300,14 +301,26 @@ class TracksFragment : Fragment() {
                         
                         val indexBar = view?.findViewById<com.music.myusiq.ui.components.AlphabetIndexBar>(R.id.alphabetIndexBar)
                         if (indexBar != null) {
-                            val charIndex = indexBar.alphabet.indexOf(if (initial.isLetter()) initial.uppercaseChar() else '#')
+                            val targetChar = if (initial.isLetter()) initial.uppercaseChar() else '#'
+                            val charIndex = indexBar.alphabet.indexOf(targetChar)
                             if (charIndex != -1) {
                                 val firstView = (layoutManager as? LinearLayoutManager)?.findViewByPosition(firstVisible)
                                 val itemOffsetFraction = if (firstView != null && firstView.height > 0) {
                                     (-firstView.top.toFloat() / firstView.height.toFloat()).coerceIn(0f, 1f)
                                 } else 0f
+
+                                val activeEntries = indexBar.alphabet.mapNotNull { ch -> activeAlphabetMap[ch]?.let { pos -> ch to pos } }
+                                val currentEntryIdx = activeEntries.indexOfFirst { it.first == targetChar }
+
+                                val sectionFraction = if (currentEntryIdx != -1 && currentEntryIdx < activeEntries.size - 1) {
+                                    val startPos = activeEntries[currentEntryIdx].second
+                                    val nextPos = activeEntries[currentEntryIdx + 1].second
+                                    if (nextPos > startPos) {
+                                        ((firstVisible.toFloat() + itemOffsetFraction - startPos.toFloat()) / (nextPos - startPos).toFloat()).coerceIn(0f, 1f)
+                                    } else itemOffsetFraction * 0.3f
+                                } else itemOffsetFraction * 0.3f
                                 
-                                val floatIndex = charIndex + (itemOffsetFraction * 0.3f)
+                                val floatIndex = charIndex + sectionFraction
                                 indexBar.setSelectedFloatIndex(floatIndex)
                             }
                         }
@@ -341,6 +354,7 @@ class TracksFragment : Fragment() {
                 map[initial] = i
             }
         }
+        activeAlphabetMap = map
         view?.findViewById<com.music.myusiq.ui.components.AlphabetIndexBar>(R.id.alphabetIndexBar)?.updateActivePositions(map)
     }
 

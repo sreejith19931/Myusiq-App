@@ -41,7 +41,8 @@ class AboutFragment : Fragment(R.layout.fragment_about) {
             
             // Version
             view.findViewById<TextView>(R.id.tvAboutVersion).text = if (isBeta) {
-                "Version ${packageInfo.versionName} (beta)"
+                val versionNum = packageInfo.versionName?.replace(Regex("(?i)-?beta\\d*"), "")?.trim() ?: ""
+                "v$versionNum (beta)"
             } else {
                 getString(R.string.version_format, packageInfo.versionName)
             }

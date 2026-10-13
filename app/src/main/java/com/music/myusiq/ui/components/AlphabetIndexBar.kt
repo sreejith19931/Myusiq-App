@@ -20,9 +20,9 @@ class AlphabetIndexBar @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr) {
 
     val alphabet = arrayOf(
-        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
+        '#', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
         'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-        'U', 'V', 'W', 'X', 'Y', 'Z', '#'
+        'U', 'V', 'W', 'X', 'Y', 'Z'
     )
 
     private val activePositions = mutableMapOf<Char, Int>()
@@ -40,6 +40,7 @@ class AlphabetIndexBar @JvmOverloads constructor(
 
     private var selectedIndex = -1
     private var selectedFloatIndex = -1f
+    private var animatedFloatIndex = -1f
     private var bubbleCard: MaterialCardView? = null
     private var bubbleText: TextView? = null
 
@@ -81,7 +82,25 @@ class AlphabetIndexBar @JvmOverloads constructor(
         val baseInactiveSize = (itemHeight * 0.55f).coerceIn(8f * density, 12f * density)
 
         val defaultX = width - (16f * density)
-        val activeIndex = if (selectedFloatIndex >= 0f) selectedFloatIndex else selectedIndex.toFloat()
+        val targetIndex = if (selectedFloatIndex >= 0f) selectedFloatIndex else selectedIndex.toFloat()
+
+        if (targetIndex >= 0f) {
+            if (animatedFloatIndex < 0f) {
+                animatedFloatIndex = targetIndex
+            } else {
+                val diff = targetIndex - animatedFloatIndex
+                if (abs(diff) > 0.001f) {
+                    animatedFloatIndex += diff * 0.35f
+                    postInvalidateOnAnimation()
+                } else {
+                    animatedFloatIndex = targetIndex
+                }
+            }
+        } else {
+            animatedFloatIndex = -1f
+        }
+
+        val activeIndex = if (animatedFloatIndex >= 0f) animatedFloatIndex else targetIndex
 
         for (i in alphabet.indices) {
             val letter = alphabet[i]
@@ -95,9 +114,10 @@ class AlphabetIndexBar @JvmOverloads constructor(
             if (activeIndex >= 0f) {
                 val dist = abs(i.toFloat() - activeIndex)
                 if (dist <= 2.5f) {
-                    val influence = (1.0f - (dist / 2.5f)).coerceIn(0f, 1f)
-                    scaleFactor = 1.0f + (1.2f * influence) // Enlarges up to 2.2x smoothly!
-                    xShift = -14f * density * influence // Pops out up to -14dp
+                    val rawInfluence = (1.0f - (dist / 2.5f)).coerceIn(0f, 1f)
+                    val influence = ((1.0f - kotlin.math.cos(rawInfluence * Math.PI.toFloat())) / 2.0f)
+                    scaleFactor = 1.0f + (1.25f * influence) // Enlarges up to 2.25x smoothly!
+                    xShift = -16f * density * influence // Pops out up to -16dp
                 } else {
                     scaleFactor = 1.0f
                     xShift = 0f

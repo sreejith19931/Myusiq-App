@@ -17,8 +17,8 @@ android {
         applicationId = "com.music.myusiq"
         minSdk = 26
         targetSdk = 37
-        versionCode = 10200
-        versionName = "1.2.0-beta1"
+        versionCode = 10202
+        versionName = "1.2.0-beta2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

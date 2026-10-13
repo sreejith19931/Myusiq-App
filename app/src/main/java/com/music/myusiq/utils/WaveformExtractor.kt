@@ -19,11 +19,15 @@ object WaveformExtractor {
                 extractor.setDataSource(context, uri, null)
                 val trackCount = extractor.trackCount
                 var audioTrackIndex = -1
+                var durationUs = 0L
                 for (i in 0 until trackCount) {
                     val format = extractor.getTrackFormat(i)
                     val mime = format.getString(MediaFormat.KEY_MIME) ?: ""
                     if (mime.startsWith("audio/")) {
                         audioTrackIndex = i
+                        if (format.containsKey(MediaFormat.KEY_DURATION)) {
+                            durationUs = format.getLong(MediaFormat.KEY_DURATION)
+                        }
                         break
                     }
                 }
@@ -33,24 +37,44 @@ object WaveformExtractor {
 
                 val amplitudes = mutableListOf<Float>()
                 val buffer = ByteBuffer.allocate(1024 * 16)
-                
-                // Sample roughly every 1% of the file for 100 points
-                // For simplicity, we just take max peaks at intervals
-                var count = 0
-                while (extractor.readSampleData(buffer, 0) >= 0) {
-                    if (count % 200 == 0) { // Downsample
-                        var max = 0
-                        for (i in 0 until buffer.remaining() step 2) {
-                            if (i + 1 < buffer.remaining()) {
-                                val sample = buffer.getShort(i).toInt()
-                                max = maxOf(max, abs(sample))
+
+                if (durationUs > 0L) {
+                    // Extract 100 points evenly sampled across the whole track duration (0% to 99%)
+                    val stepUs = durationUs / 100L
+                    for (step in 0 until 100) {
+                        val seekTargetUs = step * stepUs
+                        extractor.seekTo(seekTargetUs, MediaExtractor.SEEK_TO_CLOSEST_SYNC)
+                        buffer.clear()
+                        val sampleSize = extractor.readSampleData(buffer, 0)
+                        if (sampleSize > 0) {
+                            var max = 0
+                            for (i in 0 until buffer.remaining() step 2) {
+                                if (i + 1 < buffer.remaining()) {
+                                    val sample = buffer.getShort(i).toInt()
+                                    max = maxOf(max, abs(sample))
+                                }
                             }
+                            amplitudes.add(max / 32768f)
                         }
-                        amplitudes.add(max / 32768f)
                     }
-                    if (amplitudes.size >= 100) break
-                    extractor.advance()
-                    count++
+                } else {
+                    // Fallback for streams without duration header: sample sequentially
+                    var count = 0
+                    while (extractor.readSampleData(buffer, 0) >= 0) {
+                        if (count % 150 == 0) {
+                            var max = 0
+                            for (i in 0 until buffer.remaining() step 2) {
+                                if (i + 1 < buffer.remaining()) {
+                                    val sample = buffer.getShort(i).toInt()
+                                    max = maxOf(max, abs(sample))
+                                }
+                            }
+                            amplitudes.add(max / 32768f)
+                        }
+                        if (amplitudes.size >= 100) break
+                        extractor.advance()
+                        count++
+                    }
                 }
                 
                 if (amplitudes.isEmpty()) return@withContext null
