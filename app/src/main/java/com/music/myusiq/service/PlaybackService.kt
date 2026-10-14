@@ -1265,6 +1265,11 @@ class PlaybackService : MediaLibraryService() {
                 updateMediaSessionCustomLayout()
             }
 
+            override fun onTimelineChanged(timeline: androidx.media3.common.Timeline, reason: Int) {
+                if (exoPlayer !== player) return
+                updateWidgets()
+            }
+
             override fun onPlayerError(error: PlaybackException) {
                 if (exoPlayer !== player) return
                 Log.e("PlaybackService", "Player error: ${error.errorCode}", error)
@@ -1505,6 +1510,7 @@ class PlaybackService : MediaLibraryService() {
         
         MyusiqWidgetProvider.updateAllWidgets(applicationContext, song, isPlaying, position)
         MyusiqSolidWidgetProvider.updateAllWidgets(applicationContext, song, isPlaying, position)
+        syncStateToWearables()
     }
 
     private fun refreshAudioSettings() {
@@ -1759,7 +1765,7 @@ class PlaybackService : MediaLibraryService() {
                 val artworkData = metadata?.artworkData
                 val artworkUri = metadata?.artworkUri
 
-                val artBytes: ByteArray? = if (artworkData != null && artworkData.isNotEmpty()) {
+                var artBytes: ByteArray? = if (artworkData != null && artworkData.isNotEmpty()) {
                     artworkData
                 } else if (artworkUri != null) {
                     try {
@@ -1772,6 +1778,22 @@ class PlaybackService : MediaLibraryService() {
                     }
                 } else {
                     null
+                }
+
+                if (artBytes == null && currentItem != null) {
+                    val extras = metadata?.extras
+                    val songId = extras?.getLong("id") ?: -1L
+                    val songPath = extras?.getString("path") ?: ""
+                    if (songId != -1L || songPath.isNotEmpty()) {
+                        val artFile = ArtworkUtils.getArtworkFile(applicationContext, songId, songPath)
+                        if (artFile != null && artFile.exists()) {
+                            try {
+                                artBytes = artFile.readBytes()
+                            } catch (e: Exception) {
+                                Log.e("PlaybackService", "Error reading artwork file for wear", e)
+                            }
+                        }
+                    }
                 }
 
                 val putDataMapReq = PutDataMapRequest.create("/myusiq/state").apply {
