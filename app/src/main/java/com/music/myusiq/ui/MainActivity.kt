@@ -676,6 +676,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     override fun onResume() {
         super.onResume()
         accelerometer?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
+        UpdateManager.checkPendingInstall(this)
     }
 
     override fun onPause() {
