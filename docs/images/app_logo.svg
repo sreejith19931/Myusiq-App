@@ -1,0 +1,23 @@
+<svg width="108" height="108" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="108" height="108" rx="24" fill="#EEF1F6"/>
+
+  <!-- Headband Arc -->
+  <path d="M 29 48 C 29 18 79 18 79 48" stroke="#5A6370" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- Left Earcup -->
+  <path d="M 27 46 H 31 V 66 H 27 C 24.8 66 23 64.2 23 62 V 50 C 23 47.8 24.8 46 27 46 Z" fill="#5A6370"/>
+  <rect x="30" y="49" width="1" height="14" fill="#3A3F47"/>
+
+  <!-- Right Earcup -->
+  <path d="M 77 46 H 81 C 83.2 46 85 47.8 85 50 V 62 C 85 64.2 83.2 66 81 66 H 77 V 46 Z" fill="#5A6370"/>
+  <rect x="77" y="49" width="1" height="14" fill="#3A3F47"/>
+
+  <!-- Audio Waveform -->
+  <path d="M 32 56 C 36 56 37 42 42 42 C 47 42 47 70 52 70 C 57 70 57 36 63 36 C 69 36 72 56 76 56" stroke="#0B2545" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Frequency Nodes -->
+  <circle cx="42" cy="36" r="2" fill="#134074"/>
+  <circle cx="52" cy="76" r="1.5" fill="#134074"/>
+  <circle cx="63" cy="30" r="2.5" fill="#134074"/>
+</svg>

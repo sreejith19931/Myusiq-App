@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Myusiq | Modern Open-Source Music Player for Android</title>
+
+    <link rel="icon" type="image/svg+xml" href="images/app_logo.svg">
+
+    <!-- OpenGraph / Social Metadata -->
+    <meta property="og:title" content="Myusiq | Modern Open-Source Music Player for Android">
+    <meta property="og:description" content="Experience studio-grade audio with Material You dynamic theming. 100% offline, privacy-first, and open-source.">
+    <meta property="og:image" content="https://myusiq.vercel.app/images/app_logo.png">
+    <meta property="og:url" content="https://myusiq.vercel.app">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://myusiq.vercel.app/images/app_logo.png">
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Announcement Banner for Major Releases -->
+    <div id="announcement-banner" class="announcement-banner" style="display: flex;">
+        <span class="banner-badge">🎉 Major Release</span>
+        <span id="banner-text">🎉 Major Release! Welcome to Myusiq v1.2.0 — Experience the next level of offline audio!</span>
+        <a id="banner-action" href="#download" class="banner-link">Get Update</a>
+        <button class="banner-close" onclick="closeBanner()" aria-label="Close Announcement">&times;</button>
+    </div>
+
+    <!-- Navbar -->
+    <nav id="navbar">
+        <div class="container nav-container">
+            <a href="#" class="nav-logo">
+                <img src="images/app_logo.svg" alt="Myusiq Logo">
+                <span class="brand-font">Myusiq</span>
+            </a>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle Light/Dark Theme">
+                    <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                    <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                </button>
+                <a href="https://github.com/sreejith19931/Myusiq/issues" target="_blank" rel="noopener" class="btn btn-outlined">Report Bug</a>
+                <a href="#download" class="btn btn-primary">Get APK (v1.2.0)</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="container hero-grid reveal active">
+            <div class="hero-text">
+                <h1>The Music Player Built for Audiophiles & Privacy Purists</h1>
+                <p>Experience studio-grade audio with dynamic Material You theming that adapts to your album art. 100% open-source, ad-free, and offline.</p>
+                <div class="hero-actions">
+                    <a href="https://github.com/sreejith19931/Myusiq-App/releases" class="btn btn-primary">
+                        📥 Download APK (v1.2.0)
+                    </a>
+                    <a href="https://github.com/sreejith19931/Myusiq" target="_blank" rel="noopener" class="btn btn-outlined">
+                        ⭐ GitHub Source
+                    </a>
+                </div>
+
+                <!-- Theme Sandbox Toggle -->
+                <div class="theme-test-wrapper">
+                    <button id="toggle-theme-picker" class="btn btn-outlined" onclick="toggleThemePicker()">
+                        🎨 Test Dynamic Themes
+                    </button>
+                    <div id="theme-widget" class="theme-widget" style="display: none; margin-top: 16px;">
+                        <p style="margin-bottom: 12px; font-weight: 500; font-family: 'Space Grotesk', sans-serif;">Select Theme Palette</p>
+                        <div class="color-dot active" style="background: #A78BFA;" onclick="changeTheme('#A78BFA', '#2E1065', this)"></div>
+                        <div class="color-dot" style="background: #38BDF8;" onclick="changeTheme('#38BDF8', '#0F172A', this)"></div>
+                        <div class="color-dot" style="background: #43A047;" onclick="changeTheme('#43A047', '#1B5E20', this)"></div>
+                        <div class="color-dot" style="background: #E53935;" onclick="changeTheme('#E53935', '#B71C1C', this)"></div>
+                        <div class="color-dot" style="background: #FB8C00;" onclick="changeTheme('#FB8C00', '#E65100', this)"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hero Phone Mockup -->
+            <div class="hero-visual">
+                <div class="phone-frame">
+                    <div class="phone-notch"></div>
+                    <img src="images/screenshot_player.png" alt="Myusiq Player Screen" class="phone-screen">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Interactive Features Section -->
+
+                                <!-- Latest Release Blog Announcement -->
+    <section id="latest-blog-post" class="blog-announcement-section">
+        <div class="container">
+            <div class="glass-card blog-card reveal">
+                <div class="blog-header">
+                    <div class="blog-badge-wrap">
+                        <span class="blog-badge">🚀 FEATURED RELEASE</span>
+                        <span class="blog-version">v1.2.0</span>
+                    </div>
+                    <span class="blog-date">Oct 12, 2026</span>
+                </div>
+                <h2 class="blog-title">What's New in Myusiq v1.2.0</h2>
+                <div class="blog-body">
+                    <p class="blog-intro">We are excited to announce the official release of <strong>Myusiq v1.2.0</strong>! This update brings key feature additions, performance optimizations, and important usability upgrades to your audio experience.</p>
+                    <div class="blog-highlights-box">
+                        <h4 class="blog-highlights-title">✨ Key Features &amp; Changes Implemented</h4>
+                        <ul class="blog-items-list">
+                            <li><strong>A-Z FastScroller Enhancements</strong>: Positioned '#' symbol on top and implemented smooth 3D fisheye wave zoom animation with smoothstep curve.</li>
+                            <li><strong>Settings Page Reorganization</strong>: Grouped all Settings categories and sub-screens into clean Material 3 card sections with section headers.</li>
+                            <li><strong>Whole-Track Energy Analysis & Smart Mixes</strong>: Updated waveform extractor to sample 100 points across the entire track duration and guaranteed full 20-50 track smart playlist generation.</li>
+                            <li><strong>App Launch Responsiveness</strong>: Optimized PlaybackViewModel to start playback instantly when tapping a track on app launch with zero latency.</li>
+                            <li><strong>In-App GitHub Update Engine</strong>: Automated release checks, direct APK downloading with progress status, rate limit handling, and Android 8.0+ installer permissions.</li>
+                            <li><strong>In-App Update Checker Fixes</strong>: Fixed issue where "Check for Updates" reported "Unable to check. Check internet connection" by adding Proguard/R8 `@Keep` rules for Gson models.</li>
+                            <li><strong>Specific Error Feedback</strong>: Enhanced update check status reporting to distinguish network disconnections from GitHub API rate limits (HTTP 403/429), HTTP 404, or parse errors.</li>
+                            <li><strong>Multi-Repository Fallback & Asset Filtering</strong>: Added fallback endpoint support and improved APK asset matching to reliably download phone installer binaries.</li>
+                            <li><strong>Package Install Permission Handling</strong>: Handled Android 8.0+ unknown app installation permissions gracefully.</li>
+                            <li><strong>In-App GitHub Update Tracker</strong>: Automatic update check on app launch and manual check in Settings -> About with direct APK download & installation.</li>
+                            <li><strong>Telegram Announcement Automation</strong>: Integrated automated release publishing & Telegram channel notifications.</li>
+                            <li><strong>UI & Performance Enhancements</strong>: General polish, bug fixes, and stability improvements.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="blog-actions">
+                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/download/v1.2.0/Myusiq-v1.2.0.apk" class="btn btn-primary btn-sm">
+                        ⚡ Download Myusiq-v1.2.0.apk
+                    </a>
+                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/tag/v1.2.0" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
+                        📦 View Release Notes on GitHub
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <section id="features" class="features-section">
+        <div class="container">
+            <div class="section-header reveal">
+                <span class="section-badge">Crafted for Excellence</span>
+                <h2 class="section-title">Designed with Discerning Audio Detail</h2>
+                <p class="section-subtitle">Every feature in Myusiq is engineered for high performance, local library health, and total control.</p>
+            </div>
+
+            <div class="features-grid">
+                <!-- Card 1: Material You -->
+                <div class="glass-card feature-card reveal">
+                    <span class="icon">🎨</span>
+                    <h3>Material You Expressive</h3>
+                    <p>The interface extracts dynamic color swatches from your active album art, transforming backgrounds, buttons, and animations live.</p>
+                </div>
+
+                <!-- Card 2: Interactive Studio EQ -->
+                <div class="glass-card feature-card reveal">
+                    <span class="icon">🎚️</span>
+                    <h3>Studio 5-Band Equalizer</h3>
+                    <p>Precision audio shaping with custom frequency sliders, bass boost, and visual frequency response curves.</p>
+                    <div class="eq-container">
+                        <svg class="eq-svg-wrap" viewBox="0 0 340 120">
+                            <path id="eq-path" d="M 0 60 C 15 60, 15 60, 30 60 C 65 60, 65 60, 100 60 C 135 60, 135 60, 170 60 C 205 60, 205 60, 240 60 C 275 60, 295 60, 310 60 C 325 60, 325 60, 340 60" fill="none" stroke="var(--primary)" stroke-width="4" stroke-linecap="round"></path>
+                        </svg>
+                        <div class="eq-controls">
+                            <div class="eq-band">
+                                <input type="range" class="eq-slider" min="-10" max="10" value="0" aria-label="Equalizer 60 Hz Band Slider">
+                                <span class="eq-badge" id="eq-val-0">0 dB</span>
+                            </div>
+                            <div class="eq-band">
+                                <input type="range" class="eq-slider" min="-10" max="10" value="0" aria-label="Equalizer 230 Hz Band Slider">
+                                <span class="eq-badge" id="eq-val-1">0 dB</span>
+                            </div>
+                            <div class="eq-band">
+                                <input type="range" class="eq-slider" min="-10" max="10" value="0" aria-label="Equalizer 910 Hz Band Slider">
+                                <span class="eq-badge" id="eq-val-2">0 dB</span>
+                            </div>
+                            <div class="eq-band">
+                                <input type="range" class="eq-slider" min="-10" max="10" value="0" aria-label="Equalizer 4 kHz Band Slider">
+                                <span class="eq-badge" id="eq-val-3">0 dB</span>
+                            </div>
+                            <div class="eq-band">
+                                <input type="range" class="eq-slider" min="-10" max="10" value="0" aria-label="Equalizer 14 kHz Band Slider">
+                                <span class="eq-badge" id="eq-val-4">0 dB</span>
+                            </div>
+                        </div>
+                        <div class="preset-btns">
+                            <button class="preset-btn active" data-preset="flat" onclick="applyEqPreset('flat')">Flat</button>
+                            <button class="preset-btn" data-preset="bass" onclick="applyEqPreset('bass')">Bass Boost</button>
+                            <button class="preset-btn" data-preset="vocal" onclick="applyEqPreset('vocal')">Vocal Clarity</button>
+                            <button class="preset-btn" data-preset="electronic" onclick="applyEqPreset('electronic')">Electronic</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3: Library Janitor Interactive -->
+                <div class="glass-card feature-card reveal">
+                    <span class="icon">🧹</span>
+                    <h3>Library Janitor & Auto-Fix</h3>
+                    <p>Detect missing artwork, repair corrupted track metadata, group multi-artist albums, and clear cached lyrics with side-by-side review choices.</p>
+                    <div class="janitor-demo-card">
+                        <div id="janitor-demo" class="janitor-track-info">
+                            <div class="janitor-art">🎵</div>
+                            <div>
+                                <h4 id="janitor-title" style="font-size: 1rem; margin-bottom: 4px;">Track_01_Unknown.mp3</h4>
+                                <p id="janitor-artist" style="font-size: 0.85rem; color: var(--on-surface-variant);">Unknown Artist • Missing Artwork</p>
+                            </div>
+                        </div>
+                        <button id="janitor-toggle-btn" class="btn" style="width: 100%; font-size: 0.85rem; padding: 10px; border-radius: 12px; background: var(--surface-container-high);" onclick="toggleJanitorView()">
+                            ✨ Auto-Fix & Fetch Album Art
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Card 4: Driving Mode -->
+                <div class="glass-card feature-card reveal">
+                    <span class="icon">🚗</span>
+                    <h3>Driving Mode</h3>
+                    <p>High-contrast, large-touch controls engineered for safe, distraction-free playback while on the road.</p>
+                </div>
+
+                <!-- Card 5: Wear OS Companion -->
+                <div class="glass-card feature-card reveal">
+                    <span class="icon">⌚</span>
+                    <h3>Wear OS Companion</h3>
+                    <p>Control playback, adjust volume, and view dynamic artwork directly from your smartwatch.</p>
+                </div>
+
+                <!-- Card 6: Privacy Purist Guarantee -->
+                <div class="glass-card feature-card reveal">
+                    <span class="icon">🔒</span>
+                    <h3>Zero Tracking Privacy</h3>
+                    <p>No ads, no analytics, no cloud requirements. Your local music library stays strictly private on your device.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Screenshot Gallery -->
+    <section id="gallery" class="gallery-section">
+        <div class="container">
+            <div class="section-header reveal">
+                <span class="section-badge">Visual Showcase</span>
+                <h2 class="section-title">Explore the Interface</h2>
+                <p class="section-subtitle">Click any screenshot to view full resolution.</p>
+            </div>
+
+            <div class="gallery-tabs reveal">
+                <button class="gallery-tab active" onclick="filterGallery('all', this)">All Views</button>
+                <button class="gallery-tab" onclick="filterGallery('player', this)">Player & Library</button>
+                <button class="gallery-tab" onclick="filterGallery('eq', this)">Equalizer</button>
+                <button class="gallery-tab" onclick="filterGallery('tools', this)">Tools & Modes</button>
+            </div>
+
+            <div class="gallery-grid reveal">
+                <div class="screenshot-card" data-category="player" onclick="openLightbox('images/screenshot_player.png', 'Myusiq - Now Playing Player Interface')">
+                    <img src="images/screenshot_player.png" alt="Now Playing Screen">
+                </div>
+                <div class="screenshot-card" data-category="player" onclick="openLightbox('images/screenshot_tracks.png', 'Myusiq - Music Tracks & Albums Library')">
+                    <img src="images/screenshot_tracks.png" alt="Tracks Library Screen">
+                </div>
+                <div class="screenshot-card" data-category="player" onclick="openLightbox('images/screenshot_folders.png', 'Myusiq - Folder Hierarchy & Directory Browser')">
+                    <img src="images/screenshot_folders.png" alt="Folder Browser Screen">
+                </div>
+                <div class="screenshot-card" data-category="eq" onclick="openLightbox('images/screenshot_equalizer.png', 'Myusiq - 5-Band Studio Equalizer & Audio Effects')">
+                    <img src="images/screenshot_equalizer.png" alt="Studio Equalizer Screen">
+                </div>
+                <div class="screenshot-card" data-category="tools" onclick="openLightbox('images/screenshot_janitor.png', 'Myusiq - Library Janitor Metadata Repair')">
+                    <img src="images/screenshot_janitor.png" alt="Library Janitor Screen">
+                </div>
+                <div class="screenshot-card" data-category="tools" onclick="openLightbox('images/screenshot_trimmer.png', 'Myusiq - Precision Audio Ringtone Trimmer')">
+                    <img src="images/screenshot_trimmer.png" alt="Audio Trimmer Screen">
+                </div>
+                <div class="screenshot-card" data-category="tools" onclick="openLightbox('images/screenshot_driving.png', 'Myusiq - High-Contrast Driving Mode')">
+                    <img src="images/screenshot_driving.png" alt="Driving Mode Screen">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Timeline / Roadmap Section (Auto-populated by scripts/update_roadmap.py) -->
+                            <section id="timeline" class="timeline-section">
+        <div class="container">
+            <div class="section-header reveal">
+                <span class="section-badge">Roadmap & History</span>
+                <h2 class="section-title">What's New in Myusiq</h2>
+                <p class="section-subtitle">Track the latest user features, design updates, and audio enhancements.</p>
+            </div>
+            <div class="timeline reveal">
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content glass-card">
+                        <div class="timeline-header">
+                            <span class="version-badge">v1.2.0</span>
+                            <span class="date">Oct 12, 2026</span>
+                        </div>
+                        <ul class="changelog-list">
+                            <li><strong>A-Z FastScroller Enhancements</strong>: Positioned '#' symbol on top and implemented smooth 3D fisheye wave zoom animation with smoothstep curve.</li>
+                            <li><strong>Settings Page Reorganization</strong>: Grouped all Settings categories and sub-screens into clean Material 3 card sections with section headers.</li>
+                            <li><strong>Whole-Track Energy Analysis & Smart Mixes</strong>: Updated waveform extractor to sample 100 points across the entire track duration and guaranteed full 20-50 track smart playlist generation.</li>
+                            <li><strong>App Launch Responsiveness</strong>: Optimized PlaybackViewModel to start playback instantly when tapping a track on app launch with zero latency.</li>
+                            <li><strong>In-App GitHub Update Engine</strong>: Automated release checks, direct APK downloading with progress status, rate limit handling, and Android 8.0+ installer permissions.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content glass-card">
+                        <div class="timeline-header">
+                            <span class="version-badge">v1.1.1</span>
+                            <span class="date">Oct 10, 2026</span>
+                        </div>
+                        <ul class="changelog-list">
+                            <li><strong>In-App Update Checker Fixes</strong>: Fixed issue where "Check for Updates" reported "Unable to check. Check internet connection" by adding Proguard/R8 `@Keep` rules for Gson models.</li>
+                            <li><strong>Specific Error Feedback</strong>: Enhanced update check status reporting to distinguish network disconnections from GitHub API rate limits (HTTP 403/429), HTTP 404, or parse errors.</li>
+                            <li><strong>Multi-Repository Fallback & Asset Filtering</strong>: Added fallback endpoint support and improved APK asset matching to reliably download phone installer binaries.</li>
+                            <li><strong>Package Install Permission Handling</strong>: Handled Android 8.0+ unknown app installation permissions gracefully.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content glass-card">
+                        <div class="timeline-header">
+                            <span class="version-badge">v1.1.0</span>
+                            <span class="date">Oct 09, 2026</span>
+                        </div>
+                        <ul class="changelog-list">
+                            <li><strong>In-App GitHub Update Tracker</strong>: Automatic update check on app launch and manual check in Settings -> About with direct APK download & installation.</li>
+                            <li><strong>Telegram Announcement Automation</strong>: Integrated automated release publishing & Telegram channel notifications.</li>
+                            <li><strong>UI & Performance Enhancements</strong>: General polish, bug fixes, and stability improvements.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content glass-card">
+                        <div class="timeline-header">
+                            <span class="version-badge">v1.0.2</span>
+                            <span class="date">Oct 08, 2026</span>
+                        </div>
+                        <ul class="changelog-list">
+                            <li><strong>Physical ID3 Tag & Artwork Persistence</strong>: Embedded ID3v2 tags and cover art directly into audio files on disk and added persistent public backups.</li>
+                            <li><strong>Permission Optimization</strong>: Removed unnecessary `RECORD_AUDIO` prompt on startup, asking for audio recording permission strictly on-demand when enabling the FFT visualizer.</li>
+                            <li><strong>Performance & Playback Responsiveness</strong>: Accelerated library scan speed to <50ms and eliminated Binder IPC queue latency for instant track playback.</li>
+                            <li><strong>CI/CD Build Speed</strong>: Optimized GitHub Actions workflow with Gradle build cache and parallel task execution.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content glass-card">
+                        <div class="timeline-header">
+                            <span class="version-badge">v1.0.1</span>
+                            <span class="date">Oct 08, 2026</span>
+                        </div>
+                        <ul class="changelog-list">
+                            <li><strong>Release Key Integration</strong>: Configured release keystore and signing configs for automated GitHub releases and seamless in-place app updates.</li>
+                            <li><strong>CI/CD Build Pipeline</strong>: Updated GitHub Actions build workflow to generate production release APKs automatically.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content glass-card">
+                        <div class="timeline-header">
+                            <span class="version-badge">v1.0.0</span>
+                            <span class="date">Oct 06, 2026</span>
+                        </div>
+                        <ul class="changelog-list">
+                            <li><strong>Official Rebranding to Myusiq</strong>: Complete project and app rebrand from Rhythm to Myusiq across code, themes, widgets, navigation, build configurations, and website.</li>
+                            <li><strong>Album Grouping & Normalization</strong>: Resolved duplicate album cards for multi-artist albums by grouping tracks strictly by normalized album key.</li>
+                            <li><strong>Persistent Library Sorting</strong>: Added album sorting options (Alphabetical, Artist, Track Count, Recently Added) and track sorting options (Alphabetical, Recently Added, File Size, Popularity, Artist, Album, Recently Played) with Ascending/Descending toggles.</li>
+                            <li><strong>Interactive Janitor Review Pop-up</strong>: Added side-by-side comparison pop-ups for Auto-Fix Missing Artwork and Repair Missing Info displaying CURRENT vs PROPOSED info with checkboxes.</li>
+                            <li><strong>Lyrics Management & Transliteration</strong>: Added lyrics management with transliteration loaded on-demand.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content glass-card">
+                        <div class="timeline-header">
+                            <span class="version-badge">v0.9.5</span>
+                            <span class="date">Sep 20, 2026</span>
+                        </div>
+                        <ul class="changelog-list">
+                            <li><strong>Core Playback Engine</strong>: Robust local audio playback powered by Media3 and ExoPlayer.</li>
+                            <li><strong>Material Design 3 UI</strong>: Modern interface with seamless transitions, dynamic color extraction, Light/Dark mode.</li>
+                            <li><strong>Studio Equalizer</strong>: Built-in 5-band equalizer with presets and bass boost.</li>
+                            <li><strong>Audio Trimmer</strong>: Utility to clip and save audio segments.</li>
+                            <li><strong>Driving Mode</strong>: Simplified distraction-free UI for safe use while driving.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download & Installation Guide -->
+    <section id="download" class="features-section" style="background: var(--surface-container);">
+        <div class="container">
+            <div class="section-header reveal">
+                <span class="section-badge">Get Started</span>
+                <h2 class="section-title">Ready to Experience Myusiq?</h2>
+                <p class="section-subtitle">Download the APK directly or build from source on GitHub.</p>
+            </div>
+
+            <div class="glass-card reveal" style="max-width: 800px; margin: 0 auto; text-align: center;">
+                <h3 style="font-size: 2rem; margin-bottom: 16px;">Download Latest Release (v1.2.0)</h3>
+                <p style="color: var(--on-surface-variant); margin-bottom: 32px;">Compatible with Android 8.0 (API 26) and above. Includes phone and Wear OS APKs.</p>
+                <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 32px;">
+                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/tag/v1.2.0" class="btn btn-primary">
+                        📥 Download Myusiq-v1.2.0.apk
+                    </a>
+                    <a href="https://github.com/sreejith19931/Myusiq-App/releases" target="_blank" rel="noopener" class="btn btn-outlined">
+                        📦 All GitHub Releases
+                    </a>
+                </div>
+
+                <div style="background: var(--surface); border-radius: 16px; padding: 20px; text-align: left; border: 1px solid var(--outline);">
+                    <h4 style="font-size: 1.1rem; margin-bottom: 12px; color: var(--primary);">📲 Installation Instructions:</h4>
+                    <ol style="padding-left: 20px; color: var(--on-surface-variant); font-size: 0.95rem; line-height: 1.8;">
+                        <li>Download the <code>Myusiq-v1.2.0.apk</code> file to your Android device.</li>
+                        <li>Tap the downloaded file and allow <em>"Install from Unknown Sources"</em> if prompted by your browser.</li>
+                        <li>Follow the setup wizard in Myusiq to grant audio permissions and select your music folders.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Lightbox Modal -->
+    <div id="lightbox-modal" onclick="closeLightbox()">
+        <span class="lightbox-close">&times;</span>
+        <img id="lightbox-img" src="" alt="Full Screen Screenshot">
+    </div>
+
+    <!-- Footer -->
+    <footer style="padding: 60px 0 30px 0; border-top: 1px solid var(--outline-variant);">
+        <div class="container" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <img src="images/app_logo.svg" alt="Myusiq Logo" style="width: 32px; height: 32px;">
+                <span class="brand-font" style="font-size: 1.2rem; font-weight: 800;">Myusiq</span>
+                <span style="font-size: 0.85rem; color: var(--on-surface-variant); margin-left: 12px;">© 2026 Myusiq Project • Released under MIT License</span>
+            </div>
+            <div style="display: flex; gap: 20px; font-size: 0.95rem;">
+                <a href="https://github.com/sreejith19931/Myusiq-App" target="_blank" rel="noopener" style="color: var(--on-surface-variant);">GitHub</a>
+                <a href="https://github.com/sreejith19931/Myusiq/issues" target="_blank" rel="noopener" style="color: var(--on-surface-variant);">Support &amp; Issues</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="main.js"></script>
+</body>
+</html>
