@@ -82,22 +82,24 @@ class TrackInfoBottomSheet : BottomSheetDialogFragment() {
             
             val details = fetchTrackDetailedInfo(requireContext(), song)
             
-            val trackUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, songId)
-            val bitmap: Bitmap? = try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    requireContext().contentResolver.loadThumbnail(trackUri, Size(300, 300), null)
-                } else {
-                    val retriever = MediaMetadataRetriever()
-                    retriever.setDataSource(requireContext(), trackUri)
-                    val artBytes = retriever.embeddedPicture
-                    retriever.release()
-                    artBytes?.let {
-                        BitmapFactory.decodeByteArray(it, 0, it.size)
+            val artFile = com.music.myusiq.utils.ArtworkUtils.getArtworkFile(requireContext(), song.id, song.path)
+            val bitmap: Bitmap? = if (artFile != null && artFile.exists() && artFile.length() > 0) {
+                BitmapFactory.decodeFile(artFile.absolutePath)
+            } else {
+                try {
+                    val trackUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        requireContext().contentResolver.loadThumbnail(trackUri, Size(300, 300), null)
+                    } else {
+                        val retriever = MediaMetadataRetriever()
+                        retriever.setDataSource(requireContext(), trackUri)
+                        val artBytes = retriever.embeddedPicture
+                        retriever.release()
+                        artBytes?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
                     }
-                }
-            } catch (_: Exception) {
-                null
+                } catch (_: Exception) { null }
             }
+
             withContext(Dispatchers.Main) {
                 if (startEdit) {
                     displayEditTagsDialog(song)
@@ -154,13 +156,13 @@ class TrackInfoBottomSheet : BottomSheetDialogFragment() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             val details = fetchTrackDetailedInfo(requireContext(), song)
-            withContext(Dispatchers.Main) {
-                etYear.setText(details.year)
-                etGenre.setText(details.genre)
-                
-                val trackUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id)
+            val artFile = com.music.myusiq.utils.ArtworkUtils.getArtworkFile(requireContext(), song.id, song.path)
+            val bitmap: Bitmap? = if (artFile != null && artFile.exists() && artFile.length() > 0) {
+                BitmapFactory.decodeFile(artFile.absolutePath)
+            } else {
                 try {
-                    val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    val trackUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                         requireContext().contentResolver.loadThumbnail(trackUri, Size(300, 300), null)
                     } else {
                         val retriever = MediaMetadataRetriever()
@@ -169,9 +171,19 @@ class TrackInfoBottomSheet : BottomSheetDialogFragment() {
                         retriever.release()
                         artBytes?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
                     }
-                    if (bitmap != null) ivEditAlbumArt.setImageBitmap(bitmap)
-                } catch (_: Exception) {
-                    ivEditAlbumArt.setImageResource(R.drawable.ic_music_note_2)
+                } catch (_: Exception) { null }
+            }
+
+            withContext(Dispatchers.Main) {
+                etYear.setText(details.year)
+                etGenre.setText(details.genre)
+                
+                if (selectedArtworkUri == null) {
+                    if (bitmap != null) {
+                        ivEditAlbumArt.setImageBitmap(bitmap)
+                    } else {
+                        ivEditAlbumArt.setImageResource(R.drawable.ic_music_note_2)
+                    }
                 }
             }
         }

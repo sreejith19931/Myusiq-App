@@ -1267,7 +1267,52 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                 _songsLibrary.value = s
                 sortTracks(currentSortOrder, currentSortDirection) 
             }
-        } finally { isSongsLoaded = true; _isLibraryLoading.value = false; loadFoldersInternal(); startAutoMetadataImprovement() }
+        } finally { 
+            isSongsLoaded = true
+            _isLibraryLoading.value = false
+            loadFoldersInternal()
+            startAutoMetadataImprovement()
+            startBackgroundWaveformAnalysis()
+        }
+    }
+
+    private var backgroundWaveformJob: Job? = null
+
+    private fun startBackgroundWaveformAnalysis() {
+        backgroundWaveformJob?.cancel()
+        backgroundWaveformJob = viewModelScope.launch(Dispatchers.IO) {
+            delay(2000)
+            val tracksToAnalyze = originalTrackList.toList()
+            if (tracksToAnalyze.isEmpty()) return@launch
+
+            val libraryEntities = try {
+                musicRepository.getAllLibraryTracksSync().associateBy { it.id }
+            } catch (_: Exception) {
+                emptyMap()
+            }
+
+            for (song in tracksToAnalyze) {
+                if (!coroutineContext.isActive) break
+                val entity = libraryEntities[song.id.toString()]
+                if (entity?.waveformAmplitudes == null || entity.energyScore == -1) {
+                    try {
+                        val waveform = WaveformExtractor.extractWaveform(getApplication(), song.path.toUri())
+                        if (waveform != null) {
+                            val energy = MusicEnergyAnalyzer.analyze(waveform)
+                            val updatedEntity = (entity ?: TrackEntity(
+                                id = song.id.toString(),
+                                title = song.title,
+                                artist = song.artist
+                            )).copy(waveformAmplitudes = waveform, energyScore = energy)
+                            musicRepository.upsertTrack(updatedEntity)
+                        }
+                    } catch (e: Exception) {
+                        Log.d("PlaybackViewModel", "Background waveform extraction skipped: ${e.message}")
+                    }
+                    delay(100)
+                }
+            }
+        }
     }
 
     fun repairUnknownMetadata(context: Context, songs: List<Song>, onProgress: (Int, Int, String) -> Unit, onComplete: (Int) -> Unit) {

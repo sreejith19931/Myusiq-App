@@ -220,7 +220,8 @@ class PlaylistsFragment : Fragment(R.layout.fragment_playlists) {
             R.id.chipRelax to getString(R.string.mood_relax),
             R.id.chipParty to getString(R.string.mood_party),
             R.id.chipFocus to getString(R.string.mood_focus),
-            R.id.chipRomance to getString(R.string.mood_romance)
+            R.id.chipRomance to getString(R.string.mood_romance),
+            R.id.chipDrive to getString(R.string.mood_drive)
         )
 
         moods.forEach { (chipId, moodName) ->

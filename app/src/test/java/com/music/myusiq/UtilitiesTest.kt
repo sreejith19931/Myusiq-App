@@ -59,5 +59,9 @@ class UtilitiesTest {
         assertFalse(UpdateManager.isVersionNewer("1.1.0", "1.1.0"))
         assertFalse(UpdateManager.isVersionNewer("1.1.0", "v1.1.0"))
         assertFalse(UpdateManager.isVersionNewer("1.2.0", "1.1.0"))
+        // Pre-release vs Stable tests
+        assertTrue(UpdateManager.isVersionNewer("1.2.0-beta2", "1.2.0"))
+        assertTrue(UpdateManager.isVersionNewer("1.2.0-beta1", "1.2.0-beta2"))
+        assertFalse(UpdateManager.isVersionNewer("1.2.0", "1.2.0-beta2"))
     }
 }
