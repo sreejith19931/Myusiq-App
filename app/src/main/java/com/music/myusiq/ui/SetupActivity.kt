@@ -144,6 +144,11 @@ class SetupActivity : AppCompatActivity() {
         })
     }
 
+    override fun onResume() {
+        super.onResume()
+        UpdateManager.checkPendingInstall(this)
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putBoolean("hasPermission", hasPermission)

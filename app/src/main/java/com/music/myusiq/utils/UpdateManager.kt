@@ -6,12 +6,14 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.Keep
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.content.edit
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.gson.Gson
@@ -21,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.io.File
 import java.io.IOException
 import java.net.ConnectException
 import java.net.SocketTimeoutException
@@ -64,6 +67,7 @@ object UpdateManager {
     private const val FALLBACK_GITHUB_REPO_URL = "https://api.github.com/repos/sreejith19931/Myusiq/releases/latest"
     private const val PREFS_NAME = "update_prefs"
     private const val KEY_LAST_CHECK_TIME = "last_check_time"
+    private const val KEY_PENDING_INSTALL_PATH = "pending_install_path"
     private const val CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000L // 24 hours
 
     private val okHttpClient by lazy {
@@ -226,15 +230,48 @@ object UpdateManager {
             .show()
     }
 
+    fun checkPendingInstall(context: Context) {
+        try {
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val pendingPath = prefs.getString(KEY_PENDING_INSTALL_PATH, null) ?: return
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !context.packageManager.canRequestPackageInstalls()) {
+                return
+            }
+
+            val file = File(pendingPath)
+            if (file.exists() && file.length() > 0) {
+                prefs.edit { remove(KEY_PENDING_INSTALL_PATH) }
+                promptInstallApk(context, file)
+            } else {
+                prefs.edit { remove(KEY_PENDING_INSTALL_PATH) }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error checking pending install", e)
+        }
+    }
+
     private fun downloadAndInstallApk(context: Context, apkUrl: String, version: String) {
         try {
+            val fileName = "Myusiq-$version.apk"
+            val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            val apkFile = File(downloadDir, fileName)
+
+            if (apkFile.exists() && apkFile.length() > 0) {
+                promptInstallApk(context, apkFile)
+                return
+            }
+
             val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager
             if (downloadManager == null) {
                 openReleasePage(context, apkUrl)
                 return
             }
 
-            val fileName = "Myusiq-$version.apk"
+            if (apkFile.exists()) {
+                apkFile.delete()
+            }
+
             val uri = Uri.parse(apkUrl)
 
             val request = DownloadManager.Request(uri).apply {
@@ -261,25 +298,25 @@ object UpdateManager {
 
                         val query = DownloadManager.Query().setFilterById(downloadId)
                         val cursor = downloadManager.query(query)
+                        var downloadSuccess = false
+
                         if (cursor != null && cursor.moveToFirst()) {
                             val statusIdx = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
                             val status = if (statusIdx >= 0) cursor.getInt(statusIdx) else -1
                             cursor.close()
 
                             if (status == DownloadManager.STATUS_SUCCESSFUL) {
-                                val downloadedUri = downloadManager.getUriForDownloadedFile(downloadId)
-                                if (downloadedUri != null) {
-                                    promptInstallApk(c, downloadedUri)
-                                } else {
-                                    openReleasePage(c, apkUrl)
-                                }
-                            } else {
-                                Log.e(TAG, "APK Download failed with status code: $status")
-                                Toast.makeText(c, "Download failed. Opening release page...", Toast.LENGTH_SHORT).show()
-                                openReleasePage(c, apkUrl)
+                                downloadSuccess = true
                             }
                         } else {
                             cursor?.close()
+                        }
+
+                        if (downloadSuccess && apkFile.exists()) {
+                            promptInstallApk(c, apkFile)
+                        } else {
+                            Log.e(TAG, "APK Download failed or file missing at ${apkFile.absolutePath}")
+                            Toast.makeText(c, "Download failed. Opening release page...", Toast.LENGTH_SHORT).show()
                             openReleasePage(c, apkUrl)
                         }
                     }
@@ -298,9 +335,18 @@ object UpdateManager {
         }
     }
 
-    private fun promptInstallApk(context: Context, uri: Uri) {
+    private fun promptInstallApk(context: Context, file: File) {
         try {
-            if (!context.packageManager.canRequestPackageInstalls()) {
+            if (!file.exists()) {
+                Log.e(TAG, "APK file does not exist: ${file.absolutePath}")
+                Toast.makeText(context, "Update file not found.", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !context.packageManager.canRequestPackageInstalls()) {
+                val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                prefs.edit { putString(KEY_PENDING_INSTALL_PATH, file.absolutePath) }
+
                 Toast.makeText(context, "Please allow Myusiq to install unknown apps in Settings.", Toast.LENGTH_LONG).show()
                 val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
                     data = Uri.parse("package:${context.packageName}")
@@ -310,14 +356,27 @@ object UpdateManager {
                 return
             }
 
-            val installIntent = Intent(Intent.ACTION_VIEW).apply {
-                setDataAndType(uri, "application/vnd.android.package-archive")
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
+            val installUri: Uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    file
+                )
+            } else {
+                Uri.fromFile(file)
             }
+
+            val installIntent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(installUri, "application/vnd.android.package-archive")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+
             context.startActivity(installIntent)
         } catch (e: Exception) {
             Log.e(TAG, "Error prompting APK install", e)
-            Toast.makeText(context, "Downloaded update to Downloads folder.", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, "Downloaded update to Downloads folder: ${file.name}", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -332,4 +391,3 @@ object UpdateManager {
         }
     }
 }
-
