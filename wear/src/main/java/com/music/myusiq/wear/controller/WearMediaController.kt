@@ -8,6 +8,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.palette.graphics.Palette
 import com.google.android.gms.tasks.Tasks
+import com.google.android.gms.wearable.CapabilityClient
 import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataMap
@@ -128,14 +129,40 @@ class WearMediaController(private val context: Context) {
     private fun sendMessageToPhone(path: String, payload: ByteArray? = null) {
         scope.launch {
             try {
-                val nodeClient = Wearable.getNodeClient(context)
-                val nodes = Tasks.await(nodeClient.connectedNodes)
-                if (nodes.isEmpty()) {
-                    Log.w("WearMediaController", "No connected phone nodes found for message: $path")
+                val nodeSet = mutableSetOf<String>()
+
+                // 1. Try NodeClient connectedNodes
+                try {
+                    val connected = Tasks.await(Wearable.getNodeClient(context).connectedNodes)
+                    for (node in connected) {
+                        nodeSet.add(node.id)
+                    }
+                } catch (e: Exception) {
+                    Log.e("WearMediaController", "Error fetching connectedNodes", e)
                 }
+
+                // 2. Try CapabilityClient
+                try {
+                    val capabilityClient = Wearable.getCapabilityClient(context)
+                    val capInfoAll = Tasks.await(
+                        capabilityClient.getCapability("myusiq_phone_app", CapabilityClient.FILTER_ALL)
+                    )
+                    for (node in capInfoAll.nodes) {
+                        nodeSet.add(node.id)
+                    }
+                } catch (e: Exception) {
+                    Log.e("WearMediaController", "Error fetching capability nodes", e)
+                }
+
+                if (nodeSet.isEmpty()) {
+                    Log.w("WearMediaController", "No phone nodes found for message: $path")
+                } else {
+                    Log.d("WearMediaController", "Sending message $path to ${nodeSet.size} phone nodes: $nodeSet")
+                }
+
                 val messageClient = Wearable.getMessageClient(context)
-                for (node in nodes) {
-                    messageClient.sendMessage(node.id, path, payload ?: ByteArray(0))
+                for (nodeId in nodeSet) {
+                    messageClient.sendMessage(nodeId, path, payload ?: ByteArray(0))
                 }
             } catch (e: Exception) {
                 Log.e("WearMediaController", "Error sending message to phone: $path", e)
