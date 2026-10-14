@@ -86,6 +86,14 @@
                         android:text="@string/mood_romance"
                         app:chipIcon="@drawable/ic_heart_filled" />
 
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipDrive"
+                        style="@style/Widget.Material3.Chip.Suggestion"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/mood_drive"
+                        app:chipIcon="@drawable/ic_car" />
+
                 </com.google.android.material.chip.ChipGroup>
             </HorizontalScrollView>
         </androidx.constraintlayout.widget.ConstraintLayout>

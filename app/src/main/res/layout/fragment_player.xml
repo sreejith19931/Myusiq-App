@@ -845,7 +845,7 @@
             android:insetBottom="0dp"
             android:insetLeft="0dp"
             android:insetRight="0dp"
-            app:icon="@drawable/ic_steering_wheel"
+            app:icon="@drawable/ic_car"
             app:iconTint="?attr/colorOnSurfaceVariant"
             app:iconSize="24dp"
             app:iconGravity="textStart"

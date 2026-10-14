@@ -479,15 +479,16 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     navigationRail?.itemTextColor = iconColorStateList
                 } }
                 launch { viewModel.navigateToTab.collect { tabId ->
-                    tabId?.let {
-                        if (!isNavigating) {
-                            isNavigating = true
-                            val navView = findViewById<BottomNavigationView>(R.id.bottomNavigationView)
-                            navView.selectedItemId = it
-                            navigationRail?.selectedItemId = it
-                            viewModel.consumeNavigateToTab()
-                            isNavigating = false
+                    tabId?.let { targetTab ->
+                        val navView = findViewById<BottomNavigationView>(R.id.bottomNavigationView)
+                        if (navView.selectedItemId != targetTab) {
+                            navView.selectedItemId = targetTab
                         }
+                        if (navigationRail?.selectedItemId != targetTab) {
+                            navigationRail?.selectedItemId = targetTab
+                        }
+                        navigateToTab(targetTab)
+                        viewModel.consumeNavigateToTab()
                     }
                 } }
             }

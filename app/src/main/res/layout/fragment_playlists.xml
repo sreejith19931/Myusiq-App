@@ -88,6 +88,15 @@
                         android:textAppearance="?attr/textAppearanceLabelLarge"
                         app:chipIcon="@drawable/ic_heart_filled" />
 
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipDrive"
+                        style="@style/Widget.Material3.Chip.Suggestion"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/mood_drive"
+                        android:textAppearance="?attr/textAppearanceLabelLarge"
+                        app:chipIcon="@drawable/ic_car" />
+
                 </com.google.android.material.chip.ChipGroup>
             </HorizontalScrollView>
         </LinearLayout>

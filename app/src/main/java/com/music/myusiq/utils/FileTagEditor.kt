@@ -181,7 +181,7 @@ object FileTagEditor {
             }
 
             // Fallback to ContentResolver copy loop for MediaStore scoped storage URIs
-            val extension = originalFile.extension
+            val extension = if (originalFile.extension.isNotBlank()) originalFile.extension else "mp3"
             val cacheFile = File(context.cacheDir, "tag_edit_${System.currentTimeMillis()}.$extension")
 
             try {
@@ -224,32 +224,58 @@ object FileTagEditor {
                 audioFile.commit()
                 Log.d("FileTagEditor", "Tags committed to cache file successfully")
 
-                context.contentResolver.openOutputStream(trackUri, "rwt")?.use { output ->
-                    cacheFile.inputStream().use { input ->
-                        input.copyTo(output)
+                // 1. Direct binary copy into ParcelFileDescriptor descriptor for guaranteed disk write
+                var writeSuccess = false
+                try {
+                    context.contentResolver.openFileDescriptor(trackUri, "rw")?.use { pfd ->
+                        java.io.FileOutputStream(pfd.fileDescriptor).use { output ->
+                            cacheFile.inputStream().use { input ->
+                                input.copyTo(output)
+                            }
+                            output.flush()
+                        }
+                        writeSuccess = true
+                        Log.d("FileTagEditor", "Flushed edited tags directly to PFD file descriptor for $trackUri")
                     }
-                    output.flush()
-                } ?: run {
-                    Log.e("FileTagEditor", "Failed to open output stream for URI: $trackUri")
-                    return filePath
+                } catch (e: Exception) {
+                    Log.d("FileTagEditor", "PFD write failed: ${e.message}")
                 }
-                Log.d("FileTagEditor", "Cache file copied back to track URI")
 
-                // Also try direct embed on originalFile if available
+                // 2. Try ContentResolver output stream with supported modes if PFD write was not used
+                if (!writeSuccess) {
+                    val modes = arrayOf("wt", "w", "rwt", "rw")
+                    for (mode in modes) {
+                        try {
+                            context.contentResolver.openOutputStream(trackUri, mode)?.use { output ->
+                                cacheFile.inputStream().use { input ->
+                                    input.copyTo(output)
+                                }
+                                output.flush()
+                            }
+                            writeSuccess = true
+                            Log.d("FileTagEditor", "Copied edited tags via ContentResolver mode '$mode'")
+                            break
+                        } catch (e: Exception) {
+                            Log.d("FileTagEditor", "Mode '$mode' output stream failed: ${e.message}")
+                        }
+                    }
+                }
+
+                // 3. Also try direct overwrite on originalFile if present
                 if (originalFile.exists()) {
                     try {
-                        embedId3TagsAndArtwork(
-                            file = originalFile,
-                            title = title,
-                            artist = artist,
-                            album = album,
-                            year = year,
-                            genre = genre,
-                            artworkBytes = artworkBytes
-                        )
-                    } catch (_: Exception) {}
+                        java.io.FileOutputStream(originalFile).use { output ->
+                            cacheFile.inputStream().use { input ->
+                                input.copyTo(output)
+                            }
+                            output.flush()
+                        }
+                        Log.d("FileTagEditor", "Directly overwrote original file on disk: ${originalFile.absolutePath}")
+                    } catch (e: Exception) {
+                        Log.d("FileTagEditor", "Direct originalFile file stream overwrite failed: ${e.message}")
+                    }
                 }
-                
+
                 return filePath
             } catch (e: FileNotFoundException) {
                 Log.e("FileTagEditor", "File not found or access denied: ${e.message}")

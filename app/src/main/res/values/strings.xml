@@ -265,6 +265,7 @@
     <string name="mood_party">Party</string>
     <string name="mood_focus">Focus</string>
     <string name="mood_romance">Romance</string>
+    <string name="mood_drive">Drive</string>
     <string name="delete">Delete</string>
     <string name="library_janitor">Library Janitor</string>
     <string name="library_janitor_desc">Clean up duplicates and missing art</string>

@@ -2,13 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.2.0-beta2] - 2026-10-12
+## [1.2.0] - 2026-10-12
 
 ### Added & Fixed
 - **A-Z FastScroller Enhancements**: Positioned '#' symbol on top and implemented smooth 3D fisheye wave zoom animation with smoothstep curve.
 - **Settings Page Reorganization**: Grouped all Settings categories and sub-screens into clean Material 3 card sections with section headers.
 - **Whole-Track Energy Analysis & Smart Mixes**: Updated waveform extractor to sample 100 points across the entire track duration and guaranteed full 20-50 track smart playlist generation.
 - **App Launch Responsiveness**: Optimized PlaybackViewModel to start playback instantly when tapping a track on app launch with zero latency.
+- **In-App GitHub Update Engine**: Automated release checks, direct APK downloading with progress status, rate limit handling, and Android 8.0+ installer permissions.
 
 ## [1.1.1] - 2026-10-10
 

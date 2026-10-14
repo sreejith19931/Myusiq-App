@@ -167,11 +167,17 @@ object UpdateManager {
 
     fun isVersionNewer(current: String, latest: String): Boolean {
         try {
-            val currentClean = current.trimStart('v', 'V')
-            val latestClean = latest.trimStart('v', 'V')
+            val currentClean = current.trimStart('v', 'V').trim()
+            val latestClean = latest.trimStart('v', 'V').trim()
 
-            val currentParts = currentClean.split(".").map { it.filter { char -> char.isDigit() }.toIntOrNull() ?: 0 }
-            val latestParts = latestClean.split(".").map { it.filter { char -> char.isDigit() }.toIntOrNull() ?: 0 }
+            if (currentClean.equals(latestClean, ignoreCase = true)) return false
+
+            // Extract base version (e.g. "1.2.0" from "1.2.0-beta2") and pre-release status
+            val currentBase = currentClean.substringBefore('-')
+            val latestBase = latestClean.substringBefore('-')
+
+            val currentParts = currentBase.split(".").map { it.filter { char -> char.isDigit() }.toIntOrNull() ?: 0 }
+            val latestParts = latestBase.split(".").map { it.filter { char -> char.isDigit() }.toIntOrNull() ?: 0 }
 
             val length = maxOf(currentParts.size, latestParts.size)
             for (i in 0 until length) {
@@ -179,6 +185,22 @@ object UpdateManager {
                 val l = latestParts.getOrElse(i) { 0 }
                 if (l > c) return true
                 if (l < c) return false
+            }
+
+            // Base versions are equal (e.g. "1.2.0" vs "1.2.0")
+            val currentHasPre = currentClean.contains("-")
+            val latestHasPre = latestClean.contains("-")
+
+            // If current is pre-release (e.g. 1.2.0-beta2) and latest is official release (1.2.0), latest is newer
+            if (currentHasPre && !latestHasPre) return true
+            // If current is official release and latest is pre-release, latest is not newer
+            if (!currentHasPre && latestHasPre) return false
+
+            // Both have pre-release tags (e.g. "1.2.0-beta1" vs "1.2.0-beta2")
+            if (currentHasPre && latestHasPre) {
+                val cNum = currentClean.filter { it.isDigit() }.toIntOrNull() ?: 0
+                val lNum = latestClean.filter { it.isDigit() }.toIntOrNull() ?: 0
+                return lNum > cNum
             }
         } catch (e: Exception) {
             Log.e(TAG, "Version parse error", e)
