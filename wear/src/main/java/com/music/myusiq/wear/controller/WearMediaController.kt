@@ -166,7 +166,6 @@ class WearMediaController(private val context: Context) {
     }
 
     fun playPause() {
-        _isPlaying.value = !_isPlaying.value
         sendMessageToPhone("/myusiq/play_pause")
     }
 

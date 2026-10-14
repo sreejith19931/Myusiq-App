@@ -1689,7 +1689,7 @@ class PlaybackService : MediaLibraryService() {
         serviceScope.launch(Dispatchers.Main) {
             when (path) {
                 "/myusiq/play_pause", "/play_pause" -> {
-                    if (exoPlayer.isPlaying) {
+                    if (exoPlayer.isPlaying || exoPlayer.playWhenReady) {
                         exoPlayer.pause()
                     } else {
                         if (requestAudioFocus()) {
@@ -1745,7 +1745,9 @@ class PlaybackService : MediaLibraryService() {
     fun syncStateToWearables() {
         serviceScope.launch(Dispatchers.IO) {
             try {
-                val isPlaying = withContext(Dispatchers.Main) { exoPlayer.isPlaying }
+                val isPlaying = withContext(Dispatchers.Main) {
+                    (exoPlayer.isPlaying || exoPlayer.playWhenReady) && exoPlayer.playbackState != Player.STATE_ENDED && exoPlayer.playbackState != Player.STATE_IDLE
+                }
                 val currentItem = withContext(Dispatchers.Main) { exoPlayer.currentMediaItem }
                 val metadata = currentItem?.mediaMetadata
                 val title = metadata?.title?.toString() ?: "No Track Playing"

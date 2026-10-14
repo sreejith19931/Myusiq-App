@@ -1,5 +1,6 @@
 package com.music.myusiq.wear.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -22,6 +23,10 @@ fun WearQueueScreen(
     controller: WearMediaController,
     onBackToNowPlaying: () -> Unit
 ) {
+    BackHandler {
+        onBackToNowPlaying()
+    }
+
     val queueItems by controller.queueItems.collectAsState()
     val columnState = rememberTransformingLazyColumnState()
 
@@ -30,6 +35,17 @@ fun WearQueueScreen(
             state = columnState,
             contentPadding = contentPadding
         ) {
+            item {
+                Button(
+                    onClick = onBackToNowPlaying,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 6.dp)
+                ) {
+                    Text(text = "← Back to Player", style = MaterialTheme.typography.labelMedium)
+                }
+            }
+
             item {
                 ListHeader {
                     Text(
