@@ -1204,6 +1204,7 @@ class PlaybackService : MediaLibraryService() {
                 
                 val currentPath = mediaItem?.mediaMetadata?.extras?.getString("path") ?: ""
                 currentReplayGainFactor = ReplayGainUtil.getVolumeFactorForFile(currentPath, isReplayGainEnabled)
+                EqualizerManager.initEqualizer(applicationContext, player.audioSessionId)
 
                 if (crossfadeAnimator?.isRunning != true) {
                     if (fadeInEnabled || (crossfadeEnabled && reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO)) {

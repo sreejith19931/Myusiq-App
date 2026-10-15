@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0-beta1] - 2026-10-15
+
+### Added & Fixed
+- **10-Band Equalizer Core Engine**: Expanded equalizer from 5 bands to 10 bands (`31Hz`, `62Hz`, `125Hz`, `250Hz`, `500Hz`, `1kHz`, `2kHz`, `4kHz`, `8kHz`, `16kHz`) with profile auto-switching.
+- **Hardware AudioFX Extensions**: Integrated native Android `BassBoost`, `Virtualizer` (3D Spatial surround), `PresetReverb`, and `LoudnessEnhancer` instances tied to ExoPlayer audio session IDs.
+- **Dual-Player AudioFX Crossfade Sync**: Preserved primary and secondary AudioFX session switching for smooth dual-ExoPlayer crossfading without popping.
+- **Equalizer UI Redesign**: Added 10-band slider interface with horizontal scrolling and live interactive controls for Bass Boost & 3D Virtualizer strength.
+
 ## [1.2.0] - 2026-10-12
 
 ### Added & Fixed
