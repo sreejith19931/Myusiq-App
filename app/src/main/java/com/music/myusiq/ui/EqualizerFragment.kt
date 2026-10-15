@@ -100,8 +100,59 @@ class EqualizerFragment : Fragment(R.layout.fragment_equalizer) {
                 }
                 sharedPreferences.edit { putInt("reverb_preset", preset) }
                 viewModel.setReverbPreset(preset)
+                EqualizerManager.setPresetReverb(safeAppContext, preset.toShort())
             }
         }
+
+        val sbBassBoost = view.findViewById<SeekBar>(R.id.sbBassBoost)
+        val tvBassValue = view.findViewById<TextView>(R.id.tvBassValue)
+        val sbVirtualizer = view.findViewById<SeekBar>(R.id.sbVirtualizer)
+        val tvVirtualizerValue = view.findViewById<TextView>(R.id.tvVirtualizerValue)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    EqualizerManager.bassBoostStrength.collect { strength ->
+                        val percent = (strength.toInt() * 100 / 1000)
+                        tvBassValue?.text = "$percent%"
+                        if (sbBassBoost?.progress != strength.toInt()) {
+                            sbBassBoost?.progress = strength.toInt()
+                        }
+                    }
+                }
+                launch {
+                    EqualizerManager.virtualizerStrength.collect { strength ->
+                        val percent = (strength.toInt() * 100 / 1000)
+                        tvVirtualizerValue?.text = "$percent%"
+                        if (sbVirtualizer?.progress != strength.toInt()) {
+                            sbVirtualizer?.progress = strength.toInt()
+                        }
+                    }
+                }
+            }
+        }
+
+        sbBassBoost?.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    tvBassValue?.text = "${progress * 100 / 1000}%"
+                    EqualizerManager.setBassBoostStrength(safeAppContext, progress.toShort())
+                }
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+        sbVirtualizer?.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    tvVirtualizerValue?.text = "${progress * 100 / 1000}%"
+                    EqualizerManager.setVirtualizerStrength(safeAppContext, progress.toShort())
+                }
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
 
         spinnerDeviceProfile?.setOnItemClickListener { _, _, position, _ ->
             EqualizerManager.switchProfile(safeAppContext, position)

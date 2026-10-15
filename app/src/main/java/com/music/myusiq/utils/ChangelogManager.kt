@@ -18,8 +18,8 @@ object ChangelogManager {
         val prefs = activity.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val lastSeenVersionCode = prefs.getInt(KEY_LAST_VERSION_CODE, 0)
 
-        var currentVersionCode = 10200
-        var currentVersionName = "1.2.0"
+        var currentVersionCode = 10300
+        var currentVersionName = "1.3.0-beta1"
 
         try {
             val pInfo = activity.packageManager.getPackageInfo(activity.packageName, 0)
