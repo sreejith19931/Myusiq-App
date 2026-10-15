@@ -23,9 +23,9 @@
 <body>
 
     <!-- Announcement Banner for Major Releases -->
-    <div id="announcement-banner" class="announcement-banner" style="display: flex;">
+    <div id="announcement-banner" class="announcement-banner" style="display: none;">
         <span class="banner-badge">🎉 Major Release</span>
-        <span id="banner-text">🎉 Major Release! Welcome to Myusiq v1.2.0 — Experience the next level of offline audio!</span>
+        <span id="banner-text">🎉 Major Release! Welcome to Myusiq v1.3.0-beta1 — Experience the next level of offline audio!</span>
         <a id="banner-action" href="#download" class="banner-link">Get Update</a>
         <button class="banner-close" onclick="closeBanner()" aria-label="Close Announcement">&times;</button>
     </div>
@@ -43,7 +43,7 @@
                     <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
                 </button>
                 <a href="https://github.com/sreejith19931/Myusiq/issues" target="_blank" rel="noopener" class="btn btn-outlined">Report Bug</a>
-                <a href="#download" class="btn btn-primary">Get APK (v1.2.0)</a>
+                <a href="#download" class="btn btn-primary">Get APK (v1.3.0-beta1)</a>
             </div>
         </div>
     </nav>
@@ -56,7 +56,7 @@
                 <p>Experience studio-grade audio with dynamic Material You theming that adapts to your album art. 100% open-source, ad-free, and offline.</p>
                 <div class="hero-actions">
                     <a href="https://github.com/sreejith19931/Myusiq-App/releases" class="btn btn-primary">
-                        📥 Download APK (v1.2.0)
+                        📥 Download APK (v1.3.0-beta1)
                     </a>
                     <a href="https://github.com/sreejith19931/Myusiq" target="_blank" rel="noopener" class="btn btn-outlined">
                         ⭐ GitHub Source
@@ -98,16 +98,20 @@
                 <div class="blog-header">
                     <div class="blog-badge-wrap">
                         <span class="blog-badge">🚀 FEATURED RELEASE</span>
-                        <span class="blog-version">v1.2.0</span>
+                        <span class="blog-version">v1.3.0-beta1</span>
                     </div>
-                    <span class="blog-date">Oct 12, 2026</span>
+                    <span class="blog-date">Oct 15, 2026</span>
                 </div>
-                <h2 class="blog-title">What's New in Myusiq v1.2.0</h2>
+                <h2 class="blog-title">What's New in Myusiq v1.3.0-beta1</h2>
                 <div class="blog-body">
-                    <p class="blog-intro">We are excited to announce the official release of <strong>Myusiq v1.2.0</strong>! This update brings key feature additions, performance optimizations, and important usability upgrades to your audio experience.</p>
+                    <p class="blog-intro">We are excited to announce the official release of <strong>Myusiq v1.3.0-beta1</strong>! This update brings key feature additions, performance optimizations, and important usability upgrades to your audio experience.</p>
                     <div class="blog-highlights-box">
                         <h4 class="blog-highlights-title">✨ Key Features &amp; Changes Implemented</h4>
                         <ul class="blog-items-list">
+                            <li><strong>10-Band Equalizer Core Engine</strong>: Expanded equalizer from 5 bands to 10 bands (`31Hz`, `62Hz`, `125Hz`, `250Hz`, `500Hz`, `1kHz`, `2kHz`, `4kHz`, `8kHz`, `16kHz`) with profile auto-switching.</li>
+                            <li><strong>Hardware AudioFX Extensions</strong>: Integrated native Android `BassBoost`, `Virtualizer` (3D Spatial surround), `PresetReverb`, and `LoudnessEnhancer` instances tied to ExoPlayer audio session IDs.</li>
+                            <li><strong>Dual-Player AudioFX Crossfade Sync</strong>: Preserved primary and secondary AudioFX session switching for smooth dual-ExoPlayer crossfading without popping.</li>
+                            <li><strong>Equalizer UI Redesign</strong>: Added 10-band slider interface with horizontal scrolling and live interactive controls for Bass Boost & 3D Virtualizer strength.</li>
                             <li><strong>A-Z FastScroller Enhancements</strong>: Positioned '#' symbol on top and implemented smooth 3D fisheye wave zoom animation with smoothstep curve.</li>
                             <li><strong>Settings Page Reorganization</strong>: Grouped all Settings categories and sub-screens into clean Material 3 card sections with section headers.</li>
                             <li><strong>Whole-Track Energy Analysis & Smart Mixes</strong>: Updated waveform extractor to sample 100 points across the entire track duration and guaranteed full 20-50 track smart playlist generation.</li>
@@ -117,17 +121,14 @@
                             <li><strong>Specific Error Feedback</strong>: Enhanced update check status reporting to distinguish network disconnections from GitHub API rate limits (HTTP 403/429), HTTP 404, or parse errors.</li>
                             <li><strong>Multi-Repository Fallback & Asset Filtering</strong>: Added fallback endpoint support and improved APK asset matching to reliably download phone installer binaries.</li>
                             <li><strong>Package Install Permission Handling</strong>: Handled Android 8.0+ unknown app installation permissions gracefully.</li>
-                            <li><strong>In-App GitHub Update Tracker</strong>: Automatic update check on app launch and manual check in Settings -> About with direct APK download & installation.</li>
-                            <li><strong>Telegram Announcement Automation</strong>: Integrated automated release publishing & Telegram channel notifications.</li>
-                            <li><strong>UI & Performance Enhancements</strong>: General polish, bug fixes, and stability improvements.</li>
                         </ul>
                     </div>
                 </div>
                 <div class="blog-actions">
-                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/download/v1.2.0/Myusiq-v1.2.0.apk" class="btn btn-primary btn-sm">
-                        ⚡ Download Myusiq-v1.2.0.apk
+                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/download/v1.3.0-beta1/Myusiq-v1.3.0-beta1.apk" class="btn btn-primary btn-sm">
+                        ⚡ Download Myusiq-v1.3.0-beta1.apk
                     </a>
-                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/tag/v1.2.0" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
+                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/tag/v1.3.0-beta1" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
                         📦 View Release Notes on GitHub
                     </a>
                 </div>
@@ -290,6 +291,21 @@
                     <div class="timeline-dot"></div>
                     <div class="timeline-content glass-card">
                         <div class="timeline-header">
+                            <span class="version-badge">v1.3.0-beta1</span>
+                            <span class="date">Oct 15, 2026</span>
+                        </div>
+                        <ul class="changelog-list">
+                            <li><strong>10-Band Equalizer Core Engine</strong>: Expanded equalizer from 5 bands to 10 bands (`31Hz`, `62Hz`, `125Hz`, `250Hz`, `500Hz`, `1kHz`, `2kHz`, `4kHz`, `8kHz`, `16kHz`) with profile auto-switching.</li>
+                            <li><strong>Hardware AudioFX Extensions</strong>: Integrated native Android `BassBoost`, `Virtualizer` (3D Spatial surround), `PresetReverb`, and `LoudnessEnhancer` instances tied to ExoPlayer audio session IDs.</li>
+                            <li><strong>Dual-Player AudioFX Crossfade Sync</strong>: Preserved primary and secondary AudioFX session switching for smooth dual-ExoPlayer crossfading without popping.</li>
+                            <li><strong>Equalizer UI Redesign</strong>: Added 10-band slider interface with horizontal scrolling and live interactive controls for Bass Boost & 3D Virtualizer strength.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content glass-card">
+                        <div class="timeline-header">
                             <span class="version-badge">v1.2.0</span>
                             <span class="date">Oct 12, 2026</span>
                         </div>
@@ -405,11 +421,11 @@
             </div>
 
             <div class="glass-card reveal" style="max-width: 800px; margin: 0 auto; text-align: center;">
-                <h3 style="font-size: 2rem; margin-bottom: 16px;">Download Latest Release (v1.2.0)</h3>
+                <h3 style="font-size: 2rem; margin-bottom: 16px;">Download Latest Release (v1.3.0-beta1)</h3>
                 <p style="color: var(--on-surface-variant); margin-bottom: 32px;">Compatible with Android 8.0 (API 26) and above. Includes phone and Wear OS APKs.</p>
                 <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 32px;">
-                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/tag/v1.2.0" class="btn btn-primary">
-                        📥 Download Myusiq-v1.2.0.apk
+                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/tag/v1.3.0-beta1" class="btn btn-primary">
+                        📥 Download Myusiq-v1.3.0-beta1.apk
                     </a>
                     <a href="https://github.com/sreejith19931/Myusiq-App/releases" target="_blank" rel="noopener" class="btn btn-outlined">
                         📦 All GitHub Releases
@@ -419,7 +435,7 @@
                 <div style="background: var(--surface); border-radius: 16px; padding: 20px; text-align: left; border: 1px solid var(--outline);">
                     <h4 style="font-size: 1.1rem; margin-bottom: 12px; color: var(--primary);">📲 Installation Instructions:</h4>
                     <ol style="padding-left: 20px; color: var(--on-surface-variant); font-size: 0.95rem; line-height: 1.8;">
-                        <li>Download the <code>Myusiq-v1.2.0.apk</code> file to your Android device.</li>
+                        <li>Download the <code>Myusiq-v1.3.0-beta1.apk</code> file to your Android device.</li>
                         <li>Tap the downloaded file and allow <em>"Install from Unknown Sources"</em> if prompted by your browser.</li>
                         <li>Follow the setup wizard in Myusiq to grant audio permissions and select your music folders.</li>
                     </ol>
