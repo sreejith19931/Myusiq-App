@@ -100,6 +100,31 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     private val lyricsUseCase = LyricsUseCase(musicRepository, application, viewModelScope)
     private val smartPlaylistUseCase = SmartPlaylistUseCase(musicRepository)
     private val metadataUpdateUseCase = MetadataUpdateUseCase(musicRepository, application, viewModelScope)
+    private val janitorScanUseCase = com.music.myusiq.domain.usecase.JanitorScanUseCase(this)
+
+    private val _janitorScanState = MutableStateFlow<com.music.myusiq.domain.usecase.ScanState?>(null)
+    val janitorScanState: StateFlow<com.music.myusiq.domain.usecase.ScanState?> = _janitorScanState.asStateFlow()
+
+    private val _isJanitorScanning = MutableStateFlow(false)
+    val isJanitorScanning: StateFlow<Boolean> = _isJanitorScanning.asStateFlow()
+
+    private var activeJanitorJob: Job? = null
+
+    fun startJanitorScan(tracks: List<Song>, context: Context) {
+        activeJanitorJob?.cancel()
+        _isJanitorScanning.value = true
+        _janitorScanState.value = null
+
+        activeJanitorJob = viewModelScope.launch {
+            janitorScanUseCase.scanTracks(tracks, context.applicationContext)
+                .collect { state ->
+                    _janitorScanState.value = state
+                    if (state is com.music.myusiq.domain.usecase.ScanState.ScanCompleted) {
+                        _isJanitorScanning.value = false
+                    }
+                }
+        }
+    }
 
     private val metadataUpdateListener = object : MetadataUpdateUseCase.MetadataUpdateListener {
         override fun onPendingWriteIntent(intent: IntentSenderRequest, data: PendingTrackEdit) {

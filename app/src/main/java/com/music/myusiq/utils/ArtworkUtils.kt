@@ -13,6 +13,11 @@ import java.io.File
 
 object ArtworkUtils {
 
+    fun isGenericAlbum(albumName: String): Boolean {
+        val lower = albumName.trim().lowercase()
+        return lower.isBlank() || lower == "<unknown>" || lower == "unknown album" || lower == "unknown" || lower == "null" || lower == "singles"
+    }
+
     private fun getPublicBackupDir(): File? {
         val dirs = listOfNotNull(
             try { Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) } catch (_: Exception) { null },
@@ -95,7 +100,7 @@ object ArtworkUtils {
         return null
     }
 
-    fun getArtworkFile(context: Context, songId: Long, songPath: String): File? {
+    fun getArtworkFile(context: Context, songId: Long, songPath: String, albumName: String = ""): File? {
         val cacheDir = File(context.filesDir, "artwork_cache")
         val idFile = File(cacheDir, "$songId.jpg")
         if (idFile.exists() && idFile.length() > 0) return idFile
@@ -106,6 +111,11 @@ object ArtworkUtils {
 
         val hashLowerFile = File(cacheDir, "${normPath.lowercase().hashCode()}.jpg")
         if (hashLowerFile.exists() && hashLowerFile.length() > 0) return hashLowerFile
+
+        if (!isGenericAlbum(albumName)) {
+            val albumFile = File(cacheDir, "album_${albumName.trim().lowercase().hashCode()}.jpg")
+            if (albumFile.exists() && albumFile.length() > 0) return albumFile
+        }
 
         // 1. Check persistent external/public artwork backup directories
         val extBackupDir = File(context.getExternalFilesDir(null), "artwork_backup")
@@ -152,6 +162,13 @@ object ArtworkUtils {
                         if (!cacheDir.exists()) cacheDir.mkdirs()
                         idFile.writeBytes(picture)
                         hashFile.writeBytes(picture)
+
+                        if (!isGenericAlbum(albumName)) {
+                            try {
+                                val albumFile = File(cacheDir, "album_${albumName.trim().lowercase().hashCode()}.jpg")
+                                albumFile.writeBytes(picture)
+                            } catch (_: Exception) {}
+                        }
 
                         // Save backup copy in external and public dirs
                         try {
@@ -221,7 +238,7 @@ object ArtworkUtils {
         }
     }
 
-    fun saveArtworkCache(context: Context, songId: Long, songPath: String, artUri: Uri) {
+    fun saveArtworkCache(context: Context, songId: Long, songPath: String, artUri: Uri, albumName: String = "") {
         try {
             val cacheDir = File(context.filesDir, "artwork_cache")
             if (!cacheDir.exists()) cacheDir.mkdirs()
@@ -246,6 +263,12 @@ object ArtworkUtils {
                     if (normPath.isNotBlank()) {
                         hashFile.writeBytes(bytes)
                         hashLowerFile.writeBytes(bytes)
+                    }
+                    if (!isGenericAlbum(albumName)) {
+                        try {
+                            val albumFile = File(cacheDir, "album_${albumName.trim().lowercase().hashCode()}.jpg")
+                            albumFile.writeBytes(bytes)
+                        } catch (_: Exception) {}
                     }
                     try { extBackupFile.writeBytes(bytes) } catch (_: Exception) {}
                     try { publicBackupFile?.writeBytes(bytes) } catch (_: Exception) {}

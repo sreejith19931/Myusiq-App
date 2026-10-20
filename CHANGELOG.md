@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0-beta3] - 2026-10-16
+
+### Added & Fixed
+- **Parallel Auto-Fix & Bounded Processing**: Accelerated Library Janitor cloud scans with 4x parallel speedup via Kotlin Coroutines `Semaphore(4)` permit locks.
+- **Shared Album Artwork Auto-Assignment**: Tracks belonging to the same album automatically share and reuse official album artwork, instantly filling missing covers across multi-track albums.
+- **In-Memory LRU Search Query Caching**: Cached online metadata search results with an LRU cache (100-entry capacity) to prevent duplicate API queries and speed up manual searches.
+- **Dialog Overflow & Fixed Button Placement**: Optimized review pop-up dialog height and button anchoring so "Apply Selected" is always visible across all device screen sizes.
+- **Smart First-Time Scan Lifecycle**: Runs a comprehensive artwork & metadata scan once on initial launch, then smartly filters subsequent scans strictly for tracks with missing art or messy metadata.
+- **Metadata Verification Accuracy**: Enhanced clutter detection and path synchronization to eliminate false positives for clean or previously updated tracks.
+
 ## [1.3.0-beta2] - 2026-10-15
 
 ### Added & Fixed

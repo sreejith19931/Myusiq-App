@@ -307,7 +307,14 @@ object CloudMetadataResolver {
         }
     }
 
+    private val searchCache = android.util.LruCache<String, List<CloudMetadata>>(100)
+
     suspend fun searchMultiple(query: String, cleanTitle: String = "", cleanArtist: String = ""): List<CloudMetadata> {
+        val cacheKey = "${query.trim().lowercase()}|${cleanTitle.trim().lowercase()}|${cleanArtist.trim().lowercase()}"
+        synchronized(searchCache) {
+            searchCache.get(cacheKey)?.let { return it }
+        }
+
         return withContext(Dispatchers.IO) {
             val candidates = mutableListOf<CloudMetadata>()
             
@@ -380,8 +387,15 @@ object CloudMetadataResolver {
                 } catch (_: Exception) {}
             }
 
-            candidates.distinctBy { "${it.foundTitle?.lowercase()}|${it.foundArtist?.lowercase()}" }
+            val resultList = candidates.distinctBy { "${it.foundTitle?.lowercase()}|${it.foundArtist?.lowercase()}" }
                 .sortedByDescending { it.matchConfidence }
+
+            if (resultList.isNotEmpty()) {
+                synchronized(searchCache) {
+                    searchCache.put(cacheKey, resultList)
+                }
+            }
+            resultList
         }
     }
 }

@@ -182,8 +182,20 @@ class MetadataUpdateUseCase(
                     com.music.myusiq.utils.ArtworkUtils.copyArtworkCache(context, data.songId, data.path, data.songId, newFilePath)
 
                     data.artworkUri?.let { artUri ->
-                        com.music.myusiq.utils.ArtworkUtils.saveArtworkCache(context, data.songId, data.path, artUri)
-                        com.music.myusiq.utils.ArtworkUtils.saveArtworkCache(context, data.songId, newFilePath, artUri)
+                        com.music.myusiq.utils.ArtworkUtils.saveArtworkCache(context, data.songId, data.path, artUri, data.album)
+                        com.music.myusiq.utils.ArtworkUtils.saveArtworkCache(context, data.songId, newFilePath, artUri, data.album)
+
+                        // Propagate album artwork cache to all other tracks in the same album that lack artwork
+                        if (!com.music.myusiq.utils.ArtworkUtils.isGenericAlbum(data.album)) {
+                            try {
+                                val sameAlbumSongs = listener.getOriginalTrackList().filter {
+                                    it.album.equals(data.album, ignoreCase = true) && it.id != data.songId
+                                }
+                                sameAlbumSongs.forEach { otherSong ->
+                                    com.music.myusiq.utils.ArtworkUtils.saveArtworkCache(context, otherSong.id, otherSong.path, artUri, data.album)
+                                }
+                            } catch (_: Exception) {}
+                        }
                     }
 
                     // 1b. Save to local override table to prevent reverting UI
@@ -370,9 +382,16 @@ class MetadataUpdateUseCase(
         val isUnknownArtist = CloudMetadataResolver.isGenericArtist(artist)
         val hasFileExtension = Regex("(?i)\\.(mp3|m4a|flac|wav|aac|ogg|wma)$").containsMatchIn(title)
         val isGenericTitle = Regex("(?i)^(track|audio|sound|recording)[_\\s\\-]*\\d*$").matches(title) || title.isBlank()
-        val hasClutter = com.music.myusiq.utils.YouTubeTitleCleaner.cleanTitle(title) != title
+        
+        val cleanedTitle = com.music.myusiq.utils.YouTubeTitleCleaner.cleanTitle(title)
+        val hasClutter = !cleanedTitle.equals(title, ignoreCase = true) && 
+                         (title.contains("_") || 
+                          title.contains(Regex("""(?i)[(\[{].*?(official|music|video|audio|lyric|hd|4k|remix|visualizer|mv|topic|prod|feat|ft|full song).*?[)\]}]""")) || 
+                          title.contains(Regex("""(?i)\b(www\.|https?://)?[a-z0-9\-]+\.(com|net|org|io|me|co|info|biz)\b""")))
 
-        return isUnknownArtist || hasFileExtension || isGenericTitle || hasClutter
+        val isGenericArtistWithGenericTitle = isUnknownArtist && (isGenericTitle || artist.isBlank())
+
+        return isGenericArtistWithGenericTitle || hasFileExtension || isGenericTitle || hasClutter
     }
 
     private val processedAutoImproveTrackIds = java.util.Collections.synchronizedSet(HashSet<Long>())
@@ -384,9 +403,15 @@ class MetadataUpdateUseCase(
         scope.launch(Dispatchers.IO) {
             val currentPlayingId = listener.getCurrentPlayingSong()?.id
             val originalTrackList = listener.getOriginalTrackList()
-            
+            val initialScanDone = prefs.getBoolean("janitor_initial_scan_done", false)
+
             val toImprove = originalTrackList.asSequence().filter { song ->
-                song.id != currentPlayingId && !processedAutoImproveTrackIds.contains(song.id) && isMessyOrUnknownTrack(song)
+                val needsCheck = if (!initialScanDone) {
+                    true
+                } else {
+                    isMessyOrUnknownTrack(song) || com.music.myusiq.utils.ArtworkUtils.getArtworkFile(application, song.id, song.path) == null
+                }
+                song.id != currentPlayingId && !processedAutoImproveTrackIds.contains(song.id) && needsCheck
             }.take(3).toList()
             
             if (toImprove.isEmpty()) return@launch
@@ -419,6 +444,7 @@ class MetadataUpdateUseCase(
                 }
                 delay(2000.milliseconds)
             }
+            prefs.edit().putBoolean("janitor_initial_scan_done", true).apply()
         }
     }
 
