@@ -47,6 +47,13 @@ class TrackInfoBottomSheet : BottomSheetDialogFragment() {
         }
     }
 
+    private val pickGalleryImage = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            selectedArtworkUri = uri
+            ivEditAlbumArtRef?.setImageURI(uri)
+        }
+    }
+
     companion object {
         private const val ARG_SONG_ID = "arg_song_id"
         private const val ARG_START_EDIT = "arg_start_edit"
@@ -189,7 +196,11 @@ class TrackInfoBottomSheet : BottomSheetDialogFragment() {
         }
 
         btnChangeArt.setOnClickListener {
-            pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            try {
+                pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            } catch (_: Exception) {
+                pickGalleryImage.launch("image/*")
+            }
         }
 
         MaterialAlertDialogBuilder(requireContext())

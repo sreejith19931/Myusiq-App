@@ -41,6 +41,8 @@ class MetadataUpdateUseCase(
         fun onPendingWriteIntent(intent: IntentSenderRequest, data: PendingTrackEdit)
         fun onUpdateStarted()
         fun onUpdateProgress(songId: Long, title: String, artist: String, album: String)
+        fun onBulkProgress(current: Int, total: Int, title: String) {}
+        fun onBulkFinished() {}
         fun onUpdateFinished(data: PendingTrackEdit, refreshLibrary: Boolean)
         fun getOriginalTrackList(): List<Song>
         fun getCurrentPlayingSong(): Song?
@@ -123,6 +125,27 @@ class MetadataUpdateUseCase(
                     FileTagEditor.updateFileTags(context, data.path, uri, data.title, data.artist, data.album, data.year, data.genre, data.artworkUri)
                     if (newFilePath != data.path) {
                         FileTagEditor.updateFileTags(context, newFilePath, uri, data.title, data.artist, data.album, data.year, data.genre, data.artworkUri)
+                    }
+
+                    // Auto-embed and save fetched lyrics if available
+                    data.lyrics?.takeIf { it.isNotBlank() }?.let { lyricsText ->
+                        val baseName = File(newFilePath).nameWithoutExtension
+                        val parent = File(newFilePath).parentFile
+                        if (parent != null) {
+                            val lyricsDir = File(parent, "lyrics")
+                            if (!lyricsDir.exists()) lyricsDir.mkdirs()
+                            try { File(lyricsDir, "$baseName.lrc").writeText(lyricsText) } catch (_: Exception) {}
+                        }
+                        val appLyricsDir = File(context.getExternalFilesDir(null), "lyrics")
+                        if (appLyricsDir != null) {
+                            if (!appLyricsDir.exists()) appLyricsDir.mkdirs()
+                            try { File(appLyricsDir, "$baseName.lrc").writeText(lyricsText) } catch (_: Exception) {}
+                        }
+                        
+                        FileTagEditor.embedLyrics(File(newFilePath), lyricsText)
+                        if (data.path != newFilePath) {
+                            FileTagEditor.embedLyrics(File(data.path), lyricsText)
+                        }
                     }
 
                     // Rename/migrate corresponding .lrc files so old lrc files do not get orphaned in lyrics folder
@@ -219,6 +242,33 @@ class MetadataUpdateUseCase(
             }
             Log.d("MetadataUpdateUseCase", "MediaStore update result: $updated for ID: ${data.songId}")
 
+            // On Android 10+, updating MediaStore DISPLAY_NAME renames the file on storage.
+            // Check if the renamed file exists and update newFilePath accordingly.
+            val originalFile = File(data.path)
+            val parentDir = originalFile.parentFile
+            if (updated > 0 && targetFileName.isNotBlank() && parentDir != null) {
+                val renamedFile = File(parentDir, targetFileName)
+                if (renamedFile.exists() && renamedFile.absolutePath != newFilePath) {
+                    val oldPathBeforeRename = newFilePath
+                    newFilePath = renamedFile.absolutePath
+                    Log.d("MetadataUpdateUseCase", "MediaStore renamed file on storage to: $newFilePath")
+
+                    // Re-sync artwork cache and overrides with true path
+                    com.music.myusiq.utils.ArtworkUtils.copyArtworkCache(context, data.songId, oldPathBeforeRename, data.songId, newFilePath)
+                    val normPath = PlatformUtils.normalizePath(newFilePath)
+                    val overrideNew = SongOverride(
+                        path = normPath,
+                        title = data.title,
+                        artist = data.artist,
+                        album = data.album,
+                        year = data.year,
+                        genre = data.genre
+                    )
+                    musicRepository.upsertOverride(overrideNew)
+                    com.music.myusiq.utils.MetadataBackupUtils.saveOverrideToBackup(context, overrideNew)
+                }
+            }
+
             withContext(Dispatchers.Main) {
                 if (showToast) {
                     if (updated > 0) {
@@ -258,7 +308,6 @@ class MetadataUpdateUseCase(
     ) {
         scope.launch(Dispatchers.IO) {
             var repairedCount = 0
-            val unknownArtist = application.getString(R.string.unknown_artist)
             
             songs.forEachIndexed { index, song ->
                 withContext(Dispatchers.Main) {
@@ -268,18 +317,20 @@ class MetadataUpdateUseCase(
                 // Clean title using YouTubeTitleCleaner to remove junk
                 val (extractedArtist, extractedTitle) = com.music.myusiq.utils.YouTubeTitleCleaner.cleanAndSplit(song.title)
                 val cleanTitle = extractedTitle.ifBlank { com.music.myusiq.utils.YouTubeTitleCleaner.cleanTitle(song.title) }
-                val cleanArtist = if (song.artist == unknownArtist || song.artist.isBlank()) {
-                    if (extractedArtist != "Unknown Artist") extractedArtist else ""
-                } else song.artist
+                val cleanArtist = if (!CloudMetadataResolver.isGenericArtist(song.artist)) song.artist else if (extractedArtist != "Unknown Artist") extractedArtist else ""
 
                 val metadata = CloudMetadataResolver.resolve(cleanTitle, cleanArtist)
                 if (metadata != null) {
                     val artworkUri = metadata.artworkUrl?.let { downloadImageToCache(context, it) }
+                    val proposedTitle = metadata.foundTitle ?: cleanTitle
+                    val proposedArtist = metadata.foundArtist ?: if (cleanArtist.isNotBlank()) cleanArtist else song.artist
+                    val proposedAlbum = metadata.album ?: if (song.album.equals("<unknown>", true)) "Unknown Album" else song.album
+
                     val edit = PendingTrackEdit(
                         songId = song.id,
-                        title = cleanTitle,
-                        artist = cleanArtist,
-                        album = metadata.album ?: song.album,
+                        title = proposedTitle,
+                        artist = proposedArtist,
+                        album = proposedAlbum,
                         year = metadata.year ?: "",
                         genre = metadata.genre ?: "",
                         artworkUri = artworkUri,
@@ -297,30 +348,53 @@ class MetadataUpdateUseCase(
         }
     }
 
+    fun isMessyOrUnknownTrack(song: Song): Boolean {
+        val artist = song.artist.trim()
+        val title = song.title.trim()
+
+        val isUnknownArtist = CloudMetadataResolver.isGenericArtist(artist)
+        val hasFileExtension = Regex("(?i)\\.(mp3|m4a|flac|wav|aac|ogg|wma)$").containsMatchIn(title)
+        val isGenericTitle = Regex("(?i)^(track|audio|sound|recording)[_\\s\\-]*\\d*$").matches(title) || title.isBlank()
+        val hasClutter = com.music.myusiq.utils.YouTubeTitleCleaner.cleanTitle(title) != title
+
+        return isUnknownArtist || hasFileExtension || isGenericTitle || hasClutter
+    }
+
+    private val processedAutoImproveTrackIds = java.util.Collections.synchronizedSet(HashSet<Long>())
+
     fun startAutoMetadataImprovement(listener: MetadataUpdateListener) {
         val prefs = application.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
         if (!prefs.getBoolean("auto_improve_metadata", false)) return
         
         scope.launch(Dispatchers.IO) {
-            val unknownArtist = application.getString(R.string.unknown_artist)
-            val unknownAlbum = application.getString(R.string.unknown_album)
-            
             val currentPlayingId = listener.getCurrentPlayingSong()?.id
             val originalTrackList = listener.getOriginalTrackList()
             
-            val toImprove = originalTrackList.asSequence().filter { 
-                (it.artist == unknownArtist || it.album == unknownAlbum) && it.id != currentPlayingId
-            }.take(3)
+            val toImprove = originalTrackList.asSequence().filter { song ->
+                song.id != currentPlayingId && !processedAutoImproveTrackIds.contains(song.id) && isMessyOrUnknownTrack(song)
+            }.take(3).toList()
             
+            if (toImprove.isEmpty()) return@launch
+
             toImprove.forEach { song ->
-                val metadata = CloudMetadataResolver.resolve(song.title, song.artist)
+                processedAutoImproveTrackIds.add(song.id)
+
+                val (extractedArtist, extractedTitle) = com.music.myusiq.utils.YouTubeTitleCleaner.cleanAndSplit(song.title)
+                val cleanTitle = extractedTitle.ifBlank { com.music.myusiq.utils.YouTubeTitleCleaner.cleanTitle(song.title) }
+                val cleanArtist = if (!CloudMetadataResolver.isGenericArtist(song.artist)) song.artist else if (extractedArtist != "Unknown Artist") extractedArtist else ""
+
+                val metadata = CloudMetadataResolver.resolve(cleanTitle, cleanArtist)
                 if (metadata != null) {
                     val artworkUri = metadata.artworkUrl?.let { downloadImageToCache(application, it) }
+                    val proposedTitle = metadata.foundTitle ?: cleanTitle
+                    val proposedArtist = metadata.foundArtist ?: if (cleanArtist.isNotBlank()) cleanArtist else song.artist
+                    val proposedAlbum = metadata.album ?: if (song.album.equals("<unknown>", true)) "Unknown Album" else song.album
+
                     val edit = PendingTrackEdit(
                         songId = song.id,
-                        title = song.title,
-                        artist = song.artist,
-                        album = metadata.album ?: song.album,
+                        title = proposedTitle,
+                        artist = proposedArtist,
+                        album = proposedAlbum,
                         year = metadata.year ?: "",
                         genre = metadata.genre ?: "",
                         artworkUri = artworkUri,
@@ -328,7 +402,7 @@ class MetadataUpdateUseCase(
                     )
                     executeMediaStoreUpdate(application, edit, refreshLibrary = false, showToast = false, listener = listener)
                 }
-                delay(3000.milliseconds)
+                delay(2000.milliseconds)
             }
         }
     }
@@ -355,9 +429,35 @@ class MetadataUpdateUseCase(
         }
     }
 
+    private fun savePreEditSnapshotsIfAvailable(context: Context, updates: List<PendingTrackEdit>, listener: MetadataUpdateListener) {
+        try {
+            val originalTrackMap = listener.getOriginalTrackList().associateBy { it.id }
+            val snapshots = updates.mapNotNull { edit ->
+                val song = originalTrackMap[edit.songId]
+                if (song != null) {
+                    PendingTrackEdit(
+                        songId = song.id,
+                        title = song.title,
+                        artist = song.artist,
+                        album = song.album,
+                        year = "",
+                        genre = song.genre,
+                        path = song.path
+                    )
+                } else null
+            }
+            if (snapshots.isNotEmpty()) {
+                com.music.myusiq.utils.MetadataBackupUtils.savePreEditSnapshots(context, snapshots)
+            }
+        } catch (e: Exception) {
+            Log.e("MetadataUpdateUseCase", "Failed to record pre-edit snapshot", e)
+        }
+    }
+
     fun requestBulkMetadataUpdate(context: Context, updates: List<PendingTrackEdit>, listener: MetadataUpdateListener, onIntent: (IntentSenderRequest) -> Unit) {
         if (updates.isEmpty()) return
         scope.launch(Dispatchers.IO) {
+            savePreEditSnapshotsIfAvailable(context, updates, listener)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 val uris = updates.map { ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, it.songId) }
                 val intent = MediaStore.createWriteRequest(context.contentResolver, uris)
@@ -365,8 +465,14 @@ class MetadataUpdateUseCase(
                     onIntent(IntentSenderRequest.Builder(intent.intentSender).build())
                 }
             } else {
-                updates.forEach { 
-                    executeMediaStoreUpdate(context, it, it == updates.last(), listener = listener)
+                updates.forEachIndexed { index, edit ->
+                    withContext(Dispatchers.Main) {
+                        listener.onBulkProgress(index + 1, updates.size, edit.title)
+                    }
+                    executeMediaStoreUpdate(context, edit, refreshLibrary = false, showToast = false, listener = listener)
+                }
+                withContext(Dispatchers.Main) {
+                    listener.onBulkFinished()
                 }
             }
         }
@@ -377,22 +483,52 @@ class MetadataUpdateUseCase(
             try {
                 Log.d("MetadataUpdateUseCase", "Executing pending write. data=$pendingTrackEditData, bulk=$pendingBulkTrackEditData")
                 
-                val isBulk = pendingBulkTrackEditData != null && (pendingBulkTrackEditData.size) > 1
-                if (isBulk) {
-                    withContext(Dispatchers.Main) {
-                        val msg = application.getString(R.string.applying_changes)
-                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                    }
-                }
+                val bulkList = pendingBulkTrackEditData ?: listOfNotNull(pendingTrackEditData)
+                val isBulk = bulkList.size > 1
 
-                pendingTrackEditData?.let { executeMediaStoreUpdate(context, it, showToast = !isBulk, listener = listener) }
-                pendingBulkTrackEditData?.forEach { executeMediaStoreUpdate(context, it, it == pendingBulkTrackEditData.last(), showToast = !isBulk, listener = listener) }
+                savePreEditSnapshotsIfAvailable(context, bulkList, listener)
+
+                bulkList.forEachIndexed { index, edit ->
+                    withContext(Dispatchers.Main) {
+                        listener.onBulkProgress(index + 1, bulkList.size, edit.title)
+                    }
+                    executeMediaStoreUpdate(context, edit, refreshLibrary = false, showToast = !isBulk, listener = listener)
+                }
             } catch (e: Exception) {
                 Log.e("MetadataUpdateUseCase", "Crash in executePendingWrite", e)
             } finally {
                 withContext(Dispatchers.Main) {
+                    listener.onBulkFinished()
                     onConsume()
                 }
+            }
+        }
+    }
+
+    fun revertLastMetadataFix(
+        context: Context,
+        listener: MetadataUpdateListener,
+        onComplete: (Int) -> Unit
+    ) {
+        scope.launch(Dispatchers.IO) {
+            val snapshots = com.music.myusiq.utils.MetadataBackupUtils.loadPreEditSnapshots(context)
+            if (snapshots.isEmpty()) {
+                withContext(Dispatchers.Main) { onComplete(0) }
+                return@launch
+            }
+
+            snapshots.forEachIndexed { index, snapshot ->
+                withContext(Dispatchers.Main) {
+                    listener.onBulkProgress(index + 1, snapshots.size, snapshot.title)
+                }
+                executeMediaStoreUpdate(context, snapshot, refreshLibrary = false, showToast = false, listener = listener)
+            }
+
+            com.music.myusiq.utils.MetadataBackupUtils.clearPreEditSnapshots(context)
+
+            withContext(Dispatchers.Main) {
+                listener.onBulkFinished()
+                onComplete(snapshots.size)
             }
         }
     }

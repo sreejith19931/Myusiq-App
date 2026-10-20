@@ -80,6 +80,8 @@ data class PendingTrackEdit(
     val genre: String = "",
     val artworkUri: Uri? = null,
     val path: String = "",
+    val lyrics: String? = null,
+    val matchConfidence: Int = 100
 )
 
 class PlaybackViewModel(application: Application) : AndroidViewModel(application) {
@@ -144,6 +146,14 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             }
 
             refreshLibraryDisplay()
+        }
+
+        override fun onBulkProgress(current: Int, total: Int, title: String) {
+            setBulkUpdateProgress(current, total, title)
+        }
+
+        override fun onBulkFinished() {
+            finishBulkUpdate()
         }
 
         override fun onUpdateFinished(data: PendingTrackEdit, refreshLibrary: Boolean) {
@@ -238,6 +248,30 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     private val _artworkRefreshSignatures = MutableStateFlow<Map<String, Long>>(emptyMap())
     val artworkRefreshSignatures: StateFlow<Map<String, Long>> = _artworkRefreshSignatures.asStateFlow()
+
+    private val _displayedSongs = MutableStateFlow<List<Song>>(emptyList())
+    val displayedSongs: StateFlow<List<Song>> = _displayedSongs.asStateFlow()
+
+    private val _isBulkUpdating = MutableStateFlow(false)
+    val isBulkUpdating: StateFlow<Boolean> = _isBulkUpdating.asStateFlow()
+
+    private val _bulkUpdateProgress = MutableStateFlow(0 to 0)
+    val bulkUpdateProgress: StateFlow<Pair<Int, Int>> = _bulkUpdateProgress.asStateFlow()
+
+    private val _bulkUpdateCurrentTitle = MutableStateFlow("")
+    val bulkUpdateCurrentTitle: StateFlow<String> = _bulkUpdateCurrentTitle.asStateFlow()
+
+    fun setBulkUpdateProgress(current: Int, total: Int, title: String) {
+        _isBulkUpdating.value = total > 0 && current <= total
+        _bulkUpdateProgress.value = current to total
+        _bulkUpdateCurrentTitle.value = title
+    }
+
+    fun finishBulkUpdate() {
+        _isBulkUpdating.value = false
+        _bulkUpdateProgress.value = 0 to 0
+        _bulkUpdateCurrentTitle.value = ""
+    }
 
     fun notifyArtworkUpdated(songPath: String) {
         if (songPath.isBlank()) return
@@ -1319,6 +1353,14 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         metadataUpdateUseCase.repairUnknownMetadata(context, songs, onProgress, onComplete, metadataUpdateListener)
     }
 
+    fun revertLastMetadataFix(context: Context, onComplete: (Int) -> Unit) {
+        metadataUpdateUseCase.revertLastMetadataFix(context, metadataUpdateListener, onComplete)
+    }
+
+    suspend fun searchOnlineMetadata(query: String, cleanTitle: String = "", cleanArtist: String = ""): List<com.music.myusiq.utils.CloudMetadata> {
+        return com.music.myusiq.utils.CloudMetadataResolver.searchMultiple(query, cleanTitle, cleanArtist)
+    }
+
     private fun startAutoMetadataImprovement() {
         metadataUpdateUseCase.startAutoMetadataImprovement(metadataUpdateListener)
     }
@@ -1327,7 +1369,13 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     private fun refreshLibraryDisplay() {
         viewModelScope.launch(Dispatchers.Default) { 
-            _songsLibrary.value = searchUseCase.filterSongs(currentSortedList ?: originalTrackList, lastSearchQuery) 
+            val fullList = currentSortedList ?: originalTrackList
+            _songsLibrary.value = fullList
+            _displayedSongs.value = if (lastSearchQuery.isBlank()) {
+                fullList
+            } else {
+                searchUseCase.filterSongs(fullList, lastSearchQuery)
+            }
             _uiFolderItems.value = if (lastSearchQuery.isBlank()) {
                 _allFolderItems.value
             } else {

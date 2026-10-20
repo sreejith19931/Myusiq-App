@@ -232,6 +232,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         onBackPressedDispatcher.addCallback(this, backPressedCallback)
 
         ChangelogManager.checkAndShowChangelog(this)
+        setupBulkUpdateObserver()
     }
 
     private fun setupUI() {
@@ -701,4 +702,79 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
+
+    private var bulkUpdateDialog: androidx.appcompat.app.AlertDialog? = null
+    private var tvProgressMsg: TextView? = null
+    private var progressBar: com.google.android.material.progressindicator.LinearProgressIndicator? = null
+
+    private fun setupBulkUpdateObserver() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.isBulkUpdating.collect { isUpdating ->
+                        if (isUpdating) {
+                            if (bulkUpdateDialog == null || bulkUpdateDialog?.isShowing == false) {
+                                showBulkUpdateProgressDialog()
+                            }
+                        } else {
+                            bulkUpdateDialog?.dismiss()
+                            bulkUpdateDialog = null
+                            tvProgressMsg = null
+                            progressBar = null
+                        }
+                    }
+                }
+                launch {
+                    viewModel.bulkUpdateProgress.collect { (current, total) ->
+                        if (total > 0) {
+                            progressBar?.max = total
+                            progressBar?.progress = current
+                        }
+                    }
+                }
+                launch {
+                    viewModel.bulkUpdateCurrentTitle.collect { title ->
+                        val (current, total) = viewModel.bulkUpdateProgress.value
+                        if (total > 0 && current > 0) {
+                            tvProgressMsg?.text = "Updating $current of $total: $title"
+                        } else {
+                            tvProgressMsg?.text = "Applying metadata updates..."
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun showBulkUpdateProgressDialog() {
+        val density = resources.displayMetrics.density
+        val padding = (20 * density).toInt()
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(padding, padding, padding, padding)
+        }
+
+        tvProgressMsg = TextView(this).apply {
+            text = "Applying metadata updates..."
+            setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyMedium)
+            setPadding(0, 0, 0, (12 * density).toInt())
+        }
+
+        progressBar = com.google.android.material.progressindicator.LinearProgressIndicator(this).apply {
+            isIndeterminate = false
+            max = 100
+            progress = 0
+        }
+
+        layout.addView(tvProgressMsg)
+        layout.addView(progressBar)
+
+        bulkUpdateDialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle("Applying Metadata Changes")
+            .setView(layout)
+            .setCancelable(false)
+            .create()
+
+        bulkUpdateDialog?.show()
+    }
 }

@@ -226,24 +226,27 @@ object FileTagEditor {
 
                 // 1. Direct binary copy into ParcelFileDescriptor descriptor for guaranteed disk write
                 var writeSuccess = false
-                try {
-                    context.contentResolver.openFileDescriptor(trackUri, "rw")?.use { pfd ->
-                        java.io.FileOutputStream(pfd.fileDescriptor).use { output ->
-                            cacheFile.inputStream().use { input ->
-                                input.copyTo(output)
+                val modes = arrayOf("rwt", "wt", "w", "rw")
+                for (mode in modes) {
+                    try {
+                        context.contentResolver.openFileDescriptor(trackUri, mode)?.use { pfd ->
+                            java.io.FileOutputStream(pfd.fileDescriptor).use { output ->
+                                cacheFile.inputStream().use { input ->
+                                    input.copyTo(output)
+                                }
+                                output.flush()
                             }
-                            output.flush()
+                            writeSuccess = true
+                            Log.d("FileTagEditor", "Flushed edited tags directly to PFD file descriptor mode '$mode' for $trackUri")
                         }
-                        writeSuccess = true
-                        Log.d("FileTagEditor", "Flushed edited tags directly to PFD file descriptor for $trackUri")
+                        if (writeSuccess) break
+                    } catch (e: Exception) {
+                        Log.d("FileTagEditor", "PFD write mode '$mode' failed: ${e.message}")
                     }
-                } catch (e: Exception) {
-                    Log.d("FileTagEditor", "PFD write failed: ${e.message}")
                 }
 
                 // 2. Try ContentResolver output stream with supported modes if PFD write was not used
                 if (!writeSuccess) {
-                    val modes = arrayOf("wt", "w", "rwt", "rw")
                     for (mode in modes) {
                         try {
                             context.contentResolver.openOutputStream(trackUri, mode)?.use { output ->
@@ -274,6 +277,10 @@ object FileTagEditor {
                     } catch (e: Exception) {
                         Log.d("FileTagEditor", "Direct originalFile file stream overwrite failed: ${e.message}")
                     }
+                }
+
+                if (writeSuccess) {
+                    android.media.MediaScannerConnection.scanFile(context, arrayOf(filePath), null, null)
                 }
 
                 return filePath

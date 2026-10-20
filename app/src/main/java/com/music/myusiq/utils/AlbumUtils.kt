@@ -6,10 +6,20 @@ object AlbumUtils {
     fun getGroupingKey(albumTag: String?): String {
         if (albumTag.isNullOrBlank()) return "Unknown Album"
         val match = moviePattern.find(albumTag)
-        return if (match != null) {
-            match.groupValues[1].replace("_", "").trim().replaceFirstChar { it.uppercase() }
+        val rawKey = if (match != null) {
+            match.groupValues[1]
         } else {
-            albumTag.trim()
+            albumTag
         }
+        val cleaned = rawKey
+            .replace(Regex("""^[\\"'({\s\-_]+"""), "")
+            .replace(Regex("""[\\"')} \s\-_]+$"""), "")
+            .trim()
+        return if (cleaned.isNotBlank()) cleaned else "Unknown Album"
+    }
+
+    fun getSortKey(name: String): String {
+        val clean = name.replace(Regex("""^[^a-zA-Z0-9]+"""), "").trim().lowercase()
+        return clean.ifBlank { name.lowercase() }
     }
 }
