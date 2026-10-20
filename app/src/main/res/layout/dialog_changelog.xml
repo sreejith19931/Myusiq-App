@@ -29,7 +29,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
-                android:text="What's New in Myusiq"
+                android:text="What's New in Beta"
                 android:textAppearance="?attr/textAppearanceTitleLarge"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -40,11 +40,11 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="44dp"
             android:layout_marginBottom="16dp"
-            android:text="Version 1.2.0"
+            android:text="Version 1.3.0-beta2"
             android:textAppearance="?attr/textAppearanceLabelMedium"
             android:textColor="?attr/colorOnSurfaceVariant" />
 
-        <!-- Highlight 1: 3D Wave FastScroller -->
+        <!-- Highlight 1: Candidate Verification & Similarity Scoring -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -54,7 +54,7 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_fast_forward"
+                android:src="@drawable/ic_tracks"
                 app:tint="?attr/colorPrimary"
                 android:importantForAccessibility="no" />
 
@@ -68,20 +68,20 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="3D Fisheye FastScroller"
+                    android:text="Candidate Verification &amp; Accuracy"
                     android:textAppearance="?attr/textAppearanceBodyMedium"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="A-Z FastScroller with '#' on top and smooth 3D fisheye wave zoom animation."
+                    android:text="Token similarity scoring and audio duration matching to prevent false suggestions and wrong metadata fixes."
                     android:textAppearance="?attr/textAppearanceBodySmall"
                     android:textColor="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Highlight 2: Material 3 Settings Hub -->
+        <!-- Highlight 2: Interactive Manual Search -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -91,7 +91,7 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_settings"
+                android:src="@drawable/ic_search"
                 app:tint="?attr/colorPrimary"
                 android:importantForAccessibility="no" />
 
@@ -105,94 +105,20 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Reorganized Settings Hub"
+                    android:text="Manual Online Cloud Search"
                     android:textAppearance="?attr/textAppearanceBodyMedium"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Clean Material 3 card grouping across all settings and sub-preference screens."
+                    android:text="Search online manually directly from review cards with iTunes &amp; Deezer candidate previews and artwork selection."
                     android:textAppearance="?attr/textAppearanceBodySmall"
                     android:textColor="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Highlight 3: Whole-Track Energy Analysis -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
-
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_equalizer"
-                app:tint="?attr/colorPrimary"
-                android:importantForAccessibility="no" />
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="12dp"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Whole-Track Energy &amp; Smart Mixes"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="100-point full track energy analysis guaranteeing rich 20-50 track smart playlist mixes."
-                    android:textAppearance="?attr/textAppearanceBodySmall"
-                    android:textColor="?attr/colorOnSurfaceVariant" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- Highlight 4: App Launch Playback Responsiveness -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
-
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_play"
-                app:tint="?attr/colorPrimary"
-                android:importantForAccessibility="no" />
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="12dp"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Instant App Launch Playback"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Zero-latency audio playback initialization when tapping a song on cold launch."
-                    android:textAppearance="?attr/textAppearanceBodySmall"
-                    android:textColor="?attr/colorOnSurfaceVariant" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- Highlight 5: In-App GitHub Updates -->
+        <!-- Highlight 3: 1-Tap Metadata Undo -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -216,14 +142,88 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="In-App GitHub Update Engine"
+                    android:text="1-Tap Metadata Revert / Undo"
                     android:textAppearance="?attr/textAppearanceBodyMedium"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Direct APK downloading, installer permissions, rate limit detection, and fallback endpoints."
+                    android:text="Instant pre-edit metadata snapshot backup allowing you to restore original tags and album artwork with one tap."
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Highlight 4: Title Case & Offline Sanitizer -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_edit"
+                app:tint="?attr/colorPrimary"
+                android:importantForAccessibility="no" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Title Case &amp; Web Clutter Filter"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Converts ALL-CAPS or all-lowercase titles to Title Case and strips website domains and converter tags offline."
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Highlight 5: 10-Band EQ & Spatial Surround -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_equalizer"
+                app:tint="?attr/colorPrimary"
+                android:importantForAccessibility="no" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="10-Band Equalizer &amp; Spatial Surround"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Studio-grade 10-band EQ, 3D Spatial Surround Virtualizer, Bass Boost, and Loudness Enhancer."
                     android:textAppearance="?attr/textAppearanceBodySmall"
                     android:textColor="?attr/colorOnSurfaceVariant" />
             </LinearLayout>

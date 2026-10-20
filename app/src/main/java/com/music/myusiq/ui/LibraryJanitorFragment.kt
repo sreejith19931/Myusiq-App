@@ -6,7 +6,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
-import android.util.Size
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -29,6 +28,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -43,7 +43,7 @@ import com.music.myusiq.R
 data class JanitorUpdateItem(
     val song: Song,
     val currentArtworkUri: Uri?,
-    val proposedEdit: PendingTrackEdit,
+    var proposedEdit: PendingTrackEdit,
     var isSelected: Boolean = true
 )
 
@@ -56,10 +56,18 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
     private lateinit var btnFindMissingArt: MaterialButton
     private lateinit var tvRepairStatus: TextView
     private lateinit var btnRepairUnknown: MaterialButton
+    private lateinit var cardUndoFix: View
+    private lateinit var btnUndoLastFix: MaterialButton
 
     private var duplicateGroups: List<List<Song>> = emptyList()
     private var missingArtSongs: List<Song> = emptyList()
     private var unknownSongs: List<Song> = emptyList()
+    private var activeScanJob: kotlinx.coroutines.Job? = null
+
+    override fun onDestroyView() {
+        activeScanJob?.cancel()
+        super.onDestroyView()
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -70,12 +78,16 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
         btnFindMissingArt = view.findViewById(R.id.btnFindMissingArt)
         tvRepairStatus = view.findViewById(R.id.tvRepairStatus)
         btnRepairUnknown = view.findViewById(R.id.btnRepairUnknown)
+        cardUndoFix = view.findViewById(R.id.cardUndoFix)
+        btnUndoLastFix = view.findViewById(R.id.btnUndoLastFix)
 
         setupObservers()
+        updateUndoCardVisibility()
 
         btnCleanDuplicates.setOnClickListener { showCleanDuplicatesDialog() }
         btnFindMissingArt.setOnClickListener { startAutoFix() }
         btnRepairUnknown.setOnClickListener { startRepairUnknown() }
+        btnUndoLastFix.setOnClickListener { performRevertMetadataFix() }
 
         context?.let { ctx ->
             PageGuideManager.showGuideIfNeeded(
@@ -89,6 +101,13 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
                     GuideFeatureItem(R.drawable.ic_tracks, "Identify Unknown Tracks", "Automatically identify messy file titles and resolve missing artist/album metadata.")
                 )
             )
+        }
+
+        if (arguments?.getBoolean("auto_start_scan", false) == true) {
+            arguments?.putBoolean("auto_start_scan", false)
+            view.post {
+                startAutoFix(scanAll = false)
+            }
         }
     }
 
@@ -109,144 +128,117 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
         }
     }
 
-    private fun startAutoFix() {
-        if (missingArtSongs.isEmpty()) return
-        
+    private fun startAutoFix(scanAll: Boolean = false) {
+        val allSongs = viewModel.songsLibrary.value
+        if (allSongs.isEmpty()) {
+            Toast.makeText(requireContext(), "No tracks found in library", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val candidates = (missingArtSongs + unknownSongs).distinctBy { it.id }.filter { song ->
+            isMessyOrUnknownTrack(song) || missingArtSongs.any { m -> m.id == song.id }
+        }
+
+        if (candidates.isEmpty()) {
+            Toast.makeText(requireContext(), "All tracks in your library are already up to date!", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Auto-Fix Metadata")
-            .setMessage("Myusiq will search online for official artwork and tags for these ${missingArtSongs.size} tracks. This requires an internet connection.\n\nContinue?")
+            .setTitle("Auto-Fix Metadata & Artwork")
+            .setMessage("Myusiq will search online for official artwork and metadata for ${candidates.size} tracks that need updates.\n\nContinue?")
             .setNegativeButton("Cancel", null)
             .setPositiveButton("Start") { _, _ ->
-                executeAutoFix()
+                executeScanAndFix(candidates, "Artwork & Metadata Updates")
             }
             .show()
-    }
-
-    @SuppressLint("SetTextI18n")
-    private fun executeAutoFix() {
-        val context = requireContext().applicationContext
-        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-            val candidateItems = mutableListOf<JanitorUpdateItem>()
-            
-            missingArtSongs.forEachIndexed { index, song ->
-                withContext(Dispatchers.Main) {
-                    if (isAdded) {
-                        tvArtStatus.text = "Searching cloud ${index + 1} of ${missingArtSongs.size}: ${song.title}"
-                    }
-                }
-                
-                val metadata = CloudMetadataResolver.resolve(song.title, song.artist)
-                if (metadata != null) {
-                    val artworkUri = metadata.artworkUrl?.let { viewModel.downloadImageToCache(context, it) }
-
-                    val proposedEdit = PendingTrackEdit(
-                        songId = song.id,
-                        title = song.title,
-                        artist = song.artist,
-                        album = metadata.album ?: song.album,
-                        year = metadata.year ?: "",
-                        genre = metadata.genre ?: "",
-                        artworkUri = artworkUri,
-                        path = song.path
-                    )
-                    
-                    val currentArtUri = try {
-                        ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id)
-                    } catch (_: Exception) { null }
-
-                    candidateItems.add(JanitorUpdateItem(song, currentArtUri, proposedEdit))
-                }
-                delay(600.milliseconds)
-            }
-
-            withContext(Dispatchers.Main) {
-                if (isAdded) {
-                    tvArtStatus.text = "Scan complete. Review proposed artwork updates."
-                    if (candidateItems.isNotEmpty()) {
-                        showJanitorReviewDialog(
-                            candidateItems = candidateItems,
-                            dialogTitle = "Review Missing Artwork Updates",
-                            dialogSub = "Compare current info/art with found cloud matches and select which tracks to update."
-                        )
-                    } else {
-                        Toast.makeText(context, "No cloud matches found for missing artwork.", Toast.LENGTH_SHORT).show()
-                    }
-                    performScan()
-                }
-            }
-        }
     }
 
     private fun startRepairUnknown() {
-        if (unknownSongs.isEmpty()) return
+        val candidates = (unknownSongs + missingArtSongs).distinctBy { it.id }
+        if (candidates.isEmpty()) {
+            Toast.makeText(requireContext(), "All metadata looks clean!", Toast.LENGTH_SHORT).show()
+            return
+        }
         
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Repair Missing Info")
-            .setMessage("Myusiq will attempt to identify ${unknownSongs.size} tracks with generic or missing titles/artists and fetch official info.\n\nContinue?")
+            .setMessage("Myusiq will attempt to identify ${candidates.size} tracks with generic or missing info and fetch official details.\n\nContinue?")
             .setNegativeButton("Cancel", null)
             .setPositiveButton("Start") { _, _ ->
                 btnRepairUnknown.isEnabled = false
-                executeRepairUnknown()
+                executeScanAndFix(candidates, "Metadata Repairs")
             }
             .show()
     }
 
     @SuppressLint("SetTextI18n")
-    private fun executeRepairUnknown() {
+    private fun executeScanAndFix(tracksToScan: List<Song>, scanType: String) {
         val context = requireContext().applicationContext
-        val unknownArtist = getString(R.string.unknown_artist)
-        
-        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+        activeScanJob?.cancel()
+        activeScanJob = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             val candidateItems = mutableListOf<JanitorUpdateItem>()
             
-            unknownSongs.forEachIndexed { index, song ->
+            for ((index, song) in tracksToScan.withIndex()) {
+                if (!coroutineContext.isActive) break
+
                 withContext(Dispatchers.Main) {
                     if (isAdded) {
-                        tvRepairStatus.text = "Searching cloud ${index + 1} of ${unknownSongs.size}: ${song.title}"
+                        val statusText = "Scanning ${index + 1} of ${tracksToScan.size}: ${song.title}"
+                        tvArtStatus.text = statusText
+                        tvRepairStatus.text = statusText
                     }
                 }
                 
                 val (extractedArtist, extractedTitle) = YouTubeTitleCleaner.cleanAndSplit(song.title)
                 val cleanTitle = extractedTitle.ifBlank { YouTubeTitleCleaner.cleanTitle(song.title) }
-                val cleanArtist = if (song.artist == unknownArtist || song.artist.isBlank()) {
-                    if (extractedArtist != "Unknown Artist") extractedArtist else ""
-                } else song.artist
+                val cleanArtist = if (!CloudMetadataResolver.isGenericArtist(song.artist)) song.artist else if (extractedArtist != "Unknown Artist") extractedArtist else ""
 
                 val metadata = CloudMetadataResolver.resolve(cleanTitle, cleanArtist)
-                if (metadata != null) {
+                if (metadata != null && coroutineContext.isActive) {
                     val artworkUri = metadata.artworkUrl?.let { viewModel.downloadImageToCache(context, it) }
+
+                    val proposedTitle = metadata.foundTitle ?: cleanTitle
+                    val proposedArtist = metadata.foundArtist ?: if (cleanArtist.isNotBlank()) cleanArtist else song.artist
+                    val proposedAlbum = metadata.album ?: if (song.album.equals("<unknown>", true)) "Unknown Album" else song.album
+
+                    val confidencePct = (metadata.matchConfidence * 100).toInt()
                     val proposedEdit = PendingTrackEdit(
                         songId = song.id,
-                        title = cleanTitle,
-                        artist = cleanArtist,
-                        album = metadata.album ?: song.album,
+                        title = proposedTitle,
+                        artist = proposedArtist,
+                        album = proposedAlbum,
                         year = metadata.year ?: "",
                         genre = metadata.genre ?: "",
                         artworkUri = artworkUri,
-                        path = song.path
+                        path = song.path,
+                        matchConfidence = confidencePct
                     )
                     
                     val currentArtUri = try {
                         ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id)
                     } catch (_: Exception) { null }
 
-                    candidateItems.add(JanitorUpdateItem(song, currentArtUri, proposedEdit))
+                    if (isMeaningfulChange(context, song, proposedEdit)) {
+                        candidateItems.add(JanitorUpdateItem(song, currentArtUri, proposedEdit))
+                    }
                 }
-                delay(600.milliseconds)
+                delay(300.milliseconds)
             }
 
             withContext(Dispatchers.Main) {
-                if (isAdded) {
-                    tvRepairStatus.text = "Scan complete. Review proposed metadata repairs."
+                if (isAdded && coroutineContext.isActive) {
+                    tvArtStatus.text = "Scan complete. Review proposed updates."
+                    tvRepairStatus.text = "Scan complete. Review proposed updates."
                     btnRepairUnknown.isEnabled = true
                     if (candidateItems.isNotEmpty()) {
                         showJanitorReviewDialog(
                             candidateItems = candidateItems,
-                            dialogTitle = "Review Metadata Repairs",
-                            dialogSub = "Compare current info/art with found official info and select which tracks to update."
+                            dialogTitle = "Review Proposed Fixes ($scanType)",
+                            dialogSub = "Found ${candidateItems.size} suggested fixes. Choose which tracks to update."
                         )
                     } else {
-                        Toast.makeText(context, "No cloud matches found for repair.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "No cloud matches found for review.", Toast.LENGTH_SHORT).show()
                     }
                     performScan()
                 }
@@ -309,7 +301,7 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
                 Toast.makeText(requireContext(), "Applying changes for ${selectedEdits.size} tracks...", Toast.LENGTH_LONG).show()
             }
             dialog?.dismiss()
-            performScan()
+            view?.postDelayed({ performScan() }, 1200)
         }
 
         dialog = MaterialAlertDialogBuilder(requireContext())
@@ -317,6 +309,40 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
             .create()
 
         dialog.show()
+    }
+
+    private fun isMeaningfulChange(context: android.content.Context, song: Song, edit: PendingTrackEdit): Boolean {
+        val currentTitle = song.title.trim()
+        val currentArtist = song.artist.trim()
+        val currentAlbum = song.album.trim()
+
+        val titleChanged = edit.title.isNotBlank() && !edit.title.equals(currentTitle, ignoreCase = true)
+        val artistChanged = edit.artist.isNotBlank() && !edit.artist.equals(currentArtist, ignoreCase = true) && !CloudMetadataResolver.isGenericArtist(edit.artist)
+        
+        val isCurrentAlbumGeneric = currentAlbum.isBlank() || currentAlbum.equals("<unknown>", true) || currentAlbum.equals("Unknown Album", true)
+        val isProposedAlbumGeneric = edit.album.isBlank() || edit.album.equals("<unknown>", true) || edit.album.equals("Unknown Album", true)
+        val albumChanged = !isProposedAlbumGeneric && (isCurrentAlbumGeneric || !edit.album.equals(currentAlbum, ignoreCase = true))
+
+        val yearChanged = edit.year.isNotBlank() && edit.year != "Unknown"
+        val genreChanged = edit.genre.isNotBlank() && !edit.genre.equals(song.genre.trim(), ignoreCase = true) && edit.genre != "Unknown"
+
+        val currentArtFile = ArtworkUtils.getArtworkFile(context, song.id, song.path)
+        val hasCurrentArt = currentArtFile != null && currentArtFile.exists() && currentArtFile.length() > 0L
+        val artworkAdded = edit.artworkUri != null && !hasCurrentArt
+
+        return titleChanged || artistChanged || albumChanged || yearChanged || genreChanged || artworkAdded
+    }
+
+    private fun isMessyOrUnknownTrack(song: Song): Boolean {
+        val artist = song.artist.trim()
+        val title = song.title.trim()
+
+        val isUnknownArtist = CloudMetadataResolver.isGenericArtist(artist)
+        val hasFileExtension = Regex("(?i)\\.(mp3|m4a|flac|wav|aac|ogg|wma)$").containsMatchIn(title)
+        val isGenericTitle = Regex("(?i)^(track|audio|sound|recording)[_\\s\\-]*\\d*$").matches(title) || title.isBlank()
+        val hasClutter = YouTubeTitleCleaner.cleanTitle(title) != title
+
+        return isUnknownArtist || hasFileExtension || isGenericTitle || hasClutter
     }
 
     @SuppressLint("SetTextI18n")
@@ -330,10 +356,9 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
         }
 
         val appContext = requireContext().applicationContext
-        val contentResolver = appContext.contentResolver
 
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Default) {
-            val groups = allSongs.groupBy { "${it.title.lowercase()}|${it.artist.lowercase()}" }
+            val groups = allSongs.groupBy { "${it.title.trim().lowercase()}|${it.artist.trim().lowercase()}" }
                 .values
                 .filter { it.size > 1 }
                 .map { group ->
@@ -346,35 +371,13 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
             val missingArt = allSongs
                 .distinctBy { PlatformUtils.normalizePath(it.path) }
                 .filter { song ->
-                    val trackUri = ContentUris.withAppendedId(
-                        MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                        song.id
-                    )
-                    var hasArt = false
-
-                    // 1. Check local artwork cache, persistent backup, and physical embedded picture
+                    // Check local artwork cache, persistent backup, and physical embedded picture
                     val artFile = ArtworkUtils.getArtworkFile(appContext, song.id, song.path)
-                    if (artFile != null && artFile.exists() && artFile.length() > 0) {
-                        hasArt = true
-                    }
-
-                    // 2. Fall back to MediaStore system thumbnail if local image file wasn't found
-                    if (!hasArt) {
-                        try {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                contentResolver.loadThumbnail(trackUri, Size(100, 100), null)
-                                hasArt = true
-                            }
-                        } catch (_: Exception) {
-                            // Thumbnails fail if no artwork is embedded or present
-                        }
-                    }
-                    !hasArt
+                    artFile == null || !artFile.exists() || artFile.length() == 0L
                 }
 
-            val unknownArtist = getString(R.string.unknown_artist)
-            val toRepair = allSongs.filter { 
-                it.artist == unknownArtist || it.title.contains(".mp3", true) || it.title.lowercase() == "track"
+            val toRepair = allSongs.filter { song ->
+                isMessyOrUnknownTrack(song)
             }
 
             if (!isAdded) return@launch
@@ -395,8 +398,31 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
 
                 tvRepairStatus.text = if (toRepair.isNotEmpty()) "Found ${toRepair.size} tracks with missing or messy info." else "All metadata looks clean."
                 btnRepairUnknown.isVisible = toRepair.isNotEmpty()
+                updateUndoCardVisibility()
             }
         }
+    }
+
+    private fun updateUndoCardVisibility() {
+        val ctx = context ?: return
+        cardUndoFix.isVisible = MetadataBackupUtils.hasPreEditSnapshots(ctx)
+    }
+
+    private fun performRevertMetadataFix() {
+        val ctx = requireContext()
+        MaterialAlertDialogBuilder(ctx)
+            .setTitle("Revert Metadata Fix")
+            .setMessage("Do you want to restore your metadata and artwork back to the previous state?")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Revert") { _, _ ->
+                Toast.makeText(ctx, "Restoring previous metadata...", Toast.LENGTH_SHORT).show()
+                viewModel.revertLastMetadataFix(ctx) { count ->
+                    Toast.makeText(ctx, "Reverted metadata for $count tracks.", Toast.LENGTH_LONG).show()
+                    updateUndoCardVisibility()
+                    performScan()
+                }
+            }
+            .show()
     }
 
     private fun showCleanDuplicatesDialog() {
@@ -446,14 +472,17 @@ class JanitorReviewAdapter(
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val cbSelectTrack: MaterialCheckBox = view.findViewById(R.id.cbSelectTrack)
         val tvTrackPath: TextView = view.findViewById(R.id.tvTrackPath)
+        val btnEditProposed: android.widget.ImageButton = view.findViewById(R.id.btnEditProposed)
         val ivCurrentArt: ImageView = view.findViewById(R.id.ivCurrentArt)
         val tvCurrentTitle: TextView = view.findViewById(R.id.tvCurrentTitle)
         val tvCurrentArtist: TextView = view.findViewById(R.id.tvCurrentArtist)
         val tvCurrentAlbum: TextView = view.findViewById(R.id.tvCurrentAlbum)
+        val tvCurrentYearGenre: TextView = view.findViewById(R.id.tvCurrentYearGenre)
         val ivFoundArt: ImageView = view.findViewById(R.id.ivFoundArt)
         val tvFoundTitle: TextView = view.findViewById(R.id.tvFoundTitle)
         val tvFoundArtist: TextView = view.findViewById(R.id.tvFoundArtist)
         val tvFoundAlbum: TextView = view.findViewById(R.id.tvFoundAlbum)
+        val tvFoundYearGenre: TextView = view.findViewById(R.id.tvFoundYearGenre)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -478,6 +507,8 @@ class JanitorReviewAdapter(
         holder.tvCurrentTitle.text = item.song.title
         holder.tvCurrentArtist.text = item.song.artist
         holder.tvCurrentAlbum.text = item.song.album
+        val currentYrGenre = item.song.genre
+        holder.tvCurrentYearGenre.text = currentYrGenre.ifBlank { "—" }
 
         if (item.currentArtworkUri != null) {
             Glide.with(context).load(item.currentArtworkUri).placeholder(R.drawable.ic_music_note_2).error(R.drawable.ic_music_note_2).into(holder.ivCurrentArt)
@@ -489,13 +520,188 @@ class JanitorReviewAdapter(
         holder.tvFoundTitle.text = item.proposedEdit.title
         holder.tvFoundArtist.text = item.proposedEdit.artist
         holder.tvFoundAlbum.text = item.proposedEdit.album
+        val matchLabel = "${item.proposedEdit.matchConfidence}% match"
+        val foundYrGenre = listOf(item.proposedEdit.year, item.proposedEdit.genre, matchLabel).filter { it.isNotBlank() }.joinToString(" • ")
+        holder.tvFoundYearGenre.text = foundYrGenre.ifBlank { "—" }
 
         if (item.proposedEdit.artworkUri != null) {
             Glide.with(context).load(item.proposedEdit.artworkUri).placeholder(R.drawable.ic_music_note_2).error(R.drawable.ic_music_note_2).into(holder.ivFoundArt)
         } else {
             Glide.with(context).load(R.drawable.ic_music_note_2).into(holder.ivFoundArt)
         }
+
+        holder.btnEditProposed.setOnClickListener {
+            showInlineEditDialog(context, item, position)
+        }
+    }
+
+    private fun showInlineEditDialog(context: android.content.Context, item: JanitorUpdateItem, position: Int) {
+        val density = context.resources.displayMetrics.density
+        val padding = (20 * density).toInt()
+
+        val layout = android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(padding, (10 * density).toInt(), padding, (10 * density).toInt())
+        }
+
+        fun createInput(label: String, initialValue: String): com.google.android.material.textfield.TextInputEditText {
+            val til = com.google.android.material.textfield.TextInputLayout(context)
+            til.hint = label
+            val tiet = com.google.android.material.textfield.TextInputEditText(context).apply {
+                setText(initialValue)
+                maxLines = 1
+            }
+            til.addView(tiet)
+            layout.addView(til)
+            return tiet
+        }
+
+        val etTitle = createInput("Title", item.proposedEdit.title)
+        val etArtist = createInput("Artist", item.proposedEdit.artist)
+        val etAlbum = createInput("Album", item.proposedEdit.album)
+        val etYear = createInput("Year", item.proposedEdit.year)
+        val etGenre = createInput("Genre", item.proposedEdit.genre)
+
+        val btnSearchOnline = MaterialButton(context, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+            text = "Search Online"
+            setIconResource(R.drawable.ic_search)
+            setOnClickListener {
+                showManualSearchDialog(context, item, position) { candidate ->
+                    etTitle.setText(candidate.foundTitle ?: item.proposedEdit.title)
+                    etArtist.setText(candidate.foundArtist ?: item.proposedEdit.artist)
+                    etAlbum.setText(candidate.album ?: item.proposedEdit.album)
+                    etYear.setText(candidate.year ?: item.proposedEdit.year)
+                    etGenre.setText(candidate.genre ?: item.proposedEdit.genre)
+
+                    candidate.artworkUrl?.let { url ->
+                        val activity = context as? androidx.fragment.app.FragmentActivity
+                        if (activity != null) {
+                            activity.lifecycleScope.launch {
+                                val vm = androidx.lifecycle.ViewModelProvider(activity)[PlaybackViewModel::class.java]
+                                val uri = vm.downloadImageToCache(context, url)
+                                if (uri != null) {
+                                    item.proposedEdit = item.proposedEdit.copy(artworkUri = uri)
+                                    notifyItemChanged(position)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        layout.addView(btnSearchOnline)
+
+        MaterialAlertDialogBuilder(context)
+            .setTitle("Edit Proposed Fix")
+            .setView(layout)
+            .setPositiveButton("Save") { _, _ ->
+                val updatedEdit = item.proposedEdit.copy(
+                    title = etTitle.text?.toString()?.trim().orEmpty().ifBlank { item.song.title },
+                    artist = etArtist.text?.toString()?.trim().orEmpty().ifBlank { item.song.artist },
+                    album = etAlbum.text?.toString()?.trim().orEmpty().ifBlank { item.song.album },
+                    year = etYear.text?.toString()?.trim().orEmpty(),
+                    genre = etGenre.text?.toString()?.trim().orEmpty()
+                )
+                items[position].proposedEdit = updatedEdit
+                notifyItemChanged(position)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showManualSearchDialog(
+        context: android.content.Context,
+        item: JanitorUpdateItem,
+        position: Int,
+        onSelected: (CloudMetadata) -> Unit
+    ) {
+        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_manual_cloud_search, null)
+        val etQuery = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etManualSearchQuery)
+        val btnSearch = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnRunManualSearch)
+        val progress = dialogView.findViewById<android.widget.ProgressBar>(R.id.progressManualSearch)
+        val rvResults = dialogView.findViewById<RecyclerView>(R.id.rvManualSearchResults)
+
+        val initialQuery = "${item.proposedEdit.artist} ${item.proposedEdit.title}".trim().ifBlank { File(item.song.path).nameWithoutExtension }
+        etQuery.setText(initialQuery)
+
+        rvResults.layoutManager = LinearLayoutManager(context)
+
+        var dialog: AlertDialog? = null
+
+        fun doSearch() {
+            val q = etQuery.text?.toString()?.trim().orEmpty()
+            if (q.isBlank()) return
+            progress.isVisible = true
+            rvResults.isVisible = false
+
+            (context as? androidx.lifecycle.LifecycleOwner)?.lifecycleScope?.launch(Dispatchers.IO) {
+                val results = CloudMetadataResolver.searchMultiple(q, item.song.title, item.song.artist)
+                withContext(Dispatchers.Main) {
+                    progress.isVisible = false
+                    rvResults.isVisible = true
+                    if (results.isNotEmpty()) {
+                        rvResults.adapter = CandidateResultsAdapter(results) { selectedCandidate ->
+                            onSelected(selectedCandidate)
+                            dialog?.dismiss()
+                        }
+                    } else {
+                        Toast.makeText(context, "No online matches found", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+
+        btnSearch.setOnClickListener { doSearch() }
+
+        dialog = MaterialAlertDialogBuilder(context)
+            .setView(dialogView)
+            .setNegativeButton("Cancel", null)
+            .create()
+
+        dialog.show()
+        doSearch()
     }
 
     override fun getItemCount(): Int = items.size
+}
+
+class CandidateResultsAdapter(
+    private val candidates: List<CloudMetadata>,
+    private val onSelect: (CloudMetadata) -> Unit
+) : RecyclerView.Adapter<CandidateResultsAdapter.ViewHolder>() {
+
+    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val ivArt: ImageView = view.findViewById(R.id.ivResultArt)
+        val tvTitle: TextView = view.findViewById(R.id.tvResultTitle)
+        val tvArtist: TextView = view.findViewById(R.id.tvResultArtist)
+        val tvAlbumInfo: TextView = view.findViewById(R.id.tvResultAlbumInfo)
+        val btnSelect: MaterialButton = view.findViewById(R.id.btnSelectCandidate)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_cloud_search_result, parent, false)
+        return ViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val item = candidates[position]
+        val context = holder.itemView.context
+
+        holder.tvTitle.text = item.foundTitle ?: "Unknown Title"
+        holder.tvArtist.text = item.foundArtist ?: "Unknown Artist"
+        val pct = (item.matchConfidence * 100).toInt()
+        val infoStr = listOf(item.album, item.year, item.genre, "$pct% match").filterNotNull().filter { it.isNotBlank() }.joinToString(" • ")
+        holder.tvAlbumInfo.text = infoStr
+
+        if (item.artworkUrl != null) {
+            Glide.with(context).load(item.artworkUrl).placeholder(R.drawable.ic_music_note_2).error(R.drawable.ic_music_note_2).into(holder.ivArt)
+        } else {
+            Glide.with(context).load(R.drawable.ic_music_note_2).into(holder.ivArt)
+        }
+
+        holder.itemView.setOnClickListener { onSelect(item) }
+        holder.btnSelect.setOnClickListener { onSelect(item) }
+    }
+
+    override fun getItemCount(): Int = candidates.size
 }

@@ -42,8 +42,16 @@ class LibrarySettingsFragment : Fragment(R.layout.fragment_settings_library) {
 
         val switchAutoImprove = view.findViewById<MaterialSwitch>(R.id.switchAutoImprove)
         switchAutoImprove.isChecked = sharedPreferences.getBoolean("auto_improve_metadata", false)
+
         switchAutoImprove.setOnCheckedChangeListener { _, isChecked ->
             sharedPreferences.edit { putBoolean("auto_improve_metadata", isChecked) }
+            if (isChecked) {
+                Toast.makeText(requireContext(), "Auto-Improve Metadata enabled", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        view.findViewById<View>(R.id.rowAutoImprove)?.setOnClickListener {
+            switchAutoImprove.isChecked = !switchAutoImprove.isChecked
         }
 
         view.findViewById<View>(R.id.rowLibraryJanitor).setOnClickListener {

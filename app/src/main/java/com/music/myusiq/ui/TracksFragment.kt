@@ -440,12 +440,19 @@ class TracksFragment : Fragment() {
             .show()
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (etSearch?.text.isNullOrEmpty()) {
+            viewModel.applyFilterAndSearch("")
+        }
+    }
+
     private fun setupObservers() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     combine(
-                        viewModel.songsLibrary,
+                        viewModel.displayedSongs,
                         viewModel.currentPlayingSong,
                         viewModel.isPlaying,
                         viewModel.favoriteTrackIds,

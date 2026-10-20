@@ -2,33 +2,69 @@ package com.music.myusiq.utils
 
 /**
  * Utility for sanitizing YouTube-downloaded audio titles by removing common clutter
- * such as "(Official Music Video)", "[4K]", "(Audio)", etc., and splitting artist and title.
+ * such as "(Official Music Video)", "[4K]", "(Audio)", track index prefixes, etc.,
+ * and splitting artist and title.
  */
 object YouTubeTitleCleaner {
 
-    private val clutterRegex = Regex(
-        """(?i)[(\[{].*?(official|music|video|audio|lyric|hd|4k|remix|visualizer|mv|topic).*?[)\]}]"""
+    private val bracketClutterRegex = Regex(
+        """(?i)[(\[{].*?(official|music|video|audio|lyric|hd|4k|remix|visualizer|mv|topic|prod|feat|ft|full song).*?[)\]}]"""
     )
 
-    private val extensionRegex = Regex("(?i)\\.mp3|\\.m4a|\\.wav|\\.flac|\\.aac|\\.ogg|y2mate|dl")
+    private val unbracketedClutterRegex = Regex(
+        """(?i)\b(official\s+(music\s+)?video|official\s+audio|lyric\s+video|4k\s+video|hd\s+1080p|y2mate(\.is|\.com)?|ytmp3)\b"""
+    )
+
+    private val extensionRegex = Regex("(?i)(\\.mp3|\\.m4a|\\.wav|\\.flac|\\.aac|\\.ogg|\\.wma)$")
+
+    private val trackIndexRegex = Regex("(?i)^(\\d{1,3}[.\\-_\\s]+|track[_\\s-]*\\d{1,3}[.\\-_\\s]*)")
+
+    private val domainRegex = Regex("""(?i)\b(www\.|https?://)?[a-z0-9\-]+\.(com|net|org|io|me|co|info|biz)\b""")
 
     /**
-     * Cleans YouTube clutter and extra file extensions from the raw title string.
+     * Cleans YouTube clutter, file extensions, domain URLs, underscores, and leading track numbers from the raw title string.
      *
      * @param rawTitle The raw track title or filename.
      * @return Cleaned title string.
      */
     fun cleanTitle(rawTitle: String): String {
-        return rawTitle
-            .replace(clutterRegex, "")
+        val step1 = rawTitle
+            .replace("_", " ")
             .replace(extensionRegex, "")
+            .replace(domainRegex, "")
+            .replace(bracketClutterRegex, "")
+            .replace(unbracketedClutterRegex, "")
             .trim()
+
+        val step2 = step1.replace(trackIndexRegex, "").trim()
+        val cleaned = step2.replace(Regex("""\s+"""), " ")
+        return toTitleCase(cleaned)
     }
 
     /**
-     * Cleans YouTube clutter and attempts to split "Artist - Title" format.
+     * Converts all-caps or all-lowercase titles to Title Case.
+     */
+    fun toTitleCase(input: String): String {
+        if (input.isBlank()) return input
+        val isAllCaps = input.none { it.isLowerCase() } && input.any { it.isLetter() }
+        val isAllLower = input.none { it.isUpperCase() } && input.any { it.isLetter() }
+
+        if (isAllCaps || isAllLower) {
+            return input.split(" ").joinToString(" ") { word ->
+                when {
+                    word.equals("feat", ignoreCase = true) || word.equals("ft", ignoreCase = true) -> "feat."
+                    word.length > 1 -> word.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+                    else -> word.uppercase()
+                }
+            }
+        }
+        return input
+    }
+
+    /**
+     * Cleans YouTube clutter, strips track numbers, and attempts to split "Artist - Title" format.
      *
-     * @param rawTitle Raw title string (e.g. "Artist - Song Name (Official Video)")
+     * @param rawTitle Raw title string (e.g. "01 - Artist - Song Name (Official Video)")
      * @return Pair of (Artist, Title)
      */
     fun cleanAndSplit(rawTitle: String): Pair<String, String> {
@@ -36,9 +72,12 @@ object YouTubeTitleCleaner {
 
         return if (cleaned.contains("-")) {
             val parts = cleaned.split("-", limit = 2)
-            Pair(parts[0].trim(), parts[1].trim()) // (Artist, Title)
+            val artist = toTitleCase(parts[0].trim())
+            val title = toTitleCase(parts[1].trim())
+            Pair(if (artist.isNotBlank()) artist else "Unknown Artist", if (title.isNotBlank()) title else cleaned)
         } else {
             Pair("Unknown Artist", cleaned)
         }
     }
 }
+

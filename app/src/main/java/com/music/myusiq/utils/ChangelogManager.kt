@@ -18,8 +18,8 @@ object ChangelogManager {
         val prefs = activity.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val lastSeenVersionCode = prefs.getInt(KEY_LAST_VERSION_CODE, 0)
 
-        var currentVersionCode = 10300
-        var currentVersionName = "1.3.0-beta1"
+        var currentVersionCode = 10302
+        var currentVersionName = "1.3.0-beta2"
 
         try {
             val pInfo = activity.packageManager.getPackageInfo(activity.packageName, 0)
@@ -29,15 +29,15 @@ object ChangelogManager {
                 @Suppress("DEPRECATION")
                 pInfo.versionCode
             }
-            currentVersionName = pInfo.versionName ?: "1.2.0"
+            currentVersionName = pInfo.versionName ?: "1.3.0-beta2"
         } catch (_: Exception) {}
 
-        if (!forceShow && (lastSeenVersionCode >= currentVersionCode || lastSeenVersionCode == 0)) {
-            // First install or already seen for this version -> save version and exit
-            if (lastSeenVersionCode == 0) {
-                prefs.edit { putInt(KEY_LAST_VERSION_CODE, currentVersionCode) }
+        val isBetaBuild = currentVersionName.contains("beta", ignoreCase = true) || activity.packageName.endsWith(".beta")
+
+        if (!forceShow) {
+            if (lastSeenVersionCode == currentVersionCode) {
+                return
             }
-            return
         }
 
         val inflater = LayoutInflater.from(activity)
@@ -47,7 +47,7 @@ object ChangelogManager {
         val tvSub = dialogView.findViewById<TextView>(R.id.tvChangelogSub)
         val btnGotIt = dialogView.findViewById<MaterialButton>(R.id.btnChangelogGotIt)
 
-        tvTitle.text = "What's New in Myusiq"
+        tvTitle.text = if (isBetaBuild) "What's New in Beta" else "What's New in Myusiq"
         tvSub.text = "Version $currentVersionName"
 
         val dialog = MaterialAlertDialogBuilder(activity)

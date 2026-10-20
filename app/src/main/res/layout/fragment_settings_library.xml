@@ -133,11 +133,15 @@
 
                 <!-- Auto-Improve -->
                 <LinearLayout
+                    android:id="@+id/rowAutoImprove"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:padding="12dp">
+                    android:padding="12dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"

@@ -42,6 +42,16 @@
                 android:maxLines="1"
                 android:ellipsize="middle"
                 tools:text="Song_Title_Filename.mp3" />
+
+            <ImageButton
+                android:id="@+id/btnEditProposed"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:padding="4dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_edit"
+                app:tint="?attr/colorPrimary"
+                android:contentDescription="Edit proposed metadata" />
         </LinearLayout>
 
         <View
@@ -124,6 +134,17 @@
                             android:maxLines="1"
                             android:ellipsize="end"
                             tools:text="Album" />
+
+                        <TextView
+                            android:id="@+id/tvCurrentYearGenre"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceLabelSmall"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:textSize="10sp"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            tools:text="2021 • Pop" />
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
@@ -205,6 +226,17 @@
                             android:maxLines="1"
                             android:ellipsize="end"
                             tools:text="Official Album" />
+
+                        <TextView
+                            android:id="@+id/tvFoundYearGenre"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceLabelSmall"
+                            android:textColor="?attr/colorPrimary"
+                            android:textSize="10sp"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            tools:text="2023 • Pop" />
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>

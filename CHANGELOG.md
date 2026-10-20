@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0-beta2] - 2026-10-15
+
+### Added & Fixed
+- **Smart Janitor Candidate Verification & Similarity Scoring**: Added token Jaccard similarity and duration match bonus to candidate evaluation, eliminating false positives and wrong suggestions.
+- **Interactive Manual Online Search**: Added a "Search Online" button in the Janitor review pop-up with a search picker (`dialog_manual_cloud_search.xml`) displaying iTunes & Deezer candidate results with high-res artwork, album info, and match confidence scores.
+- **One-Tap Metadata Revert / Undo**: Implemented pre-edit JSON snapshots before applying bulk/single metadata updates, with a 1-tap "Undo Last Fix" card in Library Janitor.
+- **Offline Title Case Sanitizer**: Converts ALL-CAPS or all-lowercase titles to Title Case and strips website domains (`www.site.com`), stray underscores, and web converter tags offline.
+- **Auto Metadata Fix Optimization**: Prevented infinite re-scanning of clean or already-fixed tracks when toggling the Auto-Improve switch ON/OFF.
+
 ## [1.3.0-beta1] - 2026-10-15
 
 ### Added & Fixed

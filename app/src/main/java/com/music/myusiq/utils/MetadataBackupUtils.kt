@@ -1,7 +1,12 @@
 package com.music.myusiq.utils
 
+import android.content.ContentUris
+import android.content.ContentValues
 import android.content.Context
+import android.net.Uri
+import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
 import android.util.Log
 import com.music.myusiq.data.MusicRepository
 import com.music.myusiq.domain.models.SongOverride
@@ -39,6 +44,67 @@ object MetadataBackupUtils {
         return File(context.getExternalFilesDir(null), "metadata_overrides_backup.json")
     }
 
+    private fun saveToPublicMediaStore(context: Context, jsonString: String) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                val resolver = context.contentResolver
+                val contentValues = ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, "metadata_overrides_backup.json")
+                    put(MediaStore.MediaColumns.MIME_TYPE, "application/json")
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_DOWNLOADS}/.myusiq_backup")
+                }
+
+                val projection = arrayOf(MediaStore.MediaColumns._ID)
+                val selection = "${MediaStore.MediaColumns.DISPLAY_NAME} = ? AND ${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ?"
+                val selectionArgs = arrayOf("metadata_overrides_backup.json", "%${Environment.DIRECTORY_DOWNLOADS}/.myusiq_backup%")
+                val queryUri = MediaStore.Downloads.EXTERNAL_CONTENT_URI
+
+                var existingUri: Uri? = null
+                resolver.query(queryUri, projection, selection, selectionArgs, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID))
+                        existingUri = ContentUris.withAppendedId(queryUri, id)
+                    }
+                }
+
+                val targetUri = existingUri ?: resolver.insert(queryUri, contentValues)
+                if (targetUri != null) {
+                    resolver.openOutputStream(targetUri, "rwt")?.use { output ->
+                        output.write(jsonString.toByteArray(Charsets.UTF_8))
+                        output.flush()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.d("MetadataBackupUtils", "MediaStore public backup save failed: ${e.message}")
+            }
+        }
+    }
+
+    private fun readFromPublicMediaStore(context: Context): String? {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                val resolver = context.contentResolver
+                val projection = arrayOf(MediaStore.MediaColumns._ID)
+                val selection = "${MediaStore.MediaColumns.DISPLAY_NAME} = ?"
+                val selectionArgs = arrayOf("metadata_overrides_backup.json")
+                val queryUri = MediaStore.Downloads.EXTERNAL_CONTENT_URI
+
+                resolver.query(queryUri, projection, selection, selectionArgs, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID))
+                        val uri = ContentUris.withAppendedId(queryUri, id)
+                        resolver.openInputStream(uri)?.use { input ->
+                            return input.bufferedReader(Charsets.UTF_8).readText()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.d("MetadataBackupUtils", "MediaStore public backup read failed: ${e.message}")
+            }
+        }
+        return null
+    }
+
     fun saveOverrideToBackup(context: Context, override: SongOverride) {
         try {
             val appFile = getAppBackupFile(context)
@@ -64,6 +130,7 @@ object MetadataBackupUtils {
             val jsonString = jsonArray.toString()
             try { appFile.writeText(jsonString) } catch (_: Exception) {}
             try { publicFile?.writeText(jsonString) } catch (_: Exception) {}
+            saveToPublicMediaStore(context, jsonString)
 
             Log.d("MetadataBackupUtils", "Saved metadata override backup for ${override.path}")
         } catch (e: Exception) {
@@ -75,14 +142,13 @@ object MetadataBackupUtils {
         val appFile = getAppBackupFile(context)
         val publicFile = getPublicBackupFile()
 
-        val targetFile = when {
-            appFile.exists() && appFile.length() > 0L -> appFile
-            publicFile != null && publicFile.exists() && publicFile.length() > 0L -> publicFile
-            else -> return emptyList()
+        val jsonText = when {
+            appFile.exists() && appFile.length() > 0L -> appFile.readText()
+            publicFile != null && publicFile.exists() && publicFile.length() > 0L -> publicFile.readText()
+            else -> readFromPublicMediaStore(context) ?: return emptyList()
         }
 
         return try {
-            val jsonText = targetFile.readText()
             val jsonArray = JSONArray(jsonText)
             val list = mutableListOf<SongOverride>()
 
@@ -121,5 +187,68 @@ object MetadataBackupUtils {
         } catch (e: Exception) {
             Log.e("MetadataBackupUtils", "Error restoring metadata overrides", e)
         }
+    }
+
+    fun savePreEditSnapshots(context: Context, snapshots: List<com.music.myusiq.ui.viewmodels.PendingTrackEdit>) {
+        try {
+            val snapshotFile = File(context.getExternalFilesDir(null), "pre_edit_snapshots.json")
+            val jsonArray = JSONArray()
+            snapshots.forEach { edit ->
+                val obj = JSONObject().apply {
+                    put("songId", edit.songId)
+                    put("title", edit.title)
+                    put("artist", edit.artist)
+                    put("album", edit.album)
+                    put("year", edit.year)
+                    put("genre", edit.genre)
+                    put("path", edit.path)
+                }
+                jsonArray.put(obj)
+            }
+            snapshotFile.writeText(jsonArray.toString())
+            Log.d("MetadataBackupUtils", "Saved pre-edit snapshots for ${snapshots.size} tracks")
+        } catch (e: Exception) {
+            Log.e("MetadataBackupUtils", "Failed to save pre-edit snapshots", e)
+        }
+    }
+
+    fun loadPreEditSnapshots(context: Context): List<com.music.myusiq.ui.viewmodels.PendingTrackEdit> {
+        val snapshotFile = File(context.getExternalFilesDir(null), "pre_edit_snapshots.json")
+        if (!snapshotFile.exists() || snapshotFile.length() == 0L) return emptyList()
+
+        return try {
+            val jsonArray = JSONArray(snapshotFile.readText())
+            val list = mutableListOf<com.music.myusiq.ui.viewmodels.PendingTrackEdit>()
+            for (i in 0 until jsonArray.length()) {
+                val obj = jsonArray.getJSONObject(i)
+                list.add(
+                    com.music.myusiq.ui.viewmodels.PendingTrackEdit(
+                        songId = obj.optLong("songId", -1L),
+                        title = obj.optString("title", ""),
+                        artist = obj.optString("artist", ""),
+                        album = obj.optString("album", ""),
+                        year = obj.optString("year", ""),
+                        genre = obj.optString("genre", ""),
+                        path = obj.optString("path", "")
+                    )
+                )
+            }
+            list
+        } catch (e: Exception) {
+            Log.e("MetadataBackupUtils", "Failed to load pre-edit snapshots", e)
+            emptyList()
+        }
+    }
+
+    fun hasPreEditSnapshots(context: Context): Boolean {
+        val snapshotFile = File(context.getExternalFilesDir(null), "pre_edit_snapshots.json")
+        return snapshotFile.exists() && snapshotFile.length() > 0L
+    }
+
+    fun clearPreEditSnapshots(context: Context) {
+        try {
+            val snapshotFile = File(context.getExternalFilesDir(null), "pre_edit_snapshots.json")
+            if (snapshotFile.exists()) snapshotFile.delete()
+        } catch (_: Exception) {}
     }
 }

@@ -220,13 +220,13 @@ class AlbumsFragment : Fragment() {
 
         val sorted = when (order) {
             PlaybackViewModel.AlbumSortOrder.ALPHABETICAL ->
-                albumGroups.sortedBy { it.name.lowercase() }
+                albumGroups.sortedBy { AlbumUtils.getSortKey(it.name) }
             PlaybackViewModel.AlbumSortOrder.ARTIST ->
-                albumGroups.sortedWith(compareBy({ it.artist.lowercase() }, { it.name.lowercase() }))
+                albumGroups.sortedWith(compareBy({ AlbumUtils.getSortKey(it.artist) }, { AlbumUtils.getSortKey(it.name) }))
             PlaybackViewModel.AlbumSortOrder.TRACK_COUNT ->
-                albumGroups.sortedWith(compareBy({ it.tracksCount }, { it.name.lowercase() }))
+                albumGroups.sortedWith(compareBy({ it.tracksCount }, { AlbumUtils.getSortKey(it.name) }))
             PlaybackViewModel.AlbumSortOrder.LAST_ADDED ->
-                albumGroups.sortedWith(compareBy({ it.dateAdded }, { it.name.lowercase() }))
+                albumGroups.sortedWith(compareBy({ it.dateAdded }, { AlbumUtils.getSortKey(it.name) }))
         }
 
         return if (direction == PlaybackViewModel.SortDirection.DESCENDING) sorted.reversed() else sorted
