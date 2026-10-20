@@ -154,6 +154,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
         override fun onBulkFinished() {
             finishBulkUpdate()
+            forceScanMediaLibrary()
         }
 
         override fun onUpdateFinished(data: PendingTrackEdit, refreshLibrary: Boolean) {

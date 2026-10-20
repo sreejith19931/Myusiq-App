@@ -43,10 +43,40 @@ class LibrarySettingsFragment : Fragment(R.layout.fragment_settings_library) {
         val switchAutoImprove = view.findViewById<MaterialSwitch>(R.id.switchAutoImprove)
         switchAutoImprove.isChecked = sharedPreferences.getBoolean("auto_improve_metadata", false)
 
+        fun launchJanitorAutoFixIfUnfixedExist() {
+            val songs = viewModel.songsLibrary.value
+            val ctx = context ?: return
+            val unfixedExist = songs.any { song ->
+                val isUnknownArtist = com.music.myusiq.utils.CloudMetadataResolver.isGenericArtist(song.artist)
+                val hasFileExt = Regex("(?i)\\.(mp3|m4a|flac|wav|aac|ogg|wma)$").containsMatchIn(song.title)
+                val isGenericTitle = Regex("(?i)^(track|audio|sound|recording)[_\\s\\-]*\\d*$").matches(song.title) || song.title.isBlank()
+                val hasClutter = com.music.myusiq.utils.YouTubeTitleCleaner.cleanTitle(song.title) != song.title
+                val missingArt = com.music.myusiq.utils.ArtworkUtils.getArtworkFile(ctx, song.id, song.path) == null
+
+                isUnknownArtist || hasFileExt || isGenericTitle || hasClutter || missingArt
+            }
+
+            if (unfixedExist) {
+                val fragment = LibraryJanitorFragment().apply {
+                    arguments = Bundle().apply {
+                        putBoolean("auto_start_scan", true)
+                    }
+                }
+                parentFragmentManager.beginTransaction()
+                    .setCustomAnimations(R.anim.slide_in_right, R.anim.slide_out_left, R.anim.slide_in_left, R.anim.slide_out_right)
+                    .add(R.id.navHostFragment, fragment)
+                    .hide(this)
+                    .addToBackStack(null)
+                    .commit()
+            } else {
+                Toast.makeText(requireContext(), "Auto-Improve Metadata enabled. All tracks are up to date!", Toast.LENGTH_SHORT).show()
+            }
+        }
+
         switchAutoImprove.setOnCheckedChangeListener { _, isChecked ->
             sharedPreferences.edit { putBoolean("auto_improve_metadata", isChecked) }
             if (isChecked) {
-                Toast.makeText(requireContext(), "Auto-Improve Metadata enabled", Toast.LENGTH_SHORT).show()
+                launchJanitorAutoFixIfUnfixedExist()
             }
         }
 

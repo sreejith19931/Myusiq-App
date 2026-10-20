@@ -19,7 +19,7 @@ class MusicRepository(
         val blacklistedPaths = musicScanner.getBlacklistedFolderPaths().asSequence().map { PlatformUtils.normalizePath(it).lowercase() }.toSet()
         val allowedPaths = musicScanner.getAllowedFolderUris()
         
-        val overrides = songDao.getAllOverrides().associateBy { it.path }
+        val overrides = songDao.getAllOverrides().associateBy { PlatformUtils.normalizePath(it.path).lowercase() }
         
         rawSongs.asSequence().filter { raw ->
             val normPath = PlatformUtils.normalizePath(raw.path)
@@ -39,7 +39,8 @@ class MusicRepository(
             true
         }.map { raw ->
             val normPath = PlatformUtils.normalizePath(raw.path)
-            val override = overrides[normPath]
+            val normPathLower = normPath.lowercase()
+            val override = overrides[normPathLower]
             
             Song(
                 id = raw.id,

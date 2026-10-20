@@ -62,6 +62,15 @@ object YouTubeTitleCleaner {
     }
 
     /**
+     * Cleans raw storage filename (e.g. `01_despacito_y2mate.is.mp3`) by stripping file extensions,
+     * web tags, domain names, underscores, and leading track numbers.
+     */
+    fun cleanFilename(path: String): String {
+        val fileName = java.io.File(path).nameWithoutExtension
+        return cleanTitle(fileName)
+    }
+
+    /**
      * Cleans YouTube clutter, strips track numbers, and attempts to split "Artist - Title" format.
      *
      * @param rawTitle Raw title string (e.g. "01 - Artist - Song Name (Official Video)")
