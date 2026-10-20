@@ -2,7 +2,6 @@ package com.music.myusiq.ui
 
 import android.annotation.SuppressLint
 import android.content.ContentUris
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -26,7 +25,6 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -35,23 +33,18 @@ import java.io.File
 import kotlin.math.abs
 import kotlin.time.Duration.Companion.milliseconds
 import com.music.myusiq.domain.models.Song
+import com.music.myusiq.domain.models.JanitorUpdateItem
 import com.music.myusiq.ui.viewmodels.PlaybackViewModel
 import com.music.myusiq.ui.viewmodels.PendingTrackEdit
 import com.music.myusiq.utils.*
 import com.music.myusiq.R
-
-data class JanitorUpdateItem(
-    val song: Song,
-    val currentArtworkUri: Uri?,
-    var proposedEdit: PendingTrackEdit,
-    var isSelected: Boolean = true
-)
 
 class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
     private val viewModel: PlaybackViewModel by activityViewModels()
 
     private lateinit var tvDuplicateStatus: TextView
     private lateinit var btnCleanDuplicates: MaterialButton
+    private lateinit var cardAutoFix: View
     private lateinit var tvAutoFixStatus: TextView
     private lateinit var btnAutoFixAll: MaterialButton
     private lateinit var cardUndoFix: View
@@ -71,6 +64,7 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
 
         tvDuplicateStatus = view.findViewById(R.id.tvDuplicateStatus)
         btnCleanDuplicates = view.findViewById(R.id.btnCleanDuplicates)
+        cardAutoFix = view.findViewById(R.id.cardAutoFix)
         tvAutoFixStatus = view.findViewById(R.id.tvAutoFixStatus)
         btnAutoFixAll = view.findViewById(R.id.btnAutoFixAll)
         cardUndoFix = view.findViewById(R.id.cardUndoFix)
@@ -81,6 +75,8 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
 
         btnCleanDuplicates.setOnClickListener { showCleanDuplicatesDialog() }
         btnAutoFixAll.setOnClickListener { startAutoFix() }
+        cardAutoFix.setOnClickListener { startAutoFix() }
+        tvAutoFixStatus.setOnClickListener { startAutoFix() }
         btnUndoLastFix.setOnClickListener { performRevertMetadataFix() }
 
         context?.let { ctx ->
@@ -118,13 +114,53 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
                         performScan()
                     }
                 }
+                launch {
+                    viewModel.janitorScanState.collectLatest { state ->
+                        when (state) {
+                            is com.music.myusiq.domain.usecase.ScanState.Progress -> {
+                                tvAutoFixStatus.text = state.message
+                            }
+                            is com.music.myusiq.domain.usecase.ScanState.ScanCompleted -> {
+                                tvAutoFixStatus.text = "Scan complete. Review proposed updates."
+                                btnAutoFixAll.isEnabled = true
+                                if (state.results.isNotEmpty() && isAdded) {
+                                    val matchedCount = state.results.count { it.proposedEdit.matchConfidence > 0 }
+                                    val unmatchedCount = state.results.size - matchedCount
+                                    val dialogSub = when {
+                                        matchedCount > 0 && unmatchedCount > 0 ->
+                                            "Found $matchedCount automatic fixes and $unmatchedCount tracks requiring manual search. Tap 'Search Online' on any track to find metadata."
+                                        matchedCount > 0 ->
+                                            "Found $matchedCount suggested fixes. Choose which tracks to update or search online."
+                                        else ->
+                                            "Found ${state.results.size} tracks needing metadata/artwork. Tap 'Search Online' on any track to find its metadata."
+                                    }
+                                    showJanitorReviewDialog(
+                                        candidateItems = state.results.toMutableList(),
+                                        dialogTitle = "Review Proposed Fixes (Artwork & Metadata Updates)",
+                                        dialogSub = dialogSub
+                                    )
+                                } else if (isAdded) {
+                                    Toast.makeText(context, "No tracks needing metadata fixes.", Toast.LENGTH_SHORT).show()
+                                }
+                                performScan()
+                            }
+                            null -> {}
+                            else -> {}
+                        }
+                    }
+                }
+                launch {
+                    viewModel.isJanitorScanning.collectLatest { isScanning ->
+                        btnAutoFixAll.isEnabled = !isScanning
+                    }
+                }
             }
         }
     }
 
     private fun needsFixOrArtwork(context: android.content.Context, song: Song): Boolean {
         val isMessy = isMessyOrUnknownTrack(song)
-        val artFile = ArtworkUtils.getArtworkFile(context, song.id, song.path)
+        val artFile = ArtworkUtils.getArtworkFile(context, song.id, song.path, song.album)
         val hasMissingArt = artFile == null || !artFile.exists() || artFile.length() == 0L
         return isMessy || hasMissingArt
     }
@@ -137,17 +173,33 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
         }
 
         val appContext = requireContext().applicationContext
-        val candidates = allSongs.filter { needsFixOrArtwork(appContext, it) }
+        val prefs = appContext.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
+        val initialScanDone = prefs.getBoolean("janitor_initial_scan_done", false)
+
+        val candidates = if (!initialScanDone) {
+            allSongs
+        } else {
+            allSongs.filter { needsFixOrArtwork(appContext, it) }
+        }
 
         if (candidates.isEmpty()) {
             Toast.makeText(requireContext(), "All tracks in your library are already up to date!", Toast.LENGTH_SHORT).show()
             return
         }
 
+        val messageText = if (!initialScanDone) {
+            "First-time Library Scan: Myusiq will scan all ${candidates.size} tracks in your library for possible artwork and metadata improvements.\n\nContinue?"
+        } else {
+            "Myusiq will search online for official artwork and metadata for ${candidates.size} tracks with missing artwork or messy tags.\n\nContinue?"
+        }
+
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Auto-Fix Metadata & Artwork")
-            .setMessage("Myusiq will search online for official artwork and metadata for ${candidates.size} tracks that need updates.\n\nContinue?")
-            .setNegativeButton("Cancel", null)
+            .setMessage(messageText)
+            .setNegativeButton("Skip") { _, _ ->
+                prefs.edit().putBoolean("janitor_initial_scan_done", true).apply()
+                performScan()
+            }
             .setPositiveButton("Start") { _, _ ->
                 executeScanAndFix(candidates, "Artwork & Metadata Updates")
             }
@@ -156,88 +208,7 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
 
     @SuppressLint("SetTextI18n")
     private fun executeScanAndFix(tracksToScan: List<Song>, scanType: String) {
-        val context = requireContext().applicationContext
-        activeScanJob?.cancel()
-        activeScanJob = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-            val candidateItems = mutableListOf<JanitorUpdateItem>()
-            
-            for ((index, song) in tracksToScan.withIndex()) {
-                if (!coroutineContext.isActive) break
-
-                withContext(Dispatchers.Main) {
-                    if (isAdded) {
-                        val statusText = "Scanning ${index + 1} of ${tracksToScan.size}: ${song.title}"
-                        tvAutoFixStatus.text = statusText
-                    }
-                }
-                
-                val (extractedArtist, extractedTitle) = YouTubeTitleCleaner.cleanAndSplit(song.title)
-                val cleanTitle = if (extractedTitle.isNotBlank() && extractedTitle != song.title) {
-                    extractedTitle
-                } else {
-                    YouTubeTitleCleaner.cleanTitle(song.title).ifBlank { YouTubeTitleCleaner.cleanFilename(song.path) }
-                }
-                val cleanArtist = if (!CloudMetadataResolver.isGenericArtist(song.artist)) {
-                    song.artist
-                } else if (extractedArtist != "Unknown Artist" && !CloudMetadataResolver.isGenericArtist(extractedArtist)) {
-                    extractedArtist
-                } else ""
-
-                val metadata = CloudMetadataResolver.resolve(cleanTitle, cleanArtist)
-                if (metadata != null && coroutineContext.isActive) {
-                    val artworkUri = metadata.artworkUrl?.let { viewModel.downloadImageToCache(context, it) }
-
-                    val proposedTitle = metadata.foundTitle ?: cleanTitle
-                    val proposedArtist = metadata.foundArtist ?: if (cleanArtist.isNotBlank()) cleanArtist else song.artist
-                    val proposedAlbum = metadata.album ?: if (song.album.equals("<unknown>", true)) "Unknown Album" else song.album
-
-                    val confidencePct = (metadata.matchConfidence * 100).toInt()
-                    val proposedEdit = PendingTrackEdit(
-                        songId = song.id,
-                        title = proposedTitle,
-                        artist = proposedArtist,
-                        album = proposedAlbum,
-                        year = metadata.year ?: "",
-                        genre = metadata.genre ?: "",
-                        artworkUri = artworkUri,
-                        path = song.path,
-                        matchConfidence = confidencePct
-                    )
-                    
-                    val currentArtUri = try {
-                        ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id)
-                    } catch (_: Exception) { null }
-
-                    if (isMeaningfulChange(context, song, proposedEdit)) {
-                        candidateItems.add(JanitorUpdateItem(song, currentArtUri, proposedEdit))
-                    }
-                }
-                delay(300.milliseconds)
-            }
-
-            withContext(Dispatchers.Main) {
-                if (isAdded && coroutineContext.isActive) {
-                    tvAutoFixStatus.text = "Scan complete. Review proposed updates."
-                    btnAutoFixAll.isEnabled = true
-                    if (candidateItems.isNotEmpty()) {
-                        val unresolvableCount = tracksToScan.size - candidateItems.size
-                        val dialogSub = if (unresolvableCount > 0) {
-                            "Found ${candidateItems.size} suggested fixes ($unresolvableCount tracks already match or have no online metadata/artwork available)."
-                        } else {
-                            "Found ${candidateItems.size} suggested fixes. Choose which tracks to update."
-                        }
-                        showJanitorReviewDialog(
-                            candidateItems = candidateItems,
-                            dialogTitle = "Review Proposed Fixes ($scanType)",
-                            dialogSub = dialogSub
-                        )
-                    } else {
-                        Toast.makeText(context, "No cloud matches found for review.", Toast.LENGTH_SHORT).show()
-                    }
-                    performScan()
-                }
-            }
-        }
+        viewModel.startJanitorScan(tracksToScan, requireContext())
     }
 
     private fun showJanitorReviewDialog(
@@ -286,9 +257,63 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
 
         updateApplyButtonText()
 
-        btnCancelReview.setOnClickListener { dialog?.dismiss() }
+        val btnBulkSearchOnline = dialogView.findViewById<MaterialButton>(R.id.btnBulkSearchOnline)
+        btnBulkSearchOnline?.setOnClickListener {
+            val unmatched = candidateItems.filter { it.proposedEdit.matchConfidence == 0 || it.proposedEdit.artworkUri == null }
+            if (unmatched.isEmpty()) {
+                Toast.makeText(requireContext(), "All tracks already have artwork and metadata assigned!", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            btnBulkSearchOnline.isEnabled = false
+            btnBulkSearchOnline.text = "Searching online..."
+
+            lifecycleScope.launch(Dispatchers.IO) {
+                var foundCount = 0
+                val ctx = requireContext().applicationContext
+                for (item in unmatched) {
+                    val query = "${item.proposedEdit.artist} ${item.proposedEdit.title}".trim().ifBlank { File(item.song.path).nameWithoutExtension }
+                    val results = CloudMetadataResolver.searchMultiple(query, item.song.title, item.song.artist)
+                    if (results.isNotEmpty()) {
+                        val top = results.first()
+                        val uri = top.artworkUrl?.let { viewModel.downloadImageToCache(ctx, it) }
+                        val confidencePct = (top.matchConfidence * 100).toInt()
+
+                        item.proposedEdit = item.proposedEdit.copy(
+                            title = top.foundTitle ?: item.proposedEdit.title,
+                            artist = top.foundArtist ?: item.proposedEdit.artist,
+                            album = top.album ?: item.proposedEdit.album,
+                            year = top.year ?: item.proposedEdit.year,
+                            genre = top.genre ?: item.proposedEdit.genre,
+                            artworkUri = uri ?: item.proposedEdit.artworkUri,
+                            matchConfidence = confidencePct
+                        )
+                        item.isSelected = true
+                        foundCount++
+                    }
+                }
+
+                withContext(Dispatchers.Main) {
+                    if (isAdded) {
+                        btnBulkSearchOnline.isEnabled = true
+                        btnBulkSearchOnline.text = "Search All Messy Tracks Online"
+                        rvJanitorReview.adapter?.notifyDataSetChanged()
+                        updateApplyButtonText()
+                        Toast.makeText(requireContext(), "Found online matches for $foundCount tracks!", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+
+        btnCancelReview.setOnClickListener {
+            val prefs = requireContext().getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
+            prefs.edit().putBoolean("janitor_initial_scan_done", true).apply()
+            dialog?.dismiss()
+        }
 
         btnApplySelected.setOnClickListener {
+            val prefs = requireContext().getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
+            prefs.edit().putBoolean("janitor_initial_scan_done", true).apply()
             val selectedEdits = candidateItems.filter { it.isSelected }.map { it.proposedEdit }
             if (selectedEdits.isNotEmpty()) {
                 viewModel.requestBulkMetadataUpdate(requireContext(), selectedEdits)
@@ -301,29 +326,10 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
             .setView(dialogView)
             .create()
 
+        val prefs = requireContext().getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
+        prefs.edit().putBoolean("janitor_initial_scan_done", true).apply()
+
         dialog.show()
-    }
-
-    private fun isMeaningfulChange(context: android.content.Context, song: Song, edit: PendingTrackEdit): Boolean {
-        val currentTitle = song.title.trim()
-        val currentArtist = song.artist.trim()
-        val currentAlbum = song.album.trim()
-
-        val titleChanged = edit.title.isNotBlank() && !edit.title.equals(currentTitle, ignoreCase = true)
-        val artistChanged = edit.artist.isNotBlank() && !edit.artist.equals(currentArtist, ignoreCase = true) && !CloudMetadataResolver.isGenericArtist(edit.artist)
-        
-        val isCurrentAlbumGeneric = currentAlbum.isBlank() || currentAlbum.equals("<unknown>", true) || currentAlbum.equals("Unknown Album", true)
-        val isProposedAlbumGeneric = edit.album.isBlank() || edit.album.equals("<unknown>", true) || edit.album.equals("Unknown Album", true)
-        val albumChanged = !isProposedAlbumGeneric && (isCurrentAlbumGeneric || !edit.album.equals(currentAlbum, ignoreCase = true))
-
-        val yearChanged = edit.year.isNotBlank() && edit.year != "Unknown"
-        val genreChanged = edit.genre.isNotBlank() && !edit.genre.equals(song.genre.trim(), ignoreCase = true) && edit.genre != "Unknown"
-
-        val currentArtFile = ArtworkUtils.getArtworkFile(context, song.id, song.path)
-        val hasCurrentArt = currentArtFile != null && currentArtFile.exists() && currentArtFile.length() > 0L
-        val artworkAdded = edit.artworkUri != null && !hasCurrentArt
-
-        return titleChanged || artistChanged || albumChanged || yearChanged || genreChanged || artworkAdded
     }
 
     private fun isMessyOrUnknownTrack(song: Song): Boolean {
@@ -333,9 +339,16 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
         val isUnknownArtist = CloudMetadataResolver.isGenericArtist(artist)
         val hasFileExtension = Regex("(?i)\\.(mp3|m4a|flac|wav|aac|ogg|wma)$").containsMatchIn(title)
         val isGenericTitle = Regex("(?i)^(track|audio|sound|recording)[_\\s\\-]*\\d*$").matches(title) || title.isBlank()
-        val hasClutter = YouTubeTitleCleaner.cleanTitle(title) != title
+        
+        val cleanedTitle = YouTubeTitleCleaner.cleanTitle(title)
+        val hasClutter = !cleanedTitle.equals(title, ignoreCase = true) && 
+                         (title.contains("_") || 
+                          title.contains(Regex("""(?i)[(\[{].*?(official|music|video|audio|lyric|hd|4k|remix|visualizer|mv|topic|prod|feat|ft|full song).*?[)\]}]""")) || 
+                          title.contains(Regex("""(?i)\b(www\.|https?://)?[a-z0-9\-]+\.(com|net|org|io|me|co|info|biz)\b""")))
 
-        return isUnknownArtist || hasFileExtension || isGenericTitle || hasClutter
+        val isGenericArtistWithGenericTitle = isUnknownArtist && (isGenericTitle || artist.isBlank())
+
+        return isGenericArtistWithGenericTitle || hasFileExtension || isGenericTitle || hasClutter
     }
 
     @SuppressLint("SetTextI18n")
@@ -360,10 +373,13 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
                 }
                 .filter { it.size > 1 }
 
+            val prefs = appContext.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
+            val initialScanDone = prefs.getBoolean("janitor_initial_scan_done", false)
+
             val missingArt = allSongs
                 .distinctBy { PlatformUtils.normalizePath(it.path) }
                 .filter { song ->
-                    val artFile = ArtworkUtils.getArtworkFile(appContext, song.id, song.path)
+                    val artFile = ArtworkUtils.getArtworkFile(appContext, song.id, song.path, song.album)
                     artFile == null || !artFile.exists() || artFile.length() == 0L
                 }
 
@@ -371,7 +387,11 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
                 isMessyOrUnknownTrack(song)
             }
 
-            val consolidatedCandidates = (missingArt + toRepair).distinctBy { it.id }
+            val consolidatedCandidates = if (!initialScanDone) {
+                allSongs
+            } else {
+                (missingArt + toRepair).distinctBy { it.id }
+            }
 
             if (!isAdded) return@launch
 
@@ -386,12 +406,14 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
                 btnCleanDuplicates.isVisible = totalDuplicates > 0
 
                 val statusMessage = when {
+                    !initialScanDone ->
+                        "First-time Scan: ${allSongs.size} tracks ready for artwork & metadata check. Tap to start."
                     toRepair.isNotEmpty() && missingArt.isNotEmpty() ->
-                        "Found ${toRepair.size} tracks with messy metadata and ${missingArt.size} tracks with missing artwork."
+                        "Found ${toRepair.size} tracks with messy metadata and ${missingArt.size} tracks with missing artwork. Tap to review."
                     toRepair.isNotEmpty() ->
-                        "Found ${toRepair.size} tracks with messy metadata."
+                        "Found ${toRepair.size} tracks with messy metadata. Tap to review."
                     missingArt.isNotEmpty() ->
-                        "Found ${missingArt.size} tracks with missing artwork."
+                        "Found ${missingArt.size} tracks with missing artwork. Tap to review."
                     else ->
                         "All metadata and artwork look clean."
                 }
@@ -471,12 +493,14 @@ class JanitorReviewAdapter(
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val cbSelectTrack: MaterialCheckBox = view.findViewById(R.id.cbSelectTrack)
         val tvTrackPath: TextView = view.findViewById(R.id.tvTrackPath)
+        val btnSearchOnlineTrack: android.widget.ImageButton? = view.findViewById(R.id.btnSearchOnlineTrack)
         val btnEditProposed: android.widget.ImageButton = view.findViewById(R.id.btnEditProposed)
         val ivCurrentArt: ImageView = view.findViewById(R.id.ivCurrentArt)
         val tvCurrentTitle: TextView = view.findViewById(R.id.tvCurrentTitle)
         val tvCurrentArtist: TextView = view.findViewById(R.id.tvCurrentArtist)
         val tvCurrentAlbum: TextView = view.findViewById(R.id.tvCurrentAlbum)
         val tvCurrentYearGenre: TextView = view.findViewById(R.id.tvCurrentYearGenre)
+        val layoutFoundSection: View? = view.findViewById(R.id.layoutFoundSection)
         val ivFoundArt: ImageView = view.findViewById(R.id.ivFoundArt)
         val tvFoundTitle: TextView = view.findViewById(R.id.tvFoundTitle)
         val tvFoundArtist: TextView = view.findViewById(R.id.tvFoundArtist)
@@ -519,8 +543,12 @@ class JanitorReviewAdapter(
         holder.tvFoundTitle.text = item.proposedEdit.title
         holder.tvFoundArtist.text = item.proposedEdit.artist
         holder.tvFoundAlbum.text = item.proposedEdit.album
-        val matchLabel = "${item.proposedEdit.matchConfidence}% match"
-        val foundYrGenre = listOf(item.proposedEdit.year, item.proposedEdit.genre, matchLabel).filter { it.isNotBlank() }.joinToString(" • ")
+        val matchLabel = if (item.proposedEdit.matchConfidence > 0) "${item.proposedEdit.matchConfidence}% match" else "No online match • Tap to Search"
+        val foundYrGenre = if (item.proposedEdit.matchConfidence > 0) {
+            listOf(item.proposedEdit.year, item.proposedEdit.genre, matchLabel).filter { it.isNotBlank() }.joinToString(" • ")
+        } else {
+            matchLabel
+        }
         holder.tvFoundYearGenre.text = foundYrGenre.ifBlank { "—" }
 
         if (item.proposedEdit.artworkUri != null) {
@@ -529,6 +557,33 @@ class JanitorReviewAdapter(
             Glide.with(context).load(R.drawable.ic_music_note_2).into(holder.ivFoundArt)
         }
 
+        fun triggerOnlineSearch() {
+            showManualSearchDialog(context, item, position) { candidate ->
+                val activity = context as? androidx.fragment.app.FragmentActivity
+                if (activity != null) {
+                    activity.lifecycleScope.launch {
+                        val vm = androidx.lifecycle.ViewModelProvider(activity)[PlaybackViewModel::class.java]
+                        val uri = candidate.artworkUrl?.let { vm.downloadImageToCache(context, it) }
+                        val confidencePct = (candidate.matchConfidence * 100).toInt()
+                        item.proposedEdit = item.proposedEdit.copy(
+                            title = candidate.foundTitle ?: item.proposedEdit.title,
+                            artist = candidate.foundArtist ?: item.proposedEdit.artist,
+                            album = candidate.album ?: item.proposedEdit.album,
+                            year = candidate.year ?: item.proposedEdit.year,
+                            genre = candidate.genre ?: item.proposedEdit.genre,
+                            artworkUri = uri ?: item.proposedEdit.artworkUri,
+                            matchConfidence = confidencePct
+                        )
+                        item.isSelected = true
+                        notifyItemChanged(position)
+                        onItemSelectionChanged()
+                    }
+                }
+            }
+        }
+
+        holder.btnSearchOnlineTrack?.setOnClickListener { triggerOnlineSearch() }
+        holder.layoutFoundSection?.setOnClickListener { triggerOnlineSearch() }
         holder.btnEditProposed.setOnClickListener {
             showInlineEditDialog(context, item, position)
         }
@@ -602,7 +657,9 @@ class JanitorReviewAdapter(
                     genre = etGenre.text?.toString()?.trim().orEmpty()
                 )
                 items[position].proposedEdit = updatedEdit
+                items[position].isSelected = true
                 notifyItemChanged(position)
+                onItemSelectionChanged()
             }
             .setNegativeButton("Cancel", null)
             .show()

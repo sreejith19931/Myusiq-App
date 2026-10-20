@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="20dp">
+    android:padding="16dp">
 
     <TextView
         android:id="@+id/tvJanitorDialogTitle"
@@ -29,7 +29,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginTop="12dp">
+        android:layout_marginTop="8dp">
 
         <com.google.android.material.checkbox.MaterialCheckBox
             android:id="@+id/cbSelectAll"
@@ -41,8 +41,8 @@
 
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="320dp"
-        android:layout_marginTop="8dp">
+        android:layout_height="240dp"
+        android:layout_marginTop="4dp">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvJanitorReview"
@@ -62,12 +62,21 @@
             android:visibility="gone" />
     </FrameLayout>
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnBulkSearchOnline"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Search All Messy Tracks Online" />
+
     <LinearLayout
+        android:id="@+id/layoutDialogButtons"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="end"
-        android:layout_marginTop="16dp">
+        android:layout_marginTop="12dp">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnCancelReview"
@@ -82,7 +91,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="Apply Updates" />
+            android:text="Apply Selected" />
     </LinearLayout>
 
 </LinearLayout>

@@ -40,85 +40,11 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="44dp"
             android:layout_marginBottom="16dp"
-            android:text="Version 1.3.0-beta2"
+            android:text="Version 1.3.0-beta3"
             android:textAppearance="?attr/textAppearanceLabelMedium"
             android:textColor="?attr/colorOnSurfaceVariant" />
 
-        <!-- Highlight 1: Candidate Verification & Similarity Scoring -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
-
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_tracks"
-                app:tint="?attr/colorPrimary"
-                android:importantForAccessibility="no" />
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="12dp"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Candidate Verification &amp; Accuracy"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Token similarity scoring and audio duration matching to prevent false suggestions and wrong metadata fixes."
-                    android:textAppearance="?attr/textAppearanceBodySmall"
-                    android:textColor="?attr/colorOnSurfaceVariant" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- Highlight 2: Interactive Manual Search -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
-
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_search"
-                app:tint="?attr/colorPrimary"
-                android:importantForAccessibility="no" />
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="12dp"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Manual Online Cloud Search"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Search online manually directly from review cards with iTunes &amp; Deezer candidate previews and artwork selection."
-                    android:textAppearance="?attr/textAppearanceBodySmall"
-                    android:textColor="?attr/colorOnSurfaceVariant" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- Highlight 3: 1-Tap Metadata Undo -->
+        <!-- Highlight 1: Parallel Auto-Fix & Bounded Processing -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -142,20 +68,94 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="1-Tap Metadata Revert / Undo"
+                    android:text="4x Parallel Cloud Auto-Fix Speed"
                     android:textAppearance="?attr/textAppearanceBodyMedium"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Instant pre-edit metadata snapshot backup allowing you to restore original tags and album artwork with one tap."
+                    android:text="Accelerated Library Janitor resolution using bounded parallel worker permits for 4x faster library scans."
                     android:textAppearance="?attr/textAppearanceBodySmall"
                     android:textColor="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Highlight 4: Title Case & Offline Sanitizer -->
+        <!-- Highlight 2: Shared Album Artwork Auto-Assignment -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_album"
+                app:tint="?attr/colorPrimary"
+                android:importantForAccessibility="no" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Shared Album Artwork Auto-Assignment"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Tracks belonging to the same album automatically share and reuse official album covers across the entire album."
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Highlight 3: In-Memory Search Query Caching -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_search"
+                app:tint="?attr/colorPrimary"
+                android:importantForAccessibility="no" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="LRU Cloud Query Caching"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="In-memory search caching prevents redundant network queries and speeds up manual cloud searches."
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Highlight 4: Dialog Layout & Fixed Button Placement -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -179,20 +179,20 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Title Case &amp; Web Clutter Filter"
+                    android:text="Optimized Review Pop-Up Layout"
                     android:textAppearance="?attr/textAppearanceBodyMedium"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Converts ALL-CAPS or all-lowercase titles to Title Case and strips website domains and converter tags offline."
+                    android:text="Optimized dialog height and button anchoring so 'Apply Selected' is always visible on all device screens."
                     android:textAppearance="?attr/textAppearanceBodySmall"
                     android:textColor="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Highlight 5: 10-Band EQ & Spatial Surround -->
+        <!-- Highlight 5: Smart Janitor First-Time Scan -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -202,7 +202,7 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_equalizer"
+                android:src="@drawable/ic_tracks"
                 app:tint="?attr/colorPrimary"
                 android:importantForAccessibility="no" />
 
@@ -216,14 +216,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="10-Band Equalizer &amp; Spatial Surround"
+                    android:text="Smart First-Time Janitor Scan"
                     android:textAppearance="?attr/textAppearanceBodyMedium"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Studio-grade 10-band EQ, 3D Spatial Surround Virtualizer, Bass Boost, and Loudness Enhancer."
+                    android:text="Runs a full library scan once on launch, then intelligently filters subsequent scans for tracks needing fixes."
                     android:textAppearance="?attr/textAppearanceBodySmall"
                     android:textColor="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
