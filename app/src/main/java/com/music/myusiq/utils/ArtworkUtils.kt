@@ -104,6 +104,9 @@ object ArtworkUtils {
         val hashFile = File(cacheDir, "${normPath.hashCode()}.jpg")
         if (hashFile.exists() && hashFile.length() > 0) return hashFile
 
+        val hashLowerFile = File(cacheDir, "${normPath.lowercase().hashCode()}.jpg")
+        if (hashLowerFile.exists() && hashLowerFile.length() > 0) return hashLowerFile
+
         // 1. Check persistent external/public artwork backup directories
         val extBackupDir = File(context.getExternalFilesDir(null), "artwork_backup")
         val publicBackupDir = getPublicBackupDir()
@@ -200,6 +203,24 @@ object ArtworkUtils {
         }
     }
 
+    fun openUriInputStream(context: Context, uri: Uri): java.io.InputStream? {
+        return try {
+            if (uri.scheme == "file" && !uri.path.isNullOrBlank()) {
+                val file = File(uri.path!!)
+                if (file.exists()) file.inputStream() else null
+            } else {
+                context.contentResolver.openInputStream(uri)
+            }
+        } catch (_: Exception) {
+            try {
+                if (!uri.path.isNullOrBlank()) {
+                    val file = File(uri.path!!)
+                    if (file.exists()) file.inputStream() else null
+                } else null
+            } catch (_: Exception) { null }
+        }
+    }
+
     fun saveArtworkCache(context: Context, songId: Long, songPath: String, artUri: Uri) {
         try {
             val cacheDir = File(context.filesDir, "artwork_cache")
@@ -213,15 +234,19 @@ object ArtworkUtils {
             val idFile = File(cacheDir, "$songId.jpg")
             val normPath = PlatformUtils.normalizePath(songPath)
             val hashFile = File(cacheDir, "${normPath.hashCode()}.jpg")
+            val hashLowerFile = File(cacheDir, "${normPath.lowercase().hashCode()}.jpg")
             val extBackupFile = File(extBackupDir, "${normPath.hashCode()}.jpg")
             val publicBackupFile = publicBackupDir?.let { File(it, "${normPath.hashCode()}.jpg") }
 
-            context.contentResolver.openInputStream(artUri)?.use { input ->
+            openUriInputStream(context, artUri)?.use { input ->
                 val rawBytes = input.readBytes()
                 if (rawBytes.isNotEmpty()) {
                     val bytes = compressAndOptimizeArtwork(rawBytes)
-                    idFile.writeBytes(bytes)
-                    hashFile.writeBytes(bytes)
+                    if (songId > 0) idFile.writeBytes(bytes)
+                    if (normPath.isNotBlank()) {
+                        hashFile.writeBytes(bytes)
+                        hashLowerFile.writeBytes(bytes)
+                    }
                     try { extBackupFile.writeBytes(bytes) } catch (_: Exception) {}
                     try { publicBackupFile?.writeBytes(bytes) } catch (_: Exception) {}
                     savePublicMediaStoreImage(context, "${normPath.hashCode()}.jpg", bytes)

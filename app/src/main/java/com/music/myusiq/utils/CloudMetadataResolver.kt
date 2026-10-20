@@ -72,15 +72,18 @@ object CloudMetadataResolver {
         candidateTitle: String,
         candidateArtist: String
     ): Boolean {
-        val normCleanTitle = normalizeForMatching(cleanTitle)
-        val normCleanArtist = normalizeForMatching(cleanArtist)
+        val pureTitle = if (cleanTitle.contains(" - ")) cleanTitle.substringAfter(" - ").trim() else cleanTitle
+        val pureArtist = if (cleanArtist.isBlank() && cleanTitle.contains(" - ")) cleanTitle.substringBefore(" - ").trim() else cleanArtist
+
+        val normCleanTitle = normalizeForMatching(pureTitle)
+        val normCleanArtist = normalizeForMatching(pureArtist)
         val normCandArtist = normalizeForMatching(candidateArtist)
 
-        val titleScore = calculateTokenSimilarity(cleanTitle, candidateTitle)
-        val artistScore = calculateTokenSimilarity(cleanArtist, candidateArtist)
+        val titleScore = calculateTokenSimilarity(pureTitle, candidateTitle)
+        val artistScore = calculateTokenSimilarity(pureArtist, candidateArtist)
 
         val isGenericTitleLocal = normCleanTitle.matches(Regex("(?i)^(track|audio|sound|recording)[_\\s\\-]*\\d*$")) || normCleanTitle.length < 3
-        val isGenericArtistLocal = isGenericArtist(cleanArtist) || normCleanArtist.isBlank()
+        val isGenericArtistLocal = isGenericArtist(pureArtist) || normCleanArtist.isBlank()
 
         // 1. Reject if local title is generic and artist is generic
         if (isGenericTitleLocal && isGenericArtistLocal) {

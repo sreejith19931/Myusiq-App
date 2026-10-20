@@ -255,9 +255,11 @@ class MetadataUpdateUseCase(
 
                     // Re-sync artwork cache and overrides with true path
                     com.music.myusiq.utils.ArtworkUtils.copyArtworkCache(context, data.songId, oldPathBeforeRename, data.songId, newFilePath)
-                    val normPath = PlatformUtils.normalizePath(newFilePath)
+                    val normOldPath = PlatformUtils.normalizePath(oldPathBeforeRename)
+                    val normNewPath = PlatformUtils.normalizePath(newFilePath)
+
                     val overrideNew = SongOverride(
-                        path = normPath,
+                        path = normNewPath,
                         title = data.title,
                         artist = data.artist,
                         album = data.album,
@@ -266,6 +268,19 @@ class MetadataUpdateUseCase(
                     )
                     musicRepository.upsertOverride(overrideNew)
                     com.music.myusiq.utils.MetadataBackupUtils.saveOverrideToBackup(context, overrideNew)
+
+                    if (normOldPath != normNewPath) {
+                        val overrideOld = SongOverride(
+                            path = normOldPath,
+                            title = data.title,
+                            artist = data.artist,
+                            album = data.album,
+                            year = data.year,
+                            genre = data.genre
+                        )
+                        musicRepository.upsertOverride(overrideOld)
+                        com.music.myusiq.utils.MetadataBackupUtils.saveOverrideToBackup(context, overrideOld)
+                    }
                 }
             }
 

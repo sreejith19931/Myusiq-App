@@ -52,16 +52,13 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
 
     private lateinit var tvDuplicateStatus: TextView
     private lateinit var btnCleanDuplicates: MaterialButton
-    private lateinit var tvArtStatus: TextView
-    private lateinit var btnFindMissingArt: MaterialButton
-    private lateinit var tvRepairStatus: TextView
-    private lateinit var btnRepairUnknown: MaterialButton
+    private lateinit var tvAutoFixStatus: TextView
+    private lateinit var btnAutoFixAll: MaterialButton
     private lateinit var cardUndoFix: View
     private lateinit var btnUndoLastFix: MaterialButton
 
     private var duplicateGroups: List<List<Song>> = emptyList()
-    private var missingArtSongs: List<Song> = emptyList()
-    private var unknownSongs: List<Song> = emptyList()
+    private var allFixCandidates: List<Song> = emptyList()
     private var activeScanJob: kotlinx.coroutines.Job? = null
 
     override fun onDestroyView() {
@@ -74,10 +71,8 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
 
         tvDuplicateStatus = view.findViewById(R.id.tvDuplicateStatus)
         btnCleanDuplicates = view.findViewById(R.id.btnCleanDuplicates)
-        tvArtStatus = view.findViewById(R.id.tvArtStatus)
-        btnFindMissingArt = view.findViewById(R.id.btnFindMissingArt)
-        tvRepairStatus = view.findViewById(R.id.tvRepairStatus)
-        btnRepairUnknown = view.findViewById(R.id.btnRepairUnknown)
+        tvAutoFixStatus = view.findViewById(R.id.tvAutoFixStatus)
+        btnAutoFixAll = view.findViewById(R.id.btnAutoFixAll)
         cardUndoFix = view.findViewById(R.id.cardUndoFix)
         btnUndoLastFix = view.findViewById(R.id.btnUndoLastFix)
 
@@ -85,8 +80,7 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
         updateUndoCardVisibility()
 
         btnCleanDuplicates.setOnClickListener { showCleanDuplicatesDialog() }
-        btnFindMissingArt.setOnClickListener { startAutoFix() }
-        btnRepairUnknown.setOnClickListener { startRepairUnknown() }
+        btnAutoFixAll.setOnClickListener { startAutoFix() }
         btnUndoLastFix.setOnClickListener { performRevertMetadataFix() }
 
         context?.let { ctx ->
@@ -106,7 +100,7 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
         if (arguments?.getBoolean("auto_start_scan", false) == true) {
             arguments?.putBoolean("auto_start_scan", false)
             view.post {
-                startAutoFix(scanAll = false)
+                startAutoFix()
             }
         }
     }
@@ -128,16 +122,22 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
         }
     }
 
-    private fun startAutoFix(scanAll: Boolean = false) {
+    private fun needsFixOrArtwork(context: android.content.Context, song: Song): Boolean {
+        val isMessy = isMessyOrUnknownTrack(song)
+        val artFile = ArtworkUtils.getArtworkFile(context, song.id, song.path)
+        val hasMissingArt = artFile == null || !artFile.exists() || artFile.length() == 0L
+        return isMessy || hasMissingArt
+    }
+
+    private fun startAutoFix() {
         val allSongs = viewModel.songsLibrary.value
         if (allSongs.isEmpty()) {
             Toast.makeText(requireContext(), "No tracks found in library", Toast.LENGTH_SHORT).show()
             return
         }
 
-        val candidates = (missingArtSongs + unknownSongs).distinctBy { it.id }.filter { song ->
-            isMessyOrUnknownTrack(song) || missingArtSongs.any { m -> m.id == song.id }
-        }
+        val appContext = requireContext().applicationContext
+        val candidates = allSongs.filter { needsFixOrArtwork(appContext, it) }
 
         if (candidates.isEmpty()) {
             Toast.makeText(requireContext(), "All tracks in your library are already up to date!", Toast.LENGTH_SHORT).show()
@@ -150,24 +150,6 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
             .setNegativeButton("Cancel", null)
             .setPositiveButton("Start") { _, _ ->
                 executeScanAndFix(candidates, "Artwork & Metadata Updates")
-            }
-            .show()
-    }
-
-    private fun startRepairUnknown() {
-        val candidates = (unknownSongs + missingArtSongs).distinctBy { it.id }
-        if (candidates.isEmpty()) {
-            Toast.makeText(requireContext(), "All metadata looks clean!", Toast.LENGTH_SHORT).show()
-            return
-        }
-        
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Repair Missing Info")
-            .setMessage("Myusiq will attempt to identify ${candidates.size} tracks with generic or missing info and fetch official details.\n\nContinue?")
-            .setNegativeButton("Cancel", null)
-            .setPositiveButton("Start") { _, _ ->
-                btnRepairUnknown.isEnabled = false
-                executeScanAndFix(candidates, "Metadata Repairs")
             }
             .show()
     }
@@ -185,14 +167,21 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
                 withContext(Dispatchers.Main) {
                     if (isAdded) {
                         val statusText = "Scanning ${index + 1} of ${tracksToScan.size}: ${song.title}"
-                        tvArtStatus.text = statusText
-                        tvRepairStatus.text = statusText
+                        tvAutoFixStatus.text = statusText
                     }
                 }
                 
                 val (extractedArtist, extractedTitle) = YouTubeTitleCleaner.cleanAndSplit(song.title)
-                val cleanTitle = extractedTitle.ifBlank { YouTubeTitleCleaner.cleanTitle(song.title) }
-                val cleanArtist = if (!CloudMetadataResolver.isGenericArtist(song.artist)) song.artist else if (extractedArtist != "Unknown Artist") extractedArtist else ""
+                val cleanTitle = if (extractedTitle.isNotBlank() && extractedTitle != song.title) {
+                    extractedTitle
+                } else {
+                    YouTubeTitleCleaner.cleanTitle(song.title).ifBlank { YouTubeTitleCleaner.cleanFilename(song.path) }
+                }
+                val cleanArtist = if (!CloudMetadataResolver.isGenericArtist(song.artist)) {
+                    song.artist
+                } else if (extractedArtist != "Unknown Artist" && !CloudMetadataResolver.isGenericArtist(extractedArtist)) {
+                    extractedArtist
+                } else ""
 
                 val metadata = CloudMetadataResolver.resolve(cleanTitle, cleanArtist)
                 if (metadata != null && coroutineContext.isActive) {
@@ -228,14 +217,19 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
 
             withContext(Dispatchers.Main) {
                 if (isAdded && coroutineContext.isActive) {
-                    tvArtStatus.text = "Scan complete. Review proposed updates."
-                    tvRepairStatus.text = "Scan complete. Review proposed updates."
-                    btnRepairUnknown.isEnabled = true
+                    tvAutoFixStatus.text = "Scan complete. Review proposed updates."
+                    btnAutoFixAll.isEnabled = true
                     if (candidateItems.isNotEmpty()) {
+                        val unresolvableCount = tracksToScan.size - candidateItems.size
+                        val dialogSub = if (unresolvableCount > 0) {
+                            "Found ${candidateItems.size} suggested fixes ($unresolvableCount tracks already match or have no online metadata/artwork available)."
+                        } else {
+                            "Found ${candidateItems.size} suggested fixes. Choose which tracks to update."
+                        }
                         showJanitorReviewDialog(
                             candidateItems = candidateItems,
                             dialogTitle = "Review Proposed Fixes ($scanType)",
-                            dialogSub = "Found ${candidateItems.size} suggested fixes. Choose which tracks to update."
+                            dialogSub = dialogSub
                         )
                     } else {
                         Toast.makeText(context, "No cloud matches found for review.", Toast.LENGTH_SHORT).show()
@@ -301,7 +295,6 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
                 Toast.makeText(requireContext(), "Applying changes for ${selectedEdits.size} tracks...", Toast.LENGTH_LONG).show()
             }
             dialog?.dismiss()
-            view?.postDelayed({ performScan() }, 1200)
         }
 
         dialog = MaterialAlertDialogBuilder(requireContext())
@@ -350,8 +343,7 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
         val allSongs = viewModel.songsLibrary.value
         if (allSongs.isEmpty()) {
             tvDuplicateStatus.text = "No songs found in library."
-            tvArtStatus.text = "No songs found in library."
-            tvRepairStatus.text = "No songs found in library."
+            tvAutoFixStatus.text = "No songs found in library."
             return
         }
 
@@ -371,7 +363,6 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
             val missingArt = allSongs
                 .distinctBy { PlatformUtils.normalizePath(it.path) }
                 .filter { song ->
-                    // Check local artwork cache, persistent backup, and physical embedded picture
                     val artFile = ArtworkUtils.getArtworkFile(appContext, song.id, song.path)
                     artFile == null || !artFile.exists() || artFile.length() == 0L
                 }
@@ -380,24 +371,32 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
                 isMessyOrUnknownTrack(song)
             }
 
+            val consolidatedCandidates = (missingArt + toRepair).distinctBy { it.id }
+
             if (!isAdded) return@launch
 
             withContext(Dispatchers.Main) {
                 if (!isAdded) return@withContext
                 
                 duplicateGroups = groups
-                missingArtSongs = missingArt
-                unknownSongs = toRepair
+                allFixCandidates = consolidatedCandidates
 
                 val totalDuplicates = groups.sumOf { it.size - 1 }
                 tvDuplicateStatus.text = if (totalDuplicates > 0) "Found $totalDuplicates redundant duplicates." else "No duplicates found."
                 btnCleanDuplicates.isVisible = totalDuplicates > 0
 
-                tvArtStatus.text = if (missingArt.isNotEmpty()) "Found ${missingArt.size} tracks without cover art." else "All tracks have artwork."
-                btnFindMissingArt.isVisible = missingArt.isNotEmpty()
-
-                tvRepairStatus.text = if (toRepair.isNotEmpty()) "Found ${toRepair.size} tracks with missing or messy info." else "All metadata looks clean."
-                btnRepairUnknown.isVisible = toRepair.isNotEmpty()
+                val statusMessage = when {
+                    toRepair.isNotEmpty() && missingArt.isNotEmpty() ->
+                        "Found ${toRepair.size} tracks with messy metadata and ${missingArt.size} tracks with missing artwork."
+                    toRepair.isNotEmpty() ->
+                        "Found ${toRepair.size} tracks with messy metadata."
+                    missingArt.isNotEmpty() ->
+                        "Found ${missingArt.size} tracks with missing artwork."
+                    else ->
+                        "All metadata and artwork look clean."
+                }
+                tvAutoFixStatus.text = statusMessage
+                btnAutoFixAll.isVisible = consolidatedCandidates.isNotEmpty()
                 updateUndoCardVisibility()
             }
         }

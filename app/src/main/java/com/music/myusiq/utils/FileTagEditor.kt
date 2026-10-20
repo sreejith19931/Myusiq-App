@@ -138,7 +138,7 @@ object FileTagEditor {
             var artworkBytes: ByteArray? = null
             if (newArtworkUri != null) {
                 try {
-                    context.contentResolver.openInputStream(newArtworkUri)?.use { inputStream ->
+                    ArtworkUtils.openUriInputStream(context, newArtworkUri)?.use { inputStream ->
                         artworkBytes = inputStream.readBytes()
                     }
                 } catch (e: Exception) {
