@@ -67,4 +67,19 @@ class AppDatabaseMigrationTest {
         assertEquals("/storage/emulated/0/Music/test.mp3", lyricsOverride.songPath)
         assertEquals("[00:10.00]Hello world\n[00:15.00]I love music", lyricsOverride.rawLyrics)
     }
+
+    @Test
+    fun testDatabaseMigrations_VersionsDefined() {
+        val migration11To12 = com.music.myusiq.DatabaseProvider.MIGRATION_11_12
+        assertEquals(11, migration11To12.startVersion)
+        assertEquals(12, migration11To12.endVersion)
+
+        val migration12To13 = com.music.myusiq.DatabaseProvider.MIGRATION_12_13
+        assertEquals(12, migration12To13.startVersion)
+        assertEquals(13, migration12To13.endVersion)
+
+        val migration11To13 = com.music.myusiq.DatabaseProvider.MIGRATION_11_13
+        assertEquals(11, migration11To13.startVersion)
+        assertEquals(13, migration11To13.endVersion)
+    }
 }

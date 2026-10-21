@@ -69,20 +69,10 @@ import com.music.myusiq.DatabaseProvider
 import com.music.myusiq.MainApplication
 // LyricsResponse is now in the same package
 import com.music.myusiq.domain.models.*
+import com.music.myusiq.domain.usecase.AudioFingerprintingUseCase
+import com.music.myusiq.domain.usecase.MatchSearchUseCase
+import com.music.myusiq.domain.usecase.MetadataSanitizerUseCase
 import kotlin.math.abs
-
-data class PendingTrackEdit(
-    val songId: Long,
-    val title: String,
-    val artist: String,
-    val album: String,
-    val year: String = "",
-    val genre: String = "",
-    val artworkUri: Uri? = null,
-    val path: String = "",
-    val lyrics: String? = null,
-    val matchConfidence: Int = 100
-)
 
 class PlaybackViewModel(application: Application) : AndroidViewModel(application) {
     enum class TrackSortOrder { ALPHABETICAL, LAST_ADDED, SIZE, MOST_POPULAR, RECENTLY_PLAYED, ARTIST, ALBUM }
@@ -100,8 +90,10 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     private val lyricsUseCase = LyricsUseCase(musicRepository, application, viewModelScope)
     private val smartPlaylistUseCase = SmartPlaylistUseCase(musicRepository)
     private val metadataUpdateUseCase = MetadataUpdateUseCase(musicRepository, application, viewModelScope)
-    private val janitorScanUseCase = com.music.myusiq.domain.usecase.JanitorScanUseCase(this)
-
+    private val metadataSanitizerUseCase = MetadataSanitizerUseCase()
+    private val audioFingerprintUseCase = AudioFingerprintingUseCase()
+    private val matchSearchUseCase = MatchSearchUseCase()
+    private val janitorScanUseCase = com.music.myusiq.domain.usecase.JanitorScanUseCase(this, metadataSanitizerUseCase, audioFingerprintUseCase, matchSearchUseCase)
     private val _janitorScanState = MutableStateFlow<com.music.myusiq.domain.usecase.ScanState?>(null)
     val janitorScanState: StateFlow<com.music.myusiq.domain.usecase.ScanState?> = _janitorScanState.asStateFlow()
 
@@ -124,6 +116,10 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                     }
                 }
         }
+    }
+
+    fun clearJanitorScanState() {
+        _janitorScanState.value = null
     }
 
     private val metadataUpdateListener = object : MetadataUpdateUseCase.MetadataUpdateListener {
@@ -512,7 +508,18 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun permanentUpdateSongMetadata(context: Context, songId: Long, title: String, artist: String, album: String, year: String = "", genre: String = "", artUri: Uri? = null, path: String = "") {
-        metadataUpdateUseCase.permanentUpdateSongMetadata(context, songId, title, artist, album, year, genre, artUri, path, metadataUpdateListener)
+        metadataUpdateUseCase.permanentUpdateSongMetadata(
+            context,
+            songId,
+            title,
+            artist,
+            album,
+            year,
+            genre,
+            artUri,
+            path,
+            metadataUpdateListener
+        )
     }
 
     private fun finishMetadataUpdate(data: PendingTrackEdit, refresh: Boolean) {

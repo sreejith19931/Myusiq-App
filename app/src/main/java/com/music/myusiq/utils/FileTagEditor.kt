@@ -11,6 +11,74 @@ import java.io.FileNotFoundException
 
 object FileTagEditor {
 
+    fun compressArtworkForEmbedding(
+        bytes: ByteArray,
+        maxDimension: Int = 1000,
+        quality: Int = 85
+    ): ByteArray {
+        if (bytes.isEmpty()) return bytes
+        return try {
+            val options = android.graphics.BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+            }
+            android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
+            val origWidth = options.outWidth
+            val origHeight = options.outHeight
+
+            if (origWidth <= 0 || origHeight <= 0) return bytes
+
+            if (origWidth <= maxDimension && origHeight <= maxDimension && bytes.size < 300 * 1024) {
+                return bytes
+            }
+
+            var sampleSize = 1
+            var w = origWidth
+            var h = origHeight
+            while (w > maxDimension * 2 || h > maxDimension * 2) {
+                sampleSize *= 2
+                w /= 2
+                h /= 2
+            }
+
+            val decodeOptions = android.graphics.BitmapFactory.Options().apply {
+                inSampleSize = sampleSize
+            }
+
+            val bitmap = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size, decodeOptions)
+                ?: return bytes
+
+            val scaledBitmap = if (bitmap.width > maxDimension || bitmap.height > maxDimension) {
+                val aspect = bitmap.width.toFloat() / bitmap.height.toFloat()
+                val targetW: Int
+                val targetH: Int
+                if (bitmap.width >= bitmap.height) {
+                    targetW = maxDimension
+                    targetH = (maxDimension / aspect).toInt().coerceAtLeast(1)
+                } else {
+                    targetH = maxDimension
+                    targetW = (maxDimension * aspect).toInt().coerceAtLeast(1)
+                }
+                val resized = android.graphics.Bitmap.createScaledBitmap(bitmap, targetW, targetH, true)
+                if (resized != bitmap) {
+                    bitmap.recycle()
+                }
+                resized
+            } else {
+                bitmap
+            }
+
+            val outputStream = java.io.ByteArrayOutputStream()
+            scaledBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, quality, outputStream)
+            scaledBitmap.recycle()
+
+            val compressedBytes = outputStream.toByteArray()
+            if (compressedBytes.isNotEmpty()) compressedBytes else bytes
+        } catch (e: Exception) {
+            Log.e("FileTagEditor", "Failed to compress artwork bytes: ${e.message}")
+            bytes
+        }
+    }
+
     /**
      * Embeds ID3 metadata and album artwork directly into an audio file (MP3, FLAC, M4A, etc.) on storage using jaudiotagger.
      *
@@ -49,7 +117,11 @@ object FileTagEditor {
             year?.takeIf { it.isNotBlank() && it != "Unknown" }?.let { tag.setField(FieldKey.YEAR, it) }
             genre?.takeIf { it.isNotBlank() && it != "Unknown" }?.let { tag.setField(FieldKey.GENRE, it) }
 
-            val bytesToEmbed = artworkBytes ?: artworkFile?.takeIf { it.exists() }?.readBytes()
+            val rawBytes = artworkBytes ?: artworkFile?.takeIf { it.exists() }?.readBytes()
+            val bytesToEmbed = if (rawBytes != null && rawBytes.isNotEmpty()) {
+                compressArtworkForEmbedding(rawBytes)
+            } else null
+
             if (bytesToEmbed != null && bytesToEmbed.isNotEmpty()) {
                 val artwork = ArtworkFactory.getNew()
                 artwork.binaryData = bytesToEmbed
@@ -139,7 +211,8 @@ object FileTagEditor {
             if (newArtworkUri != null) {
                 try {
                     ArtworkUtils.openUriInputStream(context, newArtworkUri)?.use { inputStream ->
-                        artworkBytes = inputStream.readBytes()
+                        val rawBytes = inputStream.readBytes()
+                        artworkBytes = compressArtworkForEmbedding(rawBytes)
                     }
                 } catch (e: Exception) {
                     Log.e("FileTagEditor", "Error reading artwork URI: $newArtworkUri", e)

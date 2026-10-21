@@ -22,6 +22,7 @@ import com.music.myusiq.domain.models.SongOverride
 import com.music.myusiq.utils.CloudMetadataResolver
 import com.music.myusiq.utils.FileTagEditor
 import com.music.myusiq.utils.PlatformUtils
+import com.music.myusiq.utils.ArtworkUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -64,9 +65,14 @@ class MetadataUpdateUseCase(
             val trackUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, songId)
             val pendingData = PendingTrackEdit(songId, title, artist, album, year, genre, artUri, path)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                val intent = MediaStore.createWriteRequest(context.contentResolver, listOf(trackUri))
-                withContext(Dispatchers.Main) {
-                    listener.onPendingWriteIntent(IntentSenderRequest.Builder(intent.intentSender).build(), pendingData)
+                try {
+                    val intent = MediaStore.createWriteRequest(context.contentResolver, listOf(trackUri))
+                    withContext(Dispatchers.Main) {
+                        listener.onPendingWriteIntent(IntentSenderRequest.Builder(intent.intentSender).build(), pendingData)
+                    }
+                } catch (e: Exception) {
+                    Log.e("MetadataUpdateUseCase", "Failed to create write request for single song", e)
+                    executeMediaStoreUpdate(context, pendingData, listener = listener)
                 }
             } else {
                 executeMediaStoreUpdate(context, pendingData, listener = listener)
@@ -378,20 +384,18 @@ class MetadataUpdateUseCase(
     fun isMessyOrUnknownTrack(song: Song): Boolean {
         val artist = song.artist.trim()
         val title = song.title.trim()
+        val album = song.album.trim()
 
         val isUnknownArtist = CloudMetadataResolver.isGenericArtist(artist)
+        val isUnknownAlbum = ArtworkUtils.isGenericAlbum(album)
         val hasFileExtension = Regex("(?i)\\.(mp3|m4a|flac|wav|aac|ogg|wma)$").containsMatchIn(title)
-        val isGenericTitle = Regex("(?i)^(track|audio|sound|recording)[_\\s\\-]*\\d*$").matches(title) || title.isBlank()
+        val isGenericTitle = Regex("(?i)^(track|audio|sound|recording|song)[_\\s\\-]*\\d*$").matches(title) || title.isBlank()
         
-        val cleanedTitle = com.music.myusiq.utils.YouTubeTitleCleaner.cleanTitle(title)
-        val hasClutter = !cleanedTitle.equals(title, ignoreCase = true) && 
-                         (title.contains("_") || 
-                          title.contains(Regex("""(?i)[(\[{].*?(official|music|video|audio|lyric|hd|4k|remix|visualizer|mv|topic|prod|feat|ft|full song).*?[)\]}]""")) || 
-                          title.contains(Regex("""(?i)\b(www\.|https?://)?[a-z0-9\-]+\.(com|net|org|io|me|co|info|biz)\b""")))
+        val hasClutter = title.contains("_") ||
+                         Regex("""(?i)\b(www\.|https?://)?[a-z0-9\-]+\.(com|net|org|io|me|co|info|biz)\b""").containsMatchIn(title) ||
+                         Regex("""(?i)[(\[{].*?(official|music\s+video|official\s+audio|lyric\s+video|hd\s+1080p|4k|visualizer|y2mate|ytmp3).*?[)\]}]""").containsMatchIn(title)
 
-        val isGenericArtistWithGenericTitle = isUnknownArtist && (isGenericTitle || artist.isBlank())
-
-        return isGenericArtistWithGenericTitle || hasFileExtension || isGenericTitle || hasClutter
+        return isUnknownArtist || isUnknownAlbum || hasFileExtension || isGenericTitle || hasClutter
     }
 
     private val processedAutoImproveTrackIds = java.util.Collections.synchronizedSet(HashSet<Long>())
@@ -476,6 +480,9 @@ class MetadataUpdateUseCase(
             val snapshots = updates.mapNotNull { edit ->
                 val song = originalTrackMap[edit.songId]
                 if (song != null) {
+                    val existingArt = com.music.myusiq.utils.ArtworkUtils.getArtworkFile(context, song.id, song.path, song.album)
+                    val artUri = if (existingArt != null && existingArt.exists() && existingArt.length() > 0) Uri.fromFile(existingArt) else null
+                    val existingLyrics = FileTagEditor.extractLyrics(File(song.path))
                     PendingTrackEdit(
                         songId = song.id,
                         title = song.title,
@@ -483,7 +490,9 @@ class MetadataUpdateUseCase(
                         album = song.album,
                         year = "",
                         genre = song.genre,
-                        path = song.path
+                        artworkUri = artUri,
+                        path = song.path,
+                        lyrics = existingLyrics
                     )
                 } else null
             }
@@ -500,10 +509,23 @@ class MetadataUpdateUseCase(
         scope.launch(Dispatchers.IO) {
             savePreEditSnapshotsIfAvailable(context, updates, listener)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                val uris = updates.map { ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, it.songId) }
-                val intent = MediaStore.createWriteRequest(context.contentResolver, uris)
-                withContext(Dispatchers.Main) {
-                    onIntent(IntentSenderRequest.Builder(intent.intentSender).build())
+                try {
+                    val uris = updates.map { ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, it.songId) }
+                    val intent = MediaStore.createWriteRequest(context.contentResolver, uris)
+                    withContext(Dispatchers.Main) {
+                        onIntent(IntentSenderRequest.Builder(intent.intentSender).build())
+                    }
+                } catch (e: Exception) {
+                    Log.e("MetadataUpdateUseCase", "Failed to create write request for bulk updates", e)
+                    updates.forEachIndexed { index, edit ->
+                        withContext(Dispatchers.Main) {
+                            listener.onBulkProgress(index + 1, updates.size, edit.title)
+                        }
+                        executeMediaStoreUpdate(context, edit, refreshLibrary = false, showToast = false, listener = listener)
+                    }
+                    withContext(Dispatchers.Main) {
+                        listener.onBulkFinished()
+                    }
                 }
             } else {
                 updates.forEachIndexed { index, edit ->

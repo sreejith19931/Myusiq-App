@@ -103,25 +103,6 @@ jobs:
           name: app-release-apk
           path: release-artifacts
 
-      - name: Sync README, Docs and Images to Public Repo
-        env:
-          API_TOKEN_GITHUB: ${{ secrets.RELEASE_TOKEN }}
-        run: |
-          python scripts/update_roadmap.py
-          git config --global user.email "action@github.com"
-          git config --global user.name "GitHub Action"
-          git clone --depth 1 https://x-access-token:${API_TOKEN_GITHUB}@github.com/sreejith19931/Myusiq-App.git public-repo
-          cp README.md public-repo/
-          cp CHANGELOG.md public-repo/
-          mkdir -p public-repo/images
-          cp images/* public-repo/images/
-          mkdir -p public-repo/docs
-          cp -r docs/* public-repo/docs/
-          cd public-repo
-          git add .
-          git commit -m "Update README, Changelog, Docs and Screenshots for ${GITHUB_REF_NAME}" || echo "No changes to commit"
-          git push https://x-access-token:${API_TOKEN_GITHUB}@github.com/sreejith19931/Myusiq-App.git main
-
       - name: Create Release on Public Repo
         uses: softprops/action-gh-release@v2
         with:

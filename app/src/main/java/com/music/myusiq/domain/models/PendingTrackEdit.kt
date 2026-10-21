@@ -2,17 +2,15 @@ package com.music.myusiq.domain.models
 
 import android.net.Uri
 
-/**
- * Represents a suggested metadata edit for a track.
- */
 data class PendingTrackEdit(
-    val songId: String,
+    val songId: Long,
     val title: String,
     val artist: String,
     val album: String,
-    val year: String,
-    val genre: String,
-    val artworkUri: Uri?,
-    val path: String,
-    val matchConfidence: Int
+    val year: String = "",
+    val genre: String = "",
+    val artworkUri: Uri? = null,
+    val path: String = "",
+    val lyrics: String? = null,
+    val matchConfidence: Int = 100
 )

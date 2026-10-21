@@ -1,5 +1,6 @@
 package com.music.myusiq.data
 
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.music.myusiq.domain.models.*
@@ -16,7 +17,11 @@ import com.music.myusiq.data.dao.*
         LyricsOverride::class,
         SearchHistory::class,
     ],
-    version = 11,
+    version = 13,
+    autoMigrations = [
+        AutoMigration(from = 11, to = 12),
+        AutoMigration(from = 12, to = 13),
+    ],
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
