@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
@@ -17,10 +18,61 @@ data class CloudMetadata(
     val foundArtist: String? = null,
     val foundTitle: String? = null,
     val lyrics: String? = null,
-    val matchConfidence: Double = 1.0
+    val matchConfidence: Double = 1.0,
+    val durationMs: Long? = null
 )
 
 object CloudMetadataResolver {
+
+    fun extractOfflineFallbackMetadata(path: String, originalTitle: String, originalArtist: String, originalAlbum: String): CloudMetadata {
+        val file = File(path)
+        val fileNameWithoutExt = file.nameWithoutExtension
+        val parentDir = file.parentFile?.name ?: ""
+        val grandParentDir = file.parentFile?.parentFile?.name ?: ""
+
+        var fallbackTitle = originalTitle
+        var fallbackArtist = if (!isGenericArtist(originalArtist)) originalArtist else ""
+        var fallbackAlbum = if (!ArtworkUtils.isGenericAlbum(originalAlbum)) originalAlbum else ""
+
+        if (fileNameWithoutExt.contains(" - ")) {
+            val parts = fileNameWithoutExt.split(" - ", limit = 2)
+            if (parts.size == 2) {
+                if (fallbackArtist.isBlank()) fallbackArtist = parts[0].trim()
+                fallbackTitle = parts[1].trim()
+            }
+        } else if (fileNameWithoutExt.contains("_") && !fileNameWithoutExt.contains(" ")) {
+            val parts = fileNameWithoutExt.split("_", limit = 2)
+            if (parts.size == 2) {
+                if (fallbackArtist.isBlank()) fallbackArtist = parts[0].replace(".", " ").trim()
+                fallbackTitle = parts[1].replace(".", " ").trim()
+            }
+        }
+
+        if (fallbackAlbum.isBlank() && parentDir.isNotBlank() && !ArtworkUtils.isGenericAlbum(parentDir)) {
+            fallbackAlbum = parentDir
+        }
+        if (fallbackArtist.isBlank() && grandParentDir.isNotBlank() && !ArtworkUtils.isGenericAlbum(grandParentDir)) {
+            fallbackArtist = grandParentDir
+        }
+
+        val cleanedTitle = YouTubeTitleCleaner.cleanTitle(fallbackTitle).ifBlank { fileNameWithoutExt }
+        val cleanedArtist = if (fallbackArtist.isNotBlank()) cleanArtist(fallbackArtist) else "Unknown Artist"
+        val cleanedAlbum = if (fallbackAlbum.isNotBlank()) fallbackAlbum else "Unknown Album"
+
+        return CloudMetadata(
+            album = cleanedAlbum,
+            year = null,
+            genre = null,
+            artworkUrl = null,
+            foundArtist = cleanedArtist,
+            foundTitle = cleanedTitle,
+            matchConfidence = 0.50
+        )
+    }
+
+    fun cleanArtist(artist: String): String {
+        return if (!isGenericArtist(artist)) artist.trim() else ""
+    }
 
     fun isGenericArtist(artist: String): Boolean {
         val lower = artist.trim().lowercase()
@@ -37,6 +89,22 @@ object CloudMetadataResolver {
                lower == "none" ||
                lower == "artist" ||
                lower.matches(Regex("""^track\s*\d*$"""))
+    }
+
+    private val rateLimiterLock = Any()
+    private var lastRequestTimestamp = 0L
+
+    private fun enforceRateLimit(minDelayMs: Long = 150L) {
+        synchronized(rateLimiterLock) {
+            val now = System.currentTimeMillis()
+            val elapsed = now - lastRequestTimestamp
+            if (elapsed < minDelayMs) {
+                try {
+                    Thread.sleep(minDelayMs - elapsed)
+                } catch (_: Exception) {}
+            }
+            lastRequestTimestamp = System.currentTimeMillis()
+        }
     }
 
     private fun normalizeForMatching(str: String): String {
@@ -61,7 +129,7 @@ object CloudMetadataResolver {
         val union = tokens1.union(tokens2).size.toDouble()
         val jaccard = if (union > 0) intersection / union else 0.0
 
-        val containsScore = if (norm1.contains(norm2) || norm2.contains(norm1)) 0.85 else 0.0
+        val containsScore = if (norm1.length >= 4 && norm2.length >= 4 && (norm1.contains(norm2) || norm2.contains(norm1))) 0.8 else 0.0
 
         return maxOf(jaccard, containsScore)
     }
@@ -122,12 +190,14 @@ object CloudMetadataResolver {
                     val queryTerm = "$cleanArtist $cleanTitle"
                     metadata = fetchItunesMetadata(queryTerm, cleanTitle, cleanArtist)
                         ?: fetchDeezerMetadata(queryTerm, cleanTitle, cleanArtist)
+                        ?: fetchMusicBrainzMetadata(cleanTitle, cleanArtist)
                 }
 
                 // 2. Fallback: Search with cleanTitle alone
                 if (metadata == null && cleanTitle.isNotBlank()) {
                     metadata = fetchItunesMetadata(cleanTitle, cleanTitle, cleanArtist)
                         ?: fetchDeezerMetadata(cleanTitle, cleanTitle, cleanArtist)
+                        ?: fetchMusicBrainzMetadata(cleanTitle, cleanArtist)
                 }
 
                 // 3. Last fallback: Search raw clean title
@@ -136,6 +206,7 @@ object CloudMetadataResolver {
                     if (rawClean.isNotBlank() && rawClean != cleanTitle) {
                         metadata = fetchItunesMetadata(rawClean, cleanTitle, cleanArtist)
                             ?: fetchDeezerMetadata(rawClean, cleanTitle, cleanArtist)
+                            ?: fetchMusicBrainzMetadata(rawClean, cleanArtist)
                     }
                 }
 
@@ -161,6 +232,7 @@ object CloudMetadataResolver {
 
     private fun fetchItunesMetadata(searchTerm: String, cleanTitle: String, cleanArtist: String): CloudMetadata? {
         if (searchTerm.isBlank()) return null
+        enforceRateLimit(150L)
         return try {
             val query = URLEncoder.encode(searchTerm, "UTF-8").replace("+", "%20")
             val url = URL("https://itunes.apple.com/search?term=$query&entity=song&limit=5")
@@ -195,8 +267,9 @@ object CloudMetadataResolver {
                             val genre = item.optString("primaryGenreName").takeIf { it.isNotBlank() }
                             val lowResArt = item.optString("artworkUrl100")
                             val highResArt = if (lowResArt.isNotBlank()) lowResArt.replace(Regex("""\d+x\d+bb"""), "1000x1000bb") else null
+                            val durationMs = item.optLong("trackTimeMillis", -1L).takeIf { it > 0 }
 
-                            bestCandidate = CloudMetadata(album, year, genre, highResArt, foundArtist, foundTitle, matchConfidence = score)
+                            bestCandidate = CloudMetadata(album, year, genre, highResArt, foundArtist, foundTitle, matchConfidence = score, durationMs = durationMs)
                         }
                     }
                 }
@@ -211,6 +284,7 @@ object CloudMetadataResolver {
 
     private fun fetchDeezerMetadata(searchTerm: String, cleanTitle: String, cleanArtist: String): CloudMetadata? {
         if (searchTerm.isBlank()) return null
+        enforceRateLimit(150L)
         return try {
             val query = URLEncoder.encode(searchTerm, "UTF-8").replace("+", "%20")
             val url = URL("https://api.deezer.com/search?q=$query")
@@ -245,8 +319,10 @@ object CloudMetadataResolver {
                             val highResArt = albumObj?.optString("cover_xl")
                                 ?.ifBlank { albumObj.optString("cover_big") }
                                 ?.takeIf { it.isNotBlank() }
+                            val durSec = item.optLong("duration", -1L)
+                            val durationMs = if (durSec > 0) durSec * 1000L else null
 
-                            bestCandidate = CloudMetadata(album, null, null, highResArt, foundArtist, foundTitle, matchConfidence = score)
+                            bestCandidate = CloudMetadata(album, null, null, highResArt, foundArtist, foundTitle, matchConfidence = score, durationMs = durationMs)
                         }
                     }
                 }
@@ -255,6 +331,83 @@ object CloudMetadataResolver {
             null
         } catch (e: Exception) {
             Log.d("CloudMetadata", "Deezer search failed for '$searchTerm': ${e.message}")
+            null
+        }
+    }
+
+    private fun fetchMusicBrainzMetadata(cleanTitle: String, cleanArtist: String): CloudMetadata? {
+        if (cleanTitle.isBlank()) return null
+        enforceRateLimit(250L)
+        return try {
+            val queryStr = if (cleanArtist.isNotBlank()) {
+                "recording:\"$cleanTitle\" AND artist:\"$cleanArtist\""
+            } else {
+                "recording:\"$cleanTitle\""
+            }
+            val query = URLEncoder.encode(queryStr, "UTF-8").replace("+", "%20")
+            val url = URL("https://musicbrainz.org/ws/2/recording?query=$query&fmt=json&limit=5")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.setRequestProperty("User-Agent", "MyusiqMusicPlayer/1.0 (android.app@myusiq.internal)")
+            connection.connectTimeout = 5000
+            connection.readTimeout = 5000
+
+            if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+                val response = connection.inputStream.bufferedReader().use { it.readText() }
+                val json = JSONObject(response)
+                val recordings = json.optJSONArray("recordings") ?: return null
+
+                var bestCandidate: CloudMetadata? = null
+                var maxScore = -1.0
+
+                for (i in 0 until recordings.length()) {
+                    val item = recordings.getJSONObject(i)
+                    val foundTitle = item.optString("title").takeIf { it.isNotBlank() } ?: continue
+                    val artistCredit = item.optJSONArray("artist-credit")
+                    val foundArtist = if (artistCredit != null && artistCredit.length() > 0) {
+                        artistCredit.getJSONObject(0).optString("name").takeIf { it.isNotBlank() }
+                    } else null
+                    if (foundArtist == null) continue
+
+                    if (isAcceptableMatch(cleanTitle, cleanArtist, foundTitle, foundArtist)) {
+                        val titleSim = calculateTokenSimilarity(cleanTitle, foundTitle)
+                        val artistSim = if (cleanArtist.isNotBlank()) calculateTokenSimilarity(cleanArtist, foundArtist) else 1.0
+                        val score = (titleSim * 0.6) + (artistSim * 0.4)
+
+                        if (score > maxScore) {
+                            maxScore = score
+                            val releases = item.optJSONArray("releases")
+                            var album: String? = null
+                            var year: String? = null
+                            if (releases != null && releases.length() > 0) {
+                                val rel = releases.getJSONObject(0)
+                                album = rel.optString("title").takeIf { it.isNotBlank() }
+                                val relDate = rel.optString("date")
+                                if (relDate.length >= 4) year = relDate.substring(0, 4)
+                            }
+                            
+                            val tags = item.optJSONArray("tags")
+                            val genre = if (tags != null && tags.length() > 0) {
+                                tags.getJSONObject(0).optString("name").takeIf { it.isNotBlank() }
+                            } else null
+
+                            bestCandidate = CloudMetadata(
+                                album = album,
+                                year = year,
+                                genre = genre,
+                                artworkUrl = null,
+                                foundArtist = foundArtist,
+                                foundTitle = foundTitle,
+                                matchConfidence = score
+                            )
+                        }
+                    }
+                }
+                return bestCandidate
+            }
+            null
+        } catch (e: Exception) {
+            Log.d("CloudMetadata", "MusicBrainz search failed for '$cleanTitle': ${e.message}")
             null
         }
     }

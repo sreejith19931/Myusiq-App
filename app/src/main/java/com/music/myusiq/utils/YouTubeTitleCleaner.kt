@@ -8,7 +8,7 @@ package com.music.myusiq.utils
 object YouTubeTitleCleaner {
 
     private val bracketClutterRegex = Regex(
-        """(?i)[(\[{].*?(official|music|video|audio|lyric|hd|4k|remix|visualizer|mv|topic|prod|feat|ft|full song).*?[)\]}]"""
+        """(?i)[(\[{].*?(official|music\s+video|official\s+audio|lyric\s+video|hd\s+1080p|4k|visualizer|mv|topic|full\s+song|y2mate|ytmp3).*?[)\]}]"""
     )
 
     private val unbracketedClutterRegex = Regex(

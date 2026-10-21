@@ -25,6 +25,31 @@
         android:textColor="?attr/colorOnSurfaceVariant" />
 
     <LinearLayout
+        android:id="@+id/layoutJanitorProgress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:layout_marginTop="12dp">
+
+        <TextView
+            android:id="@+id/tvJanitorProgressMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Scanning tracks &amp; analyzing waveforms..."
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorSecondary" />
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/progressJanitor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:indeterminate="true"
+            android:layout_marginTop="8dp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/layoutSelectAllContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -40,6 +65,7 @@
     </LinearLayout>
 
     <FrameLayout
+        android:id="@+id/frameReviewContainer"
         android:layout_width="match_parent"
         android:layout_height="240dp"
         android:layout_marginTop="4dp">

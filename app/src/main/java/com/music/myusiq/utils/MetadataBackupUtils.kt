@@ -25,16 +25,19 @@ object MetadataBackupUtils {
         for (dir in dirs) {
             try {
                 val myusiqDir = File(dir, ".myusiq_backup")
-                if (!myusiqDir.exists()) {
+                val dirExists = try { myusiqDir.exists() } catch (_: Exception) { false }
+                if (!dirExists) {
                     val legacyDir = File(dir, ".rhythm_backup")
-                    if (legacyDir.exists()) {
+                    if (try { legacyDir.exists() } catch (_: Exception) { false }) {
                         val legacyFile = File(legacyDir, "metadata_overrides_backup.json")
-                        if (legacyFile.exists()) return legacyFile
+                        if (try { legacyFile.exists() } catch (_: Exception) { false }) return legacyFile
                     }
-                    myusiqDir.mkdirs()
+                    try { myusiqDir.mkdirs() } catch (_: Exception) {}
                 }
                 val file = File(myusiqDir, "metadata_overrides_backup.json")
-                if (file.exists() || myusiqDir.canWrite()) return file
+                val fileExists = try { file.exists() } catch (_: Exception) { false }
+                val dirWritable = try { myusiqDir.canWrite() } catch (_: Exception) { false }
+                if (fileExists || dirWritable) return file
             } catch (_: Exception) {}
         }
         return null
@@ -128,8 +131,12 @@ object MetadataBackupUtils {
             }
 
             val jsonString = jsonArray.toString()
-            try { appFile.writeText(jsonString) } catch (_: Exception) {}
-            try { publicFile?.writeText(jsonString) } catch (_: Exception) {}
+            try { appFile.writeText(jsonString) } catch (e: Exception) {
+                Log.d("MetadataBackupUtils", "App file write failed: ${e.message}")
+            }
+            try { publicFile?.writeText(jsonString) } catch (e: Exception) {
+                Log.d("MetadataBackupUtils", "Public file write failed: ${e.message}")
+            }
             saveToPublicMediaStore(context, jsonString)
 
             Log.d("MetadataBackupUtils", "Saved metadata override backup for ${override.path}")
@@ -142,10 +149,44 @@ object MetadataBackupUtils {
         val appFile = getAppBackupFile(context)
         val publicFile = getPublicBackupFile()
 
-        val jsonText = when {
-            appFile.exists() && appFile.length() > 0L -> appFile.readText()
-            publicFile != null && publicFile.exists() && publicFile.length() > 0L -> publicFile.readText()
-            else -> readFromPublicMediaStore(context) ?: return emptyList()
+        var jsonText: String? = null
+
+        // 1. Try app-private external storage first (always accessible without permission issues)
+        if (try { appFile.exists() && appFile.length() > 0L } catch (_: Exception) { false }) {
+            jsonText = try {
+                appFile.readText()
+            } catch (e: Exception) {
+                Log.d("MetadataBackupUtils", "Error reading app backup file: ${e.message}")
+                null
+            }
+        }
+
+        // 2. Try direct public File access (may fail with EACCES / FileNotFoundException on Android 10+)
+        if (jsonText.isNullOrBlank() && publicFile != null) {
+            if (try { publicFile.exists() && publicFile.length() > 0L } catch (_: Exception) { false }) {
+                jsonText = try {
+                    publicFile.readText()
+                } catch (e: Exception) {
+                    Log.d("MetadataBackupUtils", "Direct public file read failed (EACCES/Scoped Storage): ${e.message}")
+                    null
+                }
+            }
+        }
+
+        // 3. Try reading from MediaStore ContentResolver
+        if (jsonText.isNullOrBlank()) {
+            jsonText = readFromPublicMediaStore(context)
+        }
+
+        if (jsonText.isNullOrBlank()) return emptyList()
+
+        // Sync loaded content to appFile if appFile is currently empty or missing
+        if (try { !appFile.exists() || appFile.length() == 0L } catch (_: Exception) { true }) {
+            try {
+                appFile.writeText(jsonText)
+            } catch (e: Exception) {
+                Log.d("MetadataBackupUtils", "Failed to cache loaded backup into appFile: ${e.message}")
+            }
         }
 
         return try {
@@ -202,6 +243,8 @@ object MetadataBackupUtils {
                     put("year", edit.year)
                     put("genre", edit.genre)
                     put("path", edit.path)
+                    put("artworkUri", edit.artworkUri?.toString() ?: "")
+                    put("lyrics", edit.lyrics ?: "")
                 }
                 jsonArray.put(obj)
             }
@@ -213,14 +256,17 @@ object MetadataBackupUtils {
     }
 
     fun loadPreEditSnapshots(context: Context): List<com.music.myusiq.ui.viewmodels.PendingTrackEdit> {
-        val snapshotFile = File(context.getExternalFilesDir(null), "pre_edit_snapshots.json")
-        if (!snapshotFile.exists() || snapshotFile.length() == 0L) return emptyList()
-
         return try {
+            val snapshotFile = File(context.getExternalFilesDir(null), "pre_edit_snapshots.json")
+            if (!snapshotFile.exists() || snapshotFile.length() == 0L) return emptyList()
+
             val jsonArray = JSONArray(snapshotFile.readText())
             val list = mutableListOf<com.music.myusiq.ui.viewmodels.PendingTrackEdit>()
             for (i in 0 until jsonArray.length()) {
                 val obj = jsonArray.getJSONObject(i)
+                val artUriStr = obj.optString("artworkUri", "")
+                val artUri = if (artUriStr.isNotBlank()) Uri.parse(artUriStr) else null
+                val lyrics = obj.optString("lyrics", "").ifBlank { null }
                 list.add(
                     com.music.myusiq.ui.viewmodels.PendingTrackEdit(
                         songId = obj.optLong("songId", -1L),
@@ -229,7 +275,9 @@ object MetadataBackupUtils {
                         album = obj.optString("album", ""),
                         year = obj.optString("year", ""),
                         genre = obj.optString("genre", ""),
-                        path = obj.optString("path", "")
+                        path = obj.optString("path", ""),
+                        artworkUri = artUri,
+                        lyrics = lyrics
                     )
                 )
             }
@@ -241,8 +289,12 @@ object MetadataBackupUtils {
     }
 
     fun hasPreEditSnapshots(context: Context): Boolean {
-        val snapshotFile = File(context.getExternalFilesDir(null), "pre_edit_snapshots.json")
-        return snapshotFile.exists() && snapshotFile.length() > 0L
+        return try {
+            val snapshotFile = File(context.getExternalFilesDir(null), "pre_edit_snapshots.json")
+            snapshotFile.exists() && snapshotFile.length() > 0L
+        } catch (_: Exception) {
+            false
+        }
     }
 
     fun clearPreEditSnapshots(context: Context) {

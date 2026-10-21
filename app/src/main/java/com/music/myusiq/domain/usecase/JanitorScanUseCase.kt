@@ -4,19 +4,27 @@ import android.content.Context
 import android.net.Uri
 import com.music.myusiq.domain.models.Song
 import com.music.myusiq.domain.models.JanitorUpdateItem
-import com.music.myusiq.ui.viewmodels.PendingTrackEdit
+import com.music.myusiq.domain.models.JanitorItemType
+import com.music.myusiq.domain.models.PendingTrackEdit // CORRECT IMPORT
+import com.music.myusiq.domain.models.SuggestedMetadataItem
 import com.music.myusiq.ui.viewmodels.PlaybackViewModel
 import com.music.myusiq.utils.CloudMetadataResolver
 import com.music.myusiq.utils.YouTubeTitleCleaner
 import com.music.myusiq.utils.ArtworkUtils
+import com.music.myusiq.domain.usecase.MetadataSanitizerUseCase
+import com.music.myusiq.domain.usecase.AudioFingerprintingUseCase
+import com.music.myusiq.domain.usecase.MatchSearchUseCase
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.Collections
 
 sealed class ScanState {
     data class Progress(val percentage: Int, val message: String) : ScanState()
@@ -26,66 +34,150 @@ sealed class ScanState {
 
 class JanitorScanUseCase(
     private val viewModel: PlaybackViewModel,
+    private val metadataSanitizerUseCase: MetadataSanitizerUseCase,
+    private val fingerprintingUseCase: AudioFingerprintingUseCase,
+    private val matchSearchUseCase: MatchSearchUseCase
 ) {
-    /**
-     * Scans a list of tracks in parallel (max 4 concurrent) to identify fixes and propose updates.
-     * Shares album artwork across tracks belonging to the same album.
-     *
-     * @param tracks The list of tracks to scan.
-     * @param context The application context to perform file operations.
-     * @return A Flow of ScanState reporting progress and results.
-     */
     fun scanTracks(tracks: List<Song>, context: Context): Flow<ScanState> = channelFlow {
         val totalTracks = tracks.size
-        val results = java.util.Collections.synchronizedList(mutableListOf<JanitorUpdateItem>())
-        val albumArtworkMap = java.util.Collections.synchronizedMap(mutableMapOf<String, Uri>())
+        val results = Collections.synchronizedList(mutableListOf<JanitorUpdateItem>())
+        val albumArtworkMap = Collections.synchronizedMap(mutableMapOf<String, Uri>())
 
         if (totalTracks == 0) {
-            send(ScanState.Progress(100, "No tracks provided for scanning."))
-            send(ScanState.ScanCompleted(emptyList()))
+            try {
+                send(ScanState.Progress(100, "No tracks provided for scanning."))
+                send(ScanState.ScanCompleted(emptyList()))
+            } catch (_: Exception) {}
             return@channelFlow
         }
 
-        // Pre-populate albumArtworkMap from tracks that already have valid artwork cached
-        tracks.forEach { song ->
-            if (!ArtworkUtils.isGenericAlbum(song.album)) {
-                val artFile = ArtworkUtils.getArtworkFile(context, song.id, song.path, song.album)
-                if (artFile != null && artFile.exists() && artFile.length() > 0) {
-                    val albumKey = song.album.trim().lowercase()
-                    if (!albumArtworkMap.containsKey(albumKey)) {
-                        albumArtworkMap[albumKey] = Uri.fromFile(artFile)
-                    }
-                }
-            }
-        }
-
-        val completedCount = AtomicInteger(0)
-        val semaphore = Semaphore(4)
-
-        coroutineScope {
+        withContext(Dispatchers.IO) {
+            // Pre-scan for album artwork
             tracks.forEach { song ->
-                launch(Dispatchers.IO) {
-                    semaphore.withPermit {
-                        try {
-                            val result = processSingleTrack(song, context, albumArtworkMap)
-                            if (result != null) {
-                                results.add(result)
-                                send(ScanState.ResultItem(result))
-                            }
-                        } catch (e: Exception) {
-                            // Single track failure handled gracefully
-                        } finally {
-                            val count = completedCount.incrementAndGet()
-                            val progressPct = (count * 100 / totalTracks).coerceAtMost(99)
-                            send(ScanState.Progress(progressPct, "Scanning $count of $totalTracks: ${song.title}"))
+                if (!ArtworkUtils.isGenericAlbum(song.album)) {
+                    val artFile = ArtworkUtils.getArtworkFile(context, song.id, song.path, song.album)
+                    if (artFile != null && artFile.exists() && artFile.length() > 0) {
+                        val albumKey = song.album.trim().lowercase()
+                        if (!albumArtworkMap.containsKey(albumKey)) {
+                            albumArtworkMap[albumKey] = Uri.fromFile(artFile)
                         }
                     }
                 }
             }
+
+            val completedCount = AtomicInteger(0)
+            val semaphore = Semaphore(2)
+
+            val jobList = tracks.map { song ->
+                launch {
+                    semaphore.withPermit {
+                        try {
+                            kotlinx.coroutines.withTimeoutOrNull(6000L) {
+                                // 1. Sanitize metadata using song properties
+                                val sanitizedSong = metadataSanitizerUseCase.sanitize(
+                                    song,
+                                    song.year,
+                                    song.path,
+                                    song.duration.toString(),
+                                    song.albumId
+                                )
+
+                                // 2. Generate fingerprint using sanitized metadata and acoustic characteristics
+                                val fingerprint = fingerprintingUseCase.generateFingerprint(sanitizedSong, context)
+
+                                // 3. Find matches using sanitized metadata, audio fingerprint, and song context
+                                val matchesFlow = matchSearchUseCase.findMatches(
+                                    sanitizedSong,
+                                    fingerprint,
+                                    song.year,
+                                    song.genre,
+                                    context
+                                )
+
+                                val suggestions = mutableListOf<SuggestedMetadataItem>()
+                                try {
+                                    matchesFlow.collect { suggestions.add(it) }
+                                } catch (_: Exception) {}
+
+                                val bestMatch: SuggestedMetadataItem? = suggestions.maxByOrNull { it.confidenceScore }
+                                val isHighConfidence = bestMatch != null && bestMatch.confidenceScore >= 0.85f
+
+                                if (bestMatch != null) {
+                                    val isComplete = bestMatch.suggestedTitle.isNotBlank() && bestMatch.suggestedArtist.isNotBlank() && bestMatch.suggestedAlbum.isNotBlank()
+
+                                    val artworkUri: Uri? = if (!bestMatch.suggestedArtUri.isNullOrBlank()) {
+                                        if (bestMatch.suggestedArtUri.startsWith("http://") || bestMatch.suggestedArtUri.startsWith("https://")) {
+                                            try {
+                                                kotlinx.coroutines.withTimeoutOrNull(2500L) {
+                                                    viewModel.downloadImageToCache(context, bestMatch.suggestedArtUri)
+                                                }
+                                            } catch (_: Exception) { null }
+                                        } else {
+                                            try { Uri.parse(bestMatch.suggestedArtUri) } catch (_: Exception) { null }
+                                        }
+                                    } else {
+                                        val albumKey = song.album.trim().lowercase()
+                                        val artFile = ArtworkUtils.getArtworkFile(context, song.id, song.path, song.album)
+                                        artFile?.let { Uri.fromFile(it) } ?: albumArtworkMap[albumKey]
+                                    }
+
+                                    val pendingEdit = PendingTrackEdit(
+                                        songId = song.id,
+                                        title = bestMatch.suggestedTitle,
+                                        artist = bestMatch.suggestedArtist,
+                                        album = bestMatch.suggestedAlbum,
+                                        year = bestMatch.suggestedYear ?: "",
+                                        genre = bestMatch.suggestedGenre ?: "",
+                                        artworkUri = artworkUri,
+                                        path = song.path,
+                                        matchConfidence = (bestMatch.confidenceScore * 100).toInt()
+                                    )
+
+                                    val itemType = if (isComplete && isHighConfidence) JanitorItemType.AUTO_FIX else JanitorItemType.SUGGESTION
+
+                                    val item = JanitorUpdateItem(
+                                        songId = song.id.toString(),
+                                        song = song,
+                                        currentArtworkUri = null,
+                                        itemType = itemType,
+                                        rawMetadata = mapOf(
+                                            "title" to pendingEdit.title,
+                                            "artist" to pendingEdit.artist,
+                                            "album" to pendingEdit.album,
+                                            "year" to pendingEdit.year,
+                                            "genre" to pendingEdit.genre
+                                        ),
+                                        proposedEdit = pendingEdit,
+                                        isSelected = isHighConfidence,
+                                        suggestedMatches = suggestions
+                                    )
+                                    results.add(item)
+                                } else {
+                                    addFallbackItem(song, context, albumArtworkMap, results)
+                                }
+                            } ?: run {
+                                addFallbackItem(song, context, albumArtworkMap, results)
+                            }
+                        } catch (e: Exception) {
+                            if (e is kotlinx.coroutines.CancellationException) throw e
+                            addFallbackItem(song, context, albumArtworkMap, results)
+                        } finally {
+                            val count = completedCount.incrementAndGet()
+                            val progressPct = (count * 100 / totalTracks).coerceAtMost(99)
+                            try {
+                                send(ScanState.Progress(progressPct, "Scanning $count of $totalTracks: ${song.title.take(30)}..."))
+                            } catch (_: Exception) {}
+                        }
+                    }
+                }
+            }
+
+            // Wait for all jobs to complete
+            jobList.joinAll()
         }
 
-        // Second pass: Share album artwork with any track in the results that belongs to the same album and is missing artwork
-        results.forEach { item ->
+        // Second pass: Share album artwork
+        val finalResults = results.map { item ->
             val albumKey = item.proposedEdit.album.trim().lowercase()
             if (item.proposedEdit.artworkUri == null && !ArtworkUtils.isGenericAlbum(item.proposedEdit.album)) {
                 val sharedArt = albumArtworkMap[albumKey]
@@ -97,29 +189,23 @@ class JanitorScanUseCase(
                     item.isSelected = true
                 }
             }
+            item
         }
 
-        send(ScanState.Progress(100, "Scan complete. Found ${results.size} candidate updates."))
-        send(ScanState.ScanCompleted(results.toList()))
+        try {
+            send(ScanState.ScanCompleted(finalResults))
+        } catch (_: Exception) {
+            // Channel closed or flow cancelled
+        }
     }
 
-    private suspend fun processSingleTrack(
+    private suspend fun determineBaseJanitorItem(
         song: Song,
         context: Context,
         albumArtworkMap: MutableMap<String, Uri>
     ): JanitorUpdateItem? {
-        val (extractedArtist, extractedTitle) = YouTubeTitleCleaner.cleanAndSplit(song.title)
-        
-        val cleanTitle = if (extractedTitle.isNotBlank() && extractedTitle != song.title) {
-            extractedTitle
-        } else {
-            YouTubeTitleCleaner.cleanTitle(song.title).ifBlank { YouTubeTitleCleaner.cleanFilename(song.path) }
-        }
-        val cleanArtist = if (!CloudMetadataResolver.isGenericArtist(song.artist)) {
-            song.artist
-        } else if (extractedArtist != "Unknown Artist" && !CloudMetadataResolver.isGenericArtist(extractedArtist)) {
-            extractedArtist
-        } else ""
+        val cleanTitle = YouTubeTitleCleaner.cleanTitle(song.title).ifBlank { YouTubeTitleCleaner.cleanFilename(song.path) }
+        val cleanArtist = CloudMetadataResolver.cleanArtist(song.artist)
 
         val metadata = CloudMetadataResolver.resolve(cleanTitle, cleanArtist)
 
@@ -127,85 +213,84 @@ class JanitorScanUseCase(
             android.content.ContentUris.withAppendedId(android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id)
         } catch (_: Exception) { null }
 
-        return if (metadata != null) {
-            var artworkUri = metadata.artworkUrl?.let { viewModel.downloadImageToCache(context, it) }
-
-            val proposedTitle = metadata.foundTitle ?: cleanTitle
-            val proposedArtist = metadata.foundArtist ?: cleanArtist.ifBlank { song.artist }
-            val proposedAlbum = metadata.album ?: if (song.album.equals("<unknown>", true)) "Unknown Album" else song.album
-            val albumKey = proposedAlbum.trim().lowercase()
-
-            if (artworkUri != null && !ArtworkUtils.isGenericAlbum(proposedAlbum)) {
-                albumArtworkMap[albumKey] = artworkUri
-            } else if (artworkUri == null && !ArtworkUtils.isGenericAlbum(proposedAlbum)) {
-                artworkUri = albumArtworkMap[albumKey]
-            }
-
-            val confidencePct = (metadata.matchConfidence * 100).toInt()
-
-            val proposedEdit = PendingTrackEdit(
-                songId = song.id,
-                title = proposedTitle,
-                artist = proposedArtist,
-                album = proposedAlbum,
-                year = metadata.year ?: "",
-                genre = metadata.genre ?: "",
-                artworkUri = artworkUri,
-                path = song.path,
-                matchConfidence = confidencePct
-            )
-
-            JanitorUpdateItem(song, currentArtUri, proposedEdit, isSelected = true)
-        } else if (isTrackFixCandidate(context, song)) {
-            val fallbackTitle = cleanTitle.ifBlank { song.title }
-            val fallbackArtist = cleanArtist.ifBlank { song.artist }
-            val fallbackAlbum = if (song.album.equals("<unknown>", true)) "Unknown Album" else song.album
-            val albumKey = fallbackAlbum.trim().lowercase()
-
-            val sharedArt = if (!ArtworkUtils.isGenericAlbum(fallbackAlbum)) albumArtworkMap[albumKey] else null
-
-            val proposedEdit = PendingTrackEdit(
-                songId = song.id,
-                title = fallbackTitle,
-                artist = fallbackArtist,
-                album = fallbackAlbum,
-                year = "",
-                genre = "",
-                artworkUri = sharedArt,
-                path = song.path,
-                matchConfidence = if (sharedArt != null) 80 else 0
-            )
-
-            val isCleaned = fallbackTitle != song.title || fallbackArtist != song.artist || sharedArt != null
-            JanitorUpdateItem(song, currentArtUri, proposedEdit, isSelected = isCleaned)
+        val artworkUri: Uri? = if (metadata?.artworkUrl != null) {
+             viewModel.downloadImageToCache(context, metadata.artworkUrl)
         } else {
-            null
+            val albumKey = song.album.trim().lowercase()
+            val artFile = ArtworkUtils.getArtworkFile(context, song.id, song.path, song.album)
+            artFile?.let { Uri.fromFile(it) } ?: albumArtworkMap[albumKey]
         }
+
+        val pendingEdit = PendingTrackEdit(
+            songId = song.id,
+            title = metadata?.foundTitle ?: cleanTitle,
+            artist = metadata?.foundArtist ?: cleanArtist,
+            album = metadata?.album ?: song.album,
+            year = metadata?.year ?: "",
+            genre = metadata?.genre ?: "",
+            artworkUri = artworkUri,
+            path = song.path,
+            matchConfidence = ((metadata?.matchConfidence ?: 0.0) * 100).toInt()
+        )
+
+        return JanitorUpdateItem(
+            songId = song.id.toString(),
+            song = song,
+            currentArtworkUri = currentArtUri,
+            itemType = JanitorItemType.SUGGESTION,
+            rawMetadata = mapOf(
+                "title" to pendingEdit.title,
+                "artist" to pendingEdit.artist,
+                "album" to pendingEdit.album,
+                "year" to pendingEdit.year,
+                "genre" to pendingEdit.genre
+            ),
+            proposedEdit = pendingEdit,
+            suggestedMatches = listOf(SuggestedMetadataItem(
+                matchId = "BASE",
+                originalSong = song,
+                suggestedTitle = pendingEdit.title,
+                suggestedArtist = pendingEdit.artist,
+                suggestedAlbum = pendingEdit.album,
+                suggestedYear = pendingEdit.year,
+                suggestedGenre = pendingEdit.genre,
+                suggestedArtUri = pendingEdit.artworkUri?.toString(),
+                confidenceScore = (metadata?.matchConfidence ?: 0.0).toFloat()
+            ))
+        )
     }
 
-    private fun isTrackFixCandidate(context: Context, song: Song): Boolean {
-        val isMessy = isMessyOrUnknownTrack(song)
+    private fun addFallbackItem(song: Song, context: Context, albumArtworkMap: Map<String, Uri>, results: MutableList<JanitorUpdateItem>) {
+        val fallbackMeta = CloudMetadataResolver.extractOfflineFallbackMetadata(song.path, song.title, song.artist, song.album)
+        val albumKey = song.album.trim().lowercase()
         val artFile = ArtworkUtils.getArtworkFile(context, song.id, song.path, song.album)
-        val hasMissingArt = artFile == null || !artFile.exists() || artFile.length() == 0L
-        return isMessy || hasMissingArt
-    }
+        val artworkUri = artFile?.let { Uri.fromFile(it) } ?: albumArtworkMap[albumKey]
 
-    private fun isMessyOrUnknownTrack(song: Song): Boolean {
-        val artist = song.artist.trim()
-        val title = song.title.trim()
-
-        val isUnknownArtist = CloudMetadataResolver.isGenericArtist(artist)
-        val hasFileExtension = Regex("(?i)\\.(mp3|m4a|flac|wav|aac|ogg|wma)$").containsMatchIn(title)
-        val isGenericTitle = Regex("(?i)^(track|audio|sound|recording)[\\s\\-_]*\\d*$").matches(title) || title.isBlank()
-        
-        val cleanedTitle = YouTubeTitleCleaner.cleanTitle(title)
-        val hasClutter = !cleanedTitle.equals(title, ignoreCase = true) && 
-                         (title.contains("_") || 
-                          title.contains(Regex("""(?i)[(\[{].*?(official|music|video|audio|lyric|hd|4k|remix|visualizer|mv|topic|prod|feat|ft|full song).*?[)\]}]""")) || 
-                          title.contains(Regex("""(?i)\b(www\.|https?://)?[a-z0-9\-]+\.(com|net|org|io|me|co|info|biz)\b""")))
-
-        val isGenericArtistWithGenericTitle = isUnknownArtist && (isGenericTitle || artist.isBlank())
-
-        return isGenericArtistWithGenericTitle || hasFileExtension || isGenericTitle || hasClutter
+        val pendingEdit = PendingTrackEdit(
+            songId = song.id,
+            title = fallbackMeta.foundTitle ?: song.title,
+            artist = fallbackMeta.foundArtist ?: song.artist,
+            album = fallbackMeta.album ?: song.album,
+            year = fallbackMeta.year ?: "",
+            genre = fallbackMeta.genre ?: "",
+            artworkUri = artworkUri,
+            path = song.path,
+            matchConfidence = 50
+        )
+        val item = JanitorUpdateItem(
+            songId = song.id.toString(),
+            song = song,
+            currentArtworkUri = null,
+            itemType = JanitorItemType.SUGGESTION,
+            rawMetadata = mapOf(
+                "title" to pendingEdit.title,
+                "artist" to pendingEdit.artist,
+                "album" to pendingEdit.album
+            ),
+            proposedEdit = pendingEdit,
+            isSelected = false,
+            suggestedMatches = emptyList()
+        )
+        results.add(item)
     }
 }
