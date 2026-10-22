@@ -131,10 +131,22 @@ object MetadataBackupUtils {
             }
 
             val jsonString = jsonArray.toString()
-            try { appFile.writeText(jsonString) } catch (e: Exception) {
+            try {
+                val tempFile = File(appFile.parentFile, "${appFile.name}.tmp")
+                tempFile.writeText(jsonString)
+                if (appFile.exists()) appFile.delete()
+                tempFile.renameTo(appFile)
+            } catch (e: Exception) {
                 Log.d("MetadataBackupUtils", "App file write failed: ${e.message}")
             }
-            try { publicFile?.writeText(jsonString) } catch (e: Exception) {
+            try {
+                publicFile?.let { pub ->
+                    val tempPubFile = File(pub.parentFile, "${pub.name}.tmp")
+                    tempPubFile.writeText(jsonString)
+                    if (pub.exists()) pub.delete()
+                    tempPubFile.renameTo(pub)
+                }
+            } catch (e: Exception) {
                 Log.d("MetadataBackupUtils", "Public file write failed: ${e.message}")
             }
             saveToPublicMediaStore(context, jsonString)
@@ -303,4 +315,108 @@ object MetadataBackupUtils {
             if (snapshotFile.exists()) snapshotFile.delete()
         } catch (_: Exception) {}
     }
+
+    fun logTrackEdit(context: Context, oldSong: com.music.myusiq.domain.models.Song, newEdit: com.music.myusiq.ui.viewmodels.PendingTrackEdit) {
+        try {
+            val historyFile = File(context.getExternalFilesDir(null), "track_edit_history.json")
+            val existing = loadTrackEditHistory(context).toMutableList()
+            existing.removeAll { it.songId == oldSong.id }
+            val item = TrackEditHistoryItem(
+                songId = oldSong.id,
+                path = oldSong.path,
+                timestamp = System.currentTimeMillis(),
+                oldTitle = oldSong.title,
+                oldArtist = oldSong.artist,
+                oldAlbum = oldSong.album,
+                oldYear = oldSong.year ?: "",
+                oldGenre = oldSong.genre,
+                newTitle = newEdit.title,
+                newArtist = newEdit.artist,
+                newAlbum = newEdit.album,
+                newYear = newEdit.year,
+                newGenre = newEdit.genre
+            )
+            existing.add(0, item)
+
+            val jsonArray = JSONArray()
+            existing.take(100).forEach { h ->
+                val obj = JSONObject().apply {
+                    put("songId", h.songId)
+                    put("path", h.path)
+                    put("timestamp", h.timestamp)
+                    put("oldTitle", h.oldTitle)
+                    put("oldArtist", h.oldArtist)
+                    put("oldAlbum", h.oldAlbum)
+                    put("oldYear", h.oldYear)
+                    put("oldGenre", h.oldGenre)
+                    put("newTitle", h.newTitle)
+                    put("newArtist", h.newArtist)
+                    put("newAlbum", h.newAlbum)
+                    put("newYear", h.newYear)
+                    put("newGenre", h.newGenre)
+                }
+                jsonArray.put(obj)
+            }
+            historyFile.writeText(jsonArray.toString())
+        } catch (e: Exception) {
+            Log.e("MetadataBackupUtils", "Failed to log track edit history", e)
+        }
+    }
+
+    fun loadTrackEditHistory(context: Context): List<TrackEditHistoryItem> {
+        return try {
+            val historyFile = File(context.getExternalFilesDir(null), "track_edit_history.json")
+            if (!historyFile.exists() || historyFile.length() == 0L) return emptyList()
+
+            val jsonArray = JSONArray(historyFile.readText())
+            val list = mutableListOf<TrackEditHistoryItem>()
+            for (i in 0 until jsonArray.length()) {
+                val obj = jsonArray.getJSONObject(i)
+                list.add(
+                    TrackEditHistoryItem(
+                        songId = obj.optLong("songId", -1L),
+                        path = obj.optString("path", ""),
+                        timestamp = obj.optLong("timestamp", 0L),
+                        oldTitle = obj.optString("oldTitle", ""),
+                        oldArtist = obj.optString("oldArtist", ""),
+                        oldAlbum = obj.optString("oldAlbum", ""),
+                        oldYear = obj.optString("oldYear", ""),
+                        oldGenre = obj.optString("oldGenre", ""),
+                        newTitle = obj.optString("newTitle", ""),
+                        newArtist = obj.optString("newArtist", ""),
+                        newAlbum = obj.optString("newAlbum", ""),
+                        newYear = obj.optString("newYear", ""),
+                        newGenre = obj.optString("newGenre", "")
+                    )
+                )
+            }
+            list
+        } catch (e: Exception) {
+            Log.e("MetadataBackupUtils", "Failed to load track edit history", e)
+            emptyList()
+        }
+    }
+
+    fun clearTrackEditHistory(context: Context) {
+        try {
+            val historyFile = File(context.getExternalFilesDir(null), "track_edit_history.json")
+            if (historyFile.exists()) historyFile.delete()
+        } catch (_: Exception) {}
+    }
 }
+
+data class TrackEditHistoryItem(
+    val songId: Long,
+    val path: String,
+    val timestamp: Long,
+    val oldTitle: String,
+    val oldArtist: String,
+    val oldAlbum: String,
+    val oldYear: String,
+    val oldGenre: String,
+    val newTitle: String,
+    val newArtist: String,
+    val newAlbum: String,
+    val newYear: String,
+    val newGenre: String
+)

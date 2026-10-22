@@ -122,6 +122,7 @@ class PlaybackService : MediaLibraryService() {
     
     var isUpdatingMetadataInPlace = false
     private var lastBluetoothConnectionTime: Long = 0L
+    private var consecutiveErrorCount = 0
     
     var stopAfterCurrentTrack: Boolean = false
     private var isFadingForSleep = false
@@ -453,6 +454,7 @@ class PlaybackService : MediaLibraryService() {
         
         setupPlayer(playerA)
         setupPlayer(playerB)
+        EqualizerManager.initEqualizer(applicationContext, playerA.audioSessionId)
 
         val intent = Intent(this, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
@@ -1066,8 +1068,12 @@ class PlaybackService : MediaLibraryService() {
                         return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
                     }
                     "GET_AUDIO_SESSION_ID" -> {
+                        val sessionId = exoPlayer.audioSessionId
+                        if (sessionId > 0) {
+                            EqualizerManager.initEqualizer(applicationContext, sessionId)
+                        }
                         val resultBundle = Bundle()
-                        resultBundle.putInt("AUDIO_SESSION_ID", exoPlayer.audioSessionId)
+                        resultBundle.putInt("AUDIO_SESSION_ID", sessionId)
                         return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS, resultBundle))
                     }
                     "SET_REVERB" -> {
@@ -1237,12 +1243,18 @@ class PlaybackService : MediaLibraryService() {
             
             override fun onPlaybackStateChanged(playbackState: Int) {
                 if (exoPlayer !== player) return
+                if (playbackState == Player.STATE_READY) {
+                    consecutiveErrorCount = 0
+                }
                 Log.d("PlaybackService", "onPlaybackStateChanged: $playbackState")
                 updateWidgets()
             }
             
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 if (exoPlayer !== player) return
+                if (isPlaying) {
+                    consecutiveErrorCount = 0
+                }
                 Log.d("PlaybackService", "onIsPlayingChanged: $isPlaying")
                 updateWidgets() 
                 if (!isPlaying) {
@@ -1273,18 +1285,32 @@ class PlaybackService : MediaLibraryService() {
 
             override fun onPlayerError(error: PlaybackException) {
                 if (exoPlayer !== player) return
-                Log.e("PlaybackService", "Player error: ${error.errorCode}", error)
-                if (error.errorCode == PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND ||
-                    error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS) {
-                    serviceScope.launch {
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(applicationContext, "Error playing track", Toast.LENGTH_SHORT).show()
-                            if (player.hasNextMediaItem()) {
-                                delay(1000.milliseconds)
-                                player.seekToNextMediaItem()
-                                player.prepare()
-                                player.play()
-                            }
+                Log.e("PlaybackService", "Player error code: ${error.errorCode}", error)
+                consecutiveErrorCount++
+                
+                serviceScope.launch {
+                    withContext(Dispatchers.Main) {
+                        if (consecutiveErrorCount >= 5) {
+                            Toast.makeText(applicationContext, "Playback stopped due to repeated errors", Toast.LENGTH_LONG).show()
+                            consecutiveErrorCount = 0
+                            return@withContext
+                        }
+
+                        val message = when (error.errorCode) {
+                            PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND -> "Track file not found"
+                            PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS,
+                            PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED -> "Network or stream error"
+                            PlaybackException.ERROR_CODE_DECODER_INIT_FAILED,
+                            PlaybackException.ERROR_CODE_DECODER_QUERY_FAILED -> "Codec error playing track"
+                            else -> "Error playing track"
+                        }
+                        Toast.makeText(applicationContext, message, Toast.LENGTH_SHORT).show()
+
+                        if (player.hasNextMediaItem()) {
+                            delay(1000.milliseconds)
+                            player.seekToNextMediaItem()
+                            player.prepare()
+                            player.play()
                         }
                     }
                 }

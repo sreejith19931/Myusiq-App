@@ -92,5 +92,43 @@ class LibrarySettingsFragment : Fragment(R.layout.fragment_settings_library) {
                 .addToBackStack(null)
                 .commit()
         }
+
+        val switchBackgroundScan = view.findViewById<MaterialSwitch>(R.id.switchBackgroundScan)
+        switchBackgroundScan.isChecked = sharedPreferences.getBoolean("background_auto_scan", false)
+        switchBackgroundScan.setOnCheckedChangeListener { _, isChecked ->
+            sharedPreferences.edit { putBoolean("background_auto_scan", isChecked) }
+            val ctx = requireContext().applicationContext
+            if (isChecked) {
+                val constraints = androidx.work.Constraints.Builder()
+                    .setRequiredNetworkType(androidx.work.NetworkType.UNMETERED)
+                    .setRequiresCharging(true)
+                    .build()
+                val request = androidx.work.PeriodicWorkRequestBuilder<com.music.myusiq.service.JanitorBackgroundWorker>(24, java.util.concurrent.TimeUnit.HOURS)
+                    .setConstraints(constraints)
+                    .build()
+                androidx.work.WorkManager.getInstance(ctx).enqueueUniquePeriodicWork(
+                    "JanitorBackgroundScan",
+                    androidx.work.ExistingPeriodicWorkPolicy.KEEP,
+                    request
+                )
+                Toast.makeText(ctx, "Background Auto-Scan enabled (runs on Wi-Fi & Charging)", Toast.LENGTH_SHORT).show()
+            } else {
+                androidx.work.WorkManager.getInstance(ctx).cancelUniqueWork("JanitorBackgroundScan")
+                Toast.makeText(ctx, "Background Auto-Scan disabled", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        view.findViewById<View>(R.id.rowBackgroundScan)?.setOnClickListener {
+            switchBackgroundScan.isChecked = !switchBackgroundScan.isChecked
+        }
+
+        view.findViewById<View>(R.id.rowMetadataHistory).setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .setCustomAnimations(R.anim.slide_in_right, R.anim.slide_out_left, R.anim.slide_in_left, R.anim.slide_out_right)
+                .add(R.id.navHostFragment, MetadataHistoryFragment())
+                .hide(this)
+                .addToBackStack(null)
+                .commit()
+        }
     }
 }

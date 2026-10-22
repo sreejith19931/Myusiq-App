@@ -121,7 +121,6 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
                                 tvAutoFixStatus.text = state.message
                             }
                             is com.music.myusiq.domain.usecase.ScanState.ScanCompleted -> {
-                                viewModel.clearJanitorScanState()
                                 tvAutoFixStatus.text = "Scan complete. Review proposed updates."
                                 btnAutoFixAll.isEnabled = true
                                 performScan()
@@ -212,7 +211,7 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
         }
 
         btnCancel.setOnClickListener {
-            viewModel.clearJanitorScanState()
+            viewModel.cancelJanitorScan()
             dialog?.dismiss()
         }
 
@@ -304,7 +303,6 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
                         }
                         is com.music.myusiq.domain.usecase.ScanState.ScanCompleted -> {
                             android.util.Log.d("JanitorFragment", "ScanCompleted collected with ${state.results.size} results")
-                            viewModel.clearJanitorScanState()
                             candidateItems = state.results
 
                             if (candidateItems.isNotEmpty()) {
@@ -358,8 +356,12 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
             }
         }
 
+        dialog.setOnCancelListener {
+            viewModel.cancelJanitorScan()
+        }
         dialog.setOnDismissListener {
             scanObserverJob.cancel()
+            viewModel.cancelJanitorScan()
         }
 
         dialog.show()
@@ -527,8 +529,6 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Clean Duplicates")
             .setMessage("Myusiq identified $totalToDelete lower-quality redundant files to delete (keeping highest quality FLAC/higher bitrate versions):\n\n$fileListText")
-            .setTitle("Clean Duplicates")
-            .setMessage("This will delete $totalToDelete redundant files:\n\n$fileListText")
             .setNegativeButton("Cancel", null)
             .setPositiveButton("Clean Up") { _, _ -> deleteDuplicates() }
             .show()

@@ -45,7 +45,20 @@ class MatchSearchUseCase {
 
         val searchQuery = if (cleanArtist.isNotBlank()) "$cleanArtist $cleanTitle" else cleanTitle
 
-        var candidateList = CloudMetadataResolver.searchMultiple(
+        val durationSec = (song.duration / 1000).coerceAtLeast(0)
+        val acoustIdMatches = if (durationSec > 0 && fingerprint.isNotBlank()) {
+            com.music.myusiq.utils.AcoustIdClient.lookup(durationSec, fingerprint)
+        } else emptyList()
+
+        val acoustIdCandidates = mutableListOf<com.music.myusiq.utils.CloudMetadata>()
+        for (match in acoustIdMatches.take(2)) {
+            val meta = CloudMetadataResolver.fetchMusicBrainzByMbid(match.recordingId)
+            if (meta != null) {
+                acoustIdCandidates.add(meta.copy(matchConfidence = maxOf(meta.matchConfidence, match.score)))
+            }
+        }
+
+        var candidateList = acoustIdCandidates + CloudMetadataResolver.searchMultiple(
             query = searchQuery,
             cleanTitle = cleanTitle,
             cleanArtist = cleanArtist

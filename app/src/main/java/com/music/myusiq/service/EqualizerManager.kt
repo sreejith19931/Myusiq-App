@@ -15,6 +15,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlin.math.abs
+import kotlin.math.exp
+import kotlin.math.ln
 
 object EqualizerManager {
     private var equalizer: Equalizer? = null
@@ -59,6 +62,9 @@ object EqualizerManager {
 
     private val storageIoScope = CoroutineScope(Dispatchers.IO + Job())
 
+    val TEN_BAND_FREQUENCIES = intArrayOf(31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000)
+    private val currentLoaded10BandGains = ShortArray(10)
+
     val presetsMap = mapOf(
         "Flat"         to shortArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
         "Classical"    to shortArrayOf(500, 400, 300, 200, -100, -200, 200, 400, 500, 600),
@@ -71,11 +77,11 @@ object EqualizerManager {
     )
 
     fun initEqualizer(context: Context, audioSessionId: Int) {
-        if (audioSessionId == 0) return
-        
+        if (audioSessionId <= 0) return
+
         // If it's already the primary, nothing to do
         if (currentAudioSessionId == audioSessionId && equalizer != null) return
-        
+
         // If it's the secondary, promote it to primary
         if (secondaryAudioSessionId == audioSessionId && equalizerSecondary != null) {
             val oldEq = equalizer
@@ -84,14 +90,14 @@ object EqualizerManager {
             val oldRev = presetReverb
             val oldLoud = loudnessEnhancer
             val oldId = currentAudioSessionId
-            
+
             equalizer = equalizerSecondary
             bassBoost = bassBoostSecondary
             virtualizer = virtualizerSecondary
             presetReverb = presetReverbSecondary
             loudnessEnhancer = loudnessEnhancerSecondary
             currentAudioSessionId = secondaryAudioSessionId
-            
+
             equalizerSecondary = oldEq
             bassBoostSecondary = oldBb
             virtualizerSecondary = oldVirt
@@ -115,7 +121,7 @@ object EqualizerManager {
             currentAudioSessionId = audioSessionId
             try {
                 equalizer = Equalizer(0, audioSessionId)
-                
+
                 try {
                     bassBoost = BassBoost(0, audioSessionId)
                 } catch (e: Exception) {
@@ -126,6 +132,10 @@ object EqualizerManager {
                 try {
                     @Suppress("DEPRECATION")
                     virtualizer = Virtualizer(0, audioSessionId)
+                    try {
+                        @Suppress("DEPRECATION")
+                        virtualizer?.forceVirtualizationMode(Virtualizer.VIRTUALIZATION_MODE_BINAURAL)
+                    } catch (_: Exception) {}
                 } catch (e: Exception) {
                     Log.e("EqualizerManager", "Failed to create Virtualizer instance", e)
                     virtualizer = null
@@ -156,25 +166,67 @@ object EqualizerManager {
     }
 
     private fun releaseSecondaryInstance() {
-        try {
-            equalizerSecondary?.enabled = false
-            equalizerSecondary?.release()
-            bassBoostSecondary?.enabled = false
-            bassBoostSecondary?.release()
-            virtualizerSecondary?.enabled = false
-            virtualizerSecondary?.release()
-            presetReverbSecondary?.enabled = false
-            presetReverbSecondary?.release()
-            loudnessEnhancerSecondary?.enabled = false
-            loudnessEnhancerSecondary?.release()
-        } catch (e: Exception) {
-            Log.e("EqualizerManager", "Error releasing old secondary AudioFX", e)
-        }
+        runCatching { equalizerSecondary?.enabled = false }
+        runCatching { equalizerSecondary?.release() }
+        runCatching { bassBoostSecondary?.enabled = false }
+        runCatching { bassBoostSecondary?.release() }
+        runCatching { virtualizerSecondary?.enabled = false }
+        runCatching { virtualizerSecondary?.release() }
+        runCatching { presetReverbSecondary?.enabled = false }
+        runCatching { presetReverbSecondary?.release() }
+        runCatching { loudnessEnhancerSecondary?.enabled = false }
+        runCatching { loudnessEnhancerSecondary?.release() }
+
         equalizerSecondary = null
         bassBoostSecondary = null
         virtualizerSecondary = null
         presetReverbSecondary = null
         loudnessEnhancerSecondary = null
+    }
+
+    private fun get10BandLevelsForProfile(context: Context, profileIndex: Int): ShortArray {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val gains = ShortArray(10)
+        for (i in 0 until 10) {
+            gains[i] = prefs.getInt("eq_prof_${profileIndex}_custom_band_$i", 0).toShort()
+        }
+        return gains
+    }
+
+    private fun apply10BandLevelsToEqualizer(eq: Equalizer?, gains: ShortArray) {
+        if (eq == null) return
+        try {
+            val numHwBands = eq.numberOfBands.toInt()
+            if (numHwBands <= 0) return
+
+            val hwFreqs = IntArray(numHwBands) { i -> eq.getCenterFreq(i.toShort()) / 1000 }
+            val hwRange = eq.bandLevelRange
+            val minLevel = hwRange[0]
+            val maxLevel = hwRange[1]
+
+            for (h in 0 until numHwBands) {
+                val hFreq = hwFreqs[h].toDouble().coerceAtLeast(1.0)
+                val logHFreq = ln(hFreq)
+
+                var totalWeight = 0.0
+                var weightedGain = 0.0
+
+                for (i in 0 until gains.size.coerceAtMost(TEN_BAND_FREQUENCIES.size)) {
+                    val bandFreq = TEN_BAND_FREQUENCIES[i].toDouble()
+                    val logBandFreq = ln(bandFreq)
+                    val dist = abs(logHFreq - logBandFreq)
+                    val weight = exp(- (dist * dist) / 0.5)
+                    weightedGain += gains[i] * weight
+                    totalWeight += weight
+                }
+
+                val finalGain = if (totalWeight > 0.0) (weightedGain / totalWeight).toInt().toShort() else 0.toShort()
+                val clampedGain = finalGain.coerceIn(minLevel, maxLevel)
+                eq.setBandLevel(h.toShort(), clampedGain)
+            }
+        } catch (e: Exception) {
+            Log.e("EqualizerManager", "Error applying 10-band levels to HW Equalizer", e)
+        }
     }
 
     private fun applyToInstance(
@@ -187,25 +239,17 @@ object EqualizerManager {
         presetName: String,
         isEnabled: Boolean
     ) {
+        val gains = if (presetName == "Custom") {
+            get10BandLevelsForProfile(context, currentActiveProfile)
+        } else {
+            getAllPresets(context)[presetName] ?: ShortArray(10)
+        }
+        System.arraycopy(gains, 0, currentLoaded10BandGains, 0, gains.size.coerceAtMost(10))
+
         eq?.let {
             try {
                 it.enabled = isEnabled
-                if (presetName == "Custom") {
-                    for (i in 0 until it.numberOfBands) {
-                        val bandIndex = i.toShort()
-                        val savedLevel = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                            .getInt("eq_prof_${currentActiveProfile}_custom_band_$bandIndex", 0)
-                        it.setBandLevel(bandIndex, savedLevel.toShort())
-                    }
-                } else {
-                    val all = getAllPresets(context)
-                    all[presetName]?.let { gains ->
-                        for (i in 0 until it.numberOfBands) {
-                            val gain = if (i < gains.size) gains[i] else 0.toShort()
-                            it.setBandLevel(i.toShort(), gain)
-                        }
-                    }
-                }
+                apply10BandLevelsToEqualizer(it, currentLoaded10BandGains)
             } catch (e: Exception) {
                 Log.e("EqualizerManager", "Error applying EQ settings", e)
             }
@@ -218,12 +262,14 @@ object EqualizerManager {
         _bassBoostStrength.value = savedBass
         bb?.let {
             try {
-                if (it.strengthSupported) {
-                    it.setStrength(savedBass)
-                    it.enabled = isEnabled && savedBass > 0
-                }
+                it.setStrength(savedBass)
             } catch (e: Exception) {
-                Log.e("EqualizerManager", "Error applying BassBoost", e)
+                Log.e("EqualizerManager", "Error setting BassBoost strength", e)
+            }
+            try {
+                it.enabled = isEnabled && savedBass > 0
+            } catch (e: Exception) {
+                Log.e("EqualizerManager", "Error enabling BassBoost", e)
             }
         }
 
@@ -232,12 +278,18 @@ object EqualizerManager {
         _virtualizerStrength.value = savedVirt
         virt?.let {
             try {
-                if (it.strengthSupported) {
-                    it.setStrength(savedVirt)
-                    it.enabled = isEnabled && savedVirt > 0
-                }
+                @Suppress("DEPRECATION")
+                it.forceVirtualizationMode(Virtualizer.VIRTUALIZATION_MODE_BINAURAL)
+            } catch (_: Exception) {}
+            try {
+                it.setStrength(savedVirt)
             } catch (e: Exception) {
-                Log.e("EqualizerManager", "Error applying Virtualizer", e)
+                Log.e("EqualizerManager", "Error setting Virtualizer strength", e)
+            }
+            try {
+                it.enabled = isEnabled && savedVirt > 0
+            } catch (e: Exception) {
+                Log.e("EqualizerManager", "Error enabling Virtualizer", e)
             }
         }
 
@@ -266,24 +318,43 @@ object EqualizerManager {
         }
     }
 
+    private fun saveEqualizerEnabledState(context: Context, isEnabled: Boolean) {
+        val appContext = context.applicationContext
+        storageIoScope.launch {
+            val prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            prefs.edit(commit = false) {
+                putBoolean("eq_enabled_prof_$currentActiveProfile", isEnabled)
+            }
+        }
+    }
+
     fun setBassBoostStrength(context: Context, strength: Short) {
         _bassBoostStrength.value = strength
-        try {
-            bassBoost?.let {
-                if (it.strengthSupported) {
-                    it.setStrength(strength)
-                    it.enabled = _isEqualizerEnabled.value && strength > 0
-                }
-            }
-            bassBoostSecondary?.let {
-                if (it.strengthSupported) {
-                    it.setStrength(strength)
-                    it.enabled = _isEqualizerEnabled.value && strength > 0
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("EqualizerManager", "Error setting BassBoost strength", e)
+
+        if (strength > 0 && !_isEqualizerEnabled.value) {
+            _isEqualizerEnabled.value = true
+            saveEqualizerEnabledState(context, true)
         }
+
+        val isEnabled = _isEqualizerEnabled.value && strength > 0
+
+        fun applyTo(bb: BassBoost?) {
+            bb?.let {
+                try {
+                    it.setStrength(strength)
+                } catch (e: Exception) {
+                    Log.e("EqualizerManager", "Error setting BassBoost strength", e)
+                }
+                try {
+                    it.enabled = isEnabled
+                } catch (e: Exception) {
+                    Log.e("EqualizerManager", "Error enabling BassBoost", e)
+                }
+            }
+        }
+
+        applyTo(bassBoost)
+        applyTo(bassBoostSecondary)
 
         val appContext = context.applicationContext
         storageIoScope.launch {
@@ -296,22 +367,35 @@ object EqualizerManager {
 
     fun setVirtualizerStrength(context: Context, strength: Short) {
         _virtualizerStrength.value = strength
-        try {
-            virtualizer?.let {
-                if (it.strengthSupported) {
-                    it.setStrength(strength)
-                    it.enabled = _isEqualizerEnabled.value && strength > 0
-                }
-            }
-            virtualizerSecondary?.let {
-                if (it.strengthSupported) {
-                    it.setStrength(strength)
-                    it.enabled = _isEqualizerEnabled.value && strength > 0
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("EqualizerManager", "Error setting Virtualizer strength", e)
+
+        if (strength > 0 && !_isEqualizerEnabled.value) {
+            _isEqualizerEnabled.value = true
+            saveEqualizerEnabledState(context, true)
         }
+
+        val isEnabled = _isEqualizerEnabled.value && strength > 0
+
+        fun applyTo(v: Virtualizer?) {
+            v?.let {
+                try {
+                    @Suppress("DEPRECATION")
+                    it.forceVirtualizationMode(Virtualizer.VIRTUALIZATION_MODE_BINAURAL)
+                } catch (_: Exception) {}
+                try {
+                    it.setStrength(strength)
+                } catch (e: Exception) {
+                    Log.e("EqualizerManager", "Error setting Virtualizer strength", e)
+                }
+                try {
+                    it.enabled = isEnabled
+                } catch (e: Exception) {
+                    Log.e("EqualizerManager", "Error enabling Virtualizer", e)
+                }
+            }
+        }
+
+        applyTo(virtualizer)
+        applyTo(virtualizerSecondary)
 
         val appContext = context.applicationContext
         storageIoScope.launch {
@@ -324,14 +408,21 @@ object EqualizerManager {
 
     fun setPresetReverb(context: Context, preset: Short) {
         _presetReverbPreset.value = preset
+        if (preset > 0 && !_isEqualizerEnabled.value) {
+            _isEqualizerEnabled.value = true
+            saveEqualizerEnabledState(context, true)
+        }
+
+        val isEnabled = _isEqualizerEnabled.value && preset > 0
+
         try {
             presetReverb?.let {
                 it.preset = preset
-                it.enabled = _isEqualizerEnabled.value && preset > 0
+                it.enabled = isEnabled
             }
             presetReverbSecondary?.let {
                 it.preset = preset
-                it.enabled = _isEqualizerEnabled.value && preset > 0
+                it.enabled = isEnabled
             }
         } catch (e: Exception) {
             Log.e("EqualizerManager", "Error setting PresetReverb", e)
@@ -348,14 +439,21 @@ object EqualizerManager {
 
     fun setLoudnessGain(context: Context, gainmB: Int) {
         _loudnessGain.value = gainmB
+        if (gainmB > 0 && !_isEqualizerEnabled.value) {
+            _isEqualizerEnabled.value = true
+            saveEqualizerEnabledState(context, true)
+        }
+
+        val isEnabled = _isEqualizerEnabled.value && gainmB > 0
+
         try {
             loudnessEnhancer?.let {
                 it.setTargetGain(gainmB)
-                it.enabled = _isEqualizerEnabled.value && gainmB > 0
+                it.enabled = isEnabled
             }
             loudnessEnhancerSecondary?.let {
                 it.setTargetGain(gainmB)
-                it.enabled = _isEqualizerEnabled.value && gainmB > 0
+                it.enabled = isEnabled
             }
         } catch (e: Exception) {
             Log.e("EqualizerManager", "Error setting LoudnessEnhancer gain", e)
@@ -433,12 +531,12 @@ object EqualizerManager {
                 android.media.AudioDeviceInfo.TYPE_HEARING_AID,
                 android.media.AudioDeviceInfo.TYPE_BLE_HEADSET,
                 android.media.AudioDeviceInfo.TYPE_BLE_SPEAKER -> return PROFILE_BLUETOOTH
-                
+
                 android.media.AudioDeviceInfo.TYPE_WIRED_HEADSET,
                 android.media.AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
                 android.media.AudioDeviceInfo.TYPE_USB_HEADSET,
                 android.media.AudioDeviceInfo.TYPE_USB_DEVICE -> return PROFILE_WIRED
-                
+
                 else -> {}
             }
         }
@@ -463,7 +561,7 @@ object EqualizerManager {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val isEnabled = prefs.getBoolean("eq_enabled_prof_$profileIndex", false)
         val activePresetName = prefs.getString("eq_prof_${profileIndex}_active_preset", "Flat") ?: "Flat"
-        
+
         _isEqualizerEnabled.value = isEnabled
         applyToInstance(
             equalizer, bassBoost, virtualizer, presetReverb, loudnessEnhancer,
@@ -476,8 +574,9 @@ object EqualizerManager {
     }
 
     fun applyPresetToHardware(context: Context, presetName: String, saveState: Boolean = true): Boolean {
-        if (!presetsMap.containsKey(presetName)) return false
-        
+        val allPresets = getAllPresets(context)
+        if (!allPresets.containsKey(presetName)) return false
+
         val isEnabled = _isEqualizerEnabled.value
         applyToInstance(
             equalizer, bassBoost, virtualizer, presetReverb, loudnessEnhancer,
@@ -530,35 +629,56 @@ object EqualizerManager {
             Log.e("EqualizerManager", "Error toggling equalizer", e)
         }
 
+        saveEqualizerEnabledState(context, isEnabled)
+    }
+
+    fun getNumberOfBands(): Short = 10.toShort()
+
+    fun getCenterFrequency(band: Short): Int {
+        val index = band.toInt()
+        if (index in TEN_BAND_FREQUENCIES.indices) {
+            return TEN_BAND_FREQUENCIES[index] * 1000
+        }
+        return 0
+    }
+
+    fun getBandLevelRange(): ShortArray = shortArrayOf(-1500, 1500)
+
+    fun getBandLevel(band: Short): Short {
+        val index = band.toInt()
+        if (index in 0 until 10) {
+            return currentLoaded10BandGains[index]
+        }
+        return 0
+    }
+
+    fun setBandLevel(context: Context, band: Short, level: Short) {
+        val bIndex = band.toInt()
+        if (bIndex !in 0 until 10) return
+
+        currentLoaded10BandGains[bIndex] = level
+
+        if (!_isEqualizerEnabled.value) {
+            _isEqualizerEnabled.value = true
+            saveEqualizerEnabledState(context, true)
+        }
+
+        equalizer?.let {
+            it.enabled = _isEqualizerEnabled.value
+            apply10BandLevelsToEqualizer(it, currentLoaded10BandGains)
+        }
+        equalizerSecondary?.let {
+            it.enabled = _isEqualizerEnabled.value
+            apply10BandLevelsToEqualizer(it, currentLoaded10BandGains)
+        }
+
         val appContext = context.applicationContext
         storageIoScope.launch {
             val prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             prefs.edit(commit = false) {
-                putBoolean("eq_enabled_prof_$currentActiveProfile", isEnabled)
+                putInt("eq_prof_${currentActiveProfile}_custom_band_$bIndex", level.toInt())
+                putString("eq_prof_${currentActiveProfile}_active_preset", "Custom")
             }
-        }
-    }
-
-    fun getNumberOfBands(): Short = equalizer?.numberOfBands ?: 0
-    fun getCenterFrequency(band: Short): Int = equalizer?.getCenterFreq(band) ?: 0
-    fun getBandLevelRange(): ShortArray = equalizer?.bandLevelRange ?: shortArrayOf(-1500, 1500)
-    fun getBandLevel(band: Short): Short = equalizer?.getBandLevel(band) ?: 0
-
-    fun setBandLevel(context: Context, band: Short, level: Short) {
-        try {
-            equalizer?.setBandLevel(band, level)
-            equalizerSecondary?.setBandLevel(band, level)
-
-            val appContext = context.applicationContext
-            storageIoScope.launch {
-                val prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                prefs.edit(commit = false) {
-                    putInt("eq_prof_${currentActiveProfile}_custom_band_$band", level.toInt())
-                    putString("eq_prof_${currentActiveProfile}_active_preset", "Custom")
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("EqualizerManager", "Error setting band level", e)
         }
     }
 
@@ -573,17 +693,19 @@ object EqualizerManager {
     }
 
     fun release() {
-        try {
-            equalizer?.release()
-            equalizerSecondary?.release()
-            releaseSecondaryInstance()
-            bassBoost?.release()
-            virtualizer?.release()
-            presetReverb?.release()
-            loudnessEnhancer?.release()
-        } catch (e: Exception) {
-            Log.e("EqualizerManager", "Error final release", e)
-        }
+        runCatching { equalizer?.enabled = false }
+        runCatching { equalizer?.release() }
+        runCatching { bassBoost?.enabled = false }
+        runCatching { bassBoost?.release() }
+        runCatching { virtualizer?.enabled = false }
+        runCatching { virtualizer?.release() }
+        runCatching { presetReverb?.enabled = false }
+        runCatching { presetReverb?.release() }
+        runCatching { loudnessEnhancer?.enabled = false }
+        runCatching { loudnessEnhancer?.release() }
+
+        releaseSecondaryInstance()
+
         equalizer = null
         bassBoost = null
         virtualizer = null

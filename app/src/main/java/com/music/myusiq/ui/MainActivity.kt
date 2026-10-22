@@ -233,6 +233,20 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         ChangelogManager.checkAndShowChangelog(this)
         setupBulkUpdateObserver()
+
+        if (intent?.getBooleanExtra("auto_start_janitor", false) == true) {
+            intent.removeExtra("auto_start_janitor")
+            val fragment = LibraryJanitorFragment().apply {
+                arguments = Bundle().apply {
+                    putBoolean("auto_start_scan", true)
+                }
+            }
+            supportFragmentManager.beginTransaction()
+                .setCustomAnimations(R.anim.slide_in_right, R.anim.slide_out_left, R.anim.slide_in_left, R.anim.slide_out_right)
+                .add(R.id.navHostFragment, fragment)
+                .addToBackStack(null)
+                .commit()
+        }
     }
 
     private fun setupUI() {

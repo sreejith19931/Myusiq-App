@@ -28,12 +28,11 @@ import java.util.Collections
 
 sealed class ScanState {
     data class Progress(val percentage: Int, val message: String) : ScanState()
-    data class ResultItem(val item: JanitorUpdateItem) : ScanState()
     data class ScanCompleted(val results: List<JanitorUpdateItem>) : ScanState()
 }
 
 class JanitorScanUseCase(
-    private val viewModel: PlaybackViewModel,
+    private val downloadImage: suspend (Context, String) -> Uri?,
     private val metadataSanitizerUseCase: MetadataSanitizerUseCase,
     private val fingerprintingUseCase: AudioFingerprintingUseCase,
     private val matchSearchUseCase: MatchSearchUseCase
@@ -109,7 +108,7 @@ class JanitorScanUseCase(
                                         if (bestMatch.suggestedArtUri.startsWith("http://") || bestMatch.suggestedArtUri.startsWith("https://")) {
                                             try {
                                                 kotlinx.coroutines.withTimeoutOrNull(2500L) {
-                                                    viewModel.downloadImageToCache(context, bestMatch.suggestedArtUri)
+                                                    downloadImage(context, bestMatch.suggestedArtUri)
                                                 }
                                             } catch (_: Exception) { null }
                                         } else {
@@ -199,66 +198,7 @@ class JanitorScanUseCase(
         }
     }
 
-    private suspend fun determineBaseJanitorItem(
-        song: Song,
-        context: Context,
-        albumArtworkMap: MutableMap<String, Uri>
-    ): JanitorUpdateItem? {
-        val cleanTitle = YouTubeTitleCleaner.cleanTitle(song.title).ifBlank { YouTubeTitleCleaner.cleanFilename(song.path) }
-        val cleanArtist = CloudMetadataResolver.cleanArtist(song.artist)
 
-        val metadata = CloudMetadataResolver.resolve(cleanTitle, cleanArtist)
-
-        val currentArtUri = try {
-            android.content.ContentUris.withAppendedId(android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id)
-        } catch (_: Exception) { null }
-
-        val artworkUri: Uri? = if (metadata?.artworkUrl != null) {
-             viewModel.downloadImageToCache(context, metadata.artworkUrl)
-        } else {
-            val albumKey = song.album.trim().lowercase()
-            val artFile = ArtworkUtils.getArtworkFile(context, song.id, song.path, song.album)
-            artFile?.let { Uri.fromFile(it) } ?: albumArtworkMap[albumKey]
-        }
-
-        val pendingEdit = PendingTrackEdit(
-            songId = song.id,
-            title = metadata?.foundTitle ?: cleanTitle,
-            artist = metadata?.foundArtist ?: cleanArtist,
-            album = metadata?.album ?: song.album,
-            year = metadata?.year ?: "",
-            genre = metadata?.genre ?: "",
-            artworkUri = artworkUri,
-            path = song.path,
-            matchConfidence = ((metadata?.matchConfidence ?: 0.0) * 100).toInt()
-        )
-
-        return JanitorUpdateItem(
-            songId = song.id.toString(),
-            song = song,
-            currentArtworkUri = currentArtUri,
-            itemType = JanitorItemType.SUGGESTION,
-            rawMetadata = mapOf(
-                "title" to pendingEdit.title,
-                "artist" to pendingEdit.artist,
-                "album" to pendingEdit.album,
-                "year" to pendingEdit.year,
-                "genre" to pendingEdit.genre
-            ),
-            proposedEdit = pendingEdit,
-            suggestedMatches = listOf(SuggestedMetadataItem(
-                matchId = "BASE",
-                originalSong = song,
-                suggestedTitle = pendingEdit.title,
-                suggestedArtist = pendingEdit.artist,
-                suggestedAlbum = pendingEdit.album,
-                suggestedYear = pendingEdit.year,
-                suggestedGenre = pendingEdit.genre,
-                suggestedArtUri = pendingEdit.artworkUri?.toString(),
-                confidenceScore = (metadata?.matchConfidence ?: 0.0).toFloat()
-            ))
-        )
-    }
 
     private fun addFallbackItem(song: Song, context: Context, albumArtworkMap: Map<String, Uri>, results: MutableList<JanitorUpdateItem>) {
         val fallbackMeta = CloudMetadataResolver.extractOfflineFallbackMetadata(song.path, song.title, song.artist, song.album)

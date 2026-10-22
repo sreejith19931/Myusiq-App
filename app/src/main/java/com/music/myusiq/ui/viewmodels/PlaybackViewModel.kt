@@ -56,6 +56,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.session.MediaController
@@ -93,7 +94,12 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     private val metadataSanitizerUseCase = MetadataSanitizerUseCase()
     private val audioFingerprintUseCase = AudioFingerprintingUseCase()
     private val matchSearchUseCase = MatchSearchUseCase()
-    private val janitorScanUseCase = com.music.myusiq.domain.usecase.JanitorScanUseCase(this, metadataSanitizerUseCase, audioFingerprintUseCase, matchSearchUseCase)
+    private val janitorScanUseCase = com.music.myusiq.domain.usecase.JanitorScanUseCase(
+        downloadImage = { ctx, url -> downloadImageToCache(ctx, url) },
+        metadataSanitizerUseCase = metadataSanitizerUseCase,
+        fingerprintingUseCase = audioFingerprintUseCase,
+        matchSearchUseCase = matchSearchUseCase
+    )
     private val _janitorScanState = MutableStateFlow<com.music.myusiq.domain.usecase.ScanState?>(null)
     val janitorScanState: StateFlow<com.music.myusiq.domain.usecase.ScanState?> = _janitorScanState.asStateFlow()
 
@@ -119,6 +125,13 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun clearJanitorScanState() {
+        _janitorScanState.value = null
+    }
+
+    fun cancelJanitorScan() {
+        activeJanitorJob?.cancel()
+        activeJanitorJob = null
+        _isJanitorScanning.value = false
         _janitorScanState.value = null
     }
 
@@ -764,6 +777,10 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                             override fun onPositionDiscontinuity(oldPosition: Player.PositionInfo, newPosition: Player.PositionInfo, reason: Int) { syncServiceStateWithLiveData() }
                             override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) { syncServiceStateWithLiveData() }
                             override fun onRepeatModeChanged(repeatMode: Int) { syncServiceStateWithLiveData() }
+                            override fun onPlayerError(error: PlaybackException) {
+                                Log.e("PlaybackViewModel", "Player error: ${error.errorCode}", error)
+                                syncServiceStateWithLiveData()
+                            }
                             override fun onTimelineChanged(timeline: Timeline, reason: Int) {
                                 if (reason == Player.TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED) {
                                     syncServiceStateWithLiveData()

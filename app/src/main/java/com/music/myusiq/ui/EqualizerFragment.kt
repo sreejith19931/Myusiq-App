@@ -22,8 +22,11 @@ import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.chip.Chip
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import com.music.myusiq.service.EqualizerManager
+import com.music.myusiq.service.FftEngineManager
+import com.music.myusiq.ui.components.EqualizerSpectrumView
 import com.music.myusiq.ui.viewmodels.PlaybackViewModel
 import com.music.myusiq.R
 
@@ -35,24 +38,40 @@ class EqualizerFragment : Fragment(R.layout.fragment_equalizer) {
     private var switchEqualizer: MaterialSwitch? = null
     private var spinnerDeviceProfile: MaterialAutoCompleteTextView? = null
     private var llCustomSlidersWrapper: LinearLayout? = null
+    private var equalizerSpectrumView: EqualizerSpectrumView? = null
+    private var fftEngineManager: FftEngineManager? = null
+
     private val profiles = arrayOf("Device Speaker", "Wired Headphones", "Bluetooth Audio")
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        equalizerSpectrumView = view.findViewById(R.id.equalizerSpectrumView)
         glPresetContainer = view.findViewById(R.id.glPresetContainer)
         llCustomSlidersWrapper = view.findViewById(R.id.llCustomSlidersWrapper)
         llBandsContainer = view.findViewById(R.id.llBandsContainer)
         switchEqualizer = view.findViewById(R.id.switchEqualizer)
         spinnerDeviceProfile = view.findViewById(R.id.spinnerDeviceProfile)
+
         val context = context ?: return
         val safeAppContext = context.applicationContext
         val adapter = ArrayAdapter(context, android.R.layout.simple_list_item_1, profiles)
         spinnerDeviceProfile?.setAdapter(adapter)
 
+        fftEngineManager = FftEngineManager(safeAppContext) { fft ->
+            equalizerSpectrumView?.updateFftData(fft)
+        }
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.audioSessionId.collectLatest { id ->
+                        if (id != -1) {
+                            fftEngineManager?.attachToSession(id)
+                        }
+                    }
+                }
                 launch {
                     EqualizerManager.isEqualizerEnabled.collect { isEnabled ->
                         switchEqualizer?.let {
@@ -60,6 +79,7 @@ class EqualizerFragment : Fragment(R.layout.fragment_equalizer) {
                                 it.isChecked = isEnabled
                             }
                         }
+                        equalizerSpectrumView?.setEqEnabled(isEnabled)
                         togglePresetContainerState(isEnabled)
                     }
                 }
@@ -77,6 +97,7 @@ class EqualizerFragment : Fragment(R.layout.fragment_equalizer) {
 
         switchEqualizer?.setOnCheckedChangeListener { _, isChecked ->
             EqualizerManager.toggleEqualizer(safeAppContext, isChecked)
+            equalizerSpectrumView?.setEqEnabled(isChecked)
         }
 
         // Reverb Logic
@@ -100,6 +121,9 @@ class EqualizerFragment : Fragment(R.layout.fragment_equalizer) {
                 }
                 sharedPreferences.edit { putInt("reverb_preset", preset) }
                 viewModel.setReverbPreset(preset)
+                if (preset > 0 && switchEqualizer?.isChecked == false) {
+                    switchEqualizer?.isChecked = true
+                }
                 EqualizerManager.setPresetReverb(safeAppContext, preset.toShort())
             }
         }
@@ -136,6 +160,9 @@ class EqualizerFragment : Fragment(R.layout.fragment_equalizer) {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (fromUser) {
                     tvBassValue?.text = "${progress * 100 / 1000}%"
+                    if (progress > 0 && switchEqualizer?.isChecked == false) {
+                        switchEqualizer?.isChecked = true
+                    }
                     EqualizerManager.setBassBoostStrength(safeAppContext, progress.toShort())
                 }
             }
@@ -147,6 +174,9 @@ class EqualizerFragment : Fragment(R.layout.fragment_equalizer) {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (fromUser) {
                     tvVirtualizerValue?.text = "${progress * 100 / 1000}%"
+                    if (progress > 0 && switchEqualizer?.isChecked == false) {
+                        switchEqualizer?.isChecked = true
+                    }
                     EqualizerManager.setVirtualizerStrength(safeAppContext, progress.toShort())
                 }
             }
@@ -169,10 +199,19 @@ class EqualizerFragment : Fragment(R.layout.fragment_equalizer) {
                 features = listOf(
                     com.music.myusiq.utils.GuideFeatureItem(R.drawable.ic_equalizer, "Hardware Profile Auto-Switching", "Myusiq remembers separate EQ settings when using Device Speaker, Wired Headphones, or Bluetooth Audio."),
                     com.music.myusiq.utils.GuideFeatureItem(R.drawable.ic_speed, "Sound Profiles & Presets", "Tap sound profile chips (Bass Boost, Vocal Focus, Rock, Classical) to quickly switch frequency balances."),
-                    com.music.myusiq.utils.GuideFeatureItem(R.drawable.ic_volume_up, "5-Band Slider Control", "Select Custom to manually adjust individual frequency slider bands with smooth animated thumbs.")
+                    com.music.myusiq.utils.GuideFeatureItem(R.drawable.ic_volume_up, "10-Band Slider Control", "Select Custom to manually adjust individual 10-band frequency sliders with smooth animated controls.")
                 )
             )
         }
+    }
+
+    private fun updateSpectrumCurve() {
+        val numBands = EqualizerManager.getNumberOfBands().toInt()
+        val gains = ShortArray(numBands)
+        for (i in 0 until numBands) {
+            gains[i] = EqualizerManager.getBandLevel(i.toShort())
+        }
+        equalizerSpectrumView?.setBandLevels(gains)
     }
 
     @SuppressLint("UseKtx")
@@ -187,7 +226,6 @@ class EqualizerFragment : Fragment(R.layout.fragment_equalizer) {
         for (presetName in allPresets.keys) {
             val chip = Chip(safeContext).apply {
                 text = presetName
-                // We resolve the theme attribute to ensure it picks up our custom font overlay
                 val typedValue = TypedValue()
                 safeContext.theme.resolveAttribute(com.google.android.material.R.attr.textAppearanceLabelLarge, typedValue, true)
                 if (typedValue.resourceId != 0) {
@@ -214,6 +252,7 @@ class EqualizerFragment : Fragment(R.layout.fragment_equalizer) {
                         EqualizerManager.applyPresetToHardware(safeAppContext, presetName)
                         handleCustomSlidersVisibility(showSliders = false)
                     }
+                    updateSpectrumCurve()
                 }
             }
 
@@ -228,6 +267,7 @@ class EqualizerFragment : Fragment(R.layout.fragment_equalizer) {
             container.addView(chip)
         }
 
+        updateSpectrumCurve()
         handleCustomSlidersVisibility(currentlySavedPreset == "Custom")
         switchEqualizer?.let { togglePresetContainerState(it.isChecked) }
     }
@@ -243,13 +283,13 @@ class EqualizerFragment : Fragment(R.layout.fragment_equalizer) {
         val bandsContainer = llBandsContainer ?: return
         bandsContainer.removeAllViews()
 
-        val numBands = EqualizerManager.getNumberOfBands()
+        val numBands = EqualizerManager.getNumberOfBands().toInt()
         val range = EqualizerManager.getBandLevelRange()
 
         if (numBands <= 0) return
 
-        val minLevel = range[0]
-        val maxLevel = range[1]
+        val minLevel = range[0].toInt()
+        val maxLevel = range[1].toInt()
         val safeContext = context ?: return
         val safeAppContext = safeContext.applicationContext
         val inflater = LayoutInflater.from(safeContext)
@@ -266,12 +306,18 @@ class EqualizerFragment : Fragment(R.layout.fragment_equalizer) {
 
             val rowView = inflater.inflate(R.layout.item_equalizer_slider, bandsContainer, false)
             val tvLabel = rowView.findViewById<TextView>(R.id.tvBandLabel)
+            val tvGain = rowView.findViewById<TextView>(R.id.tvBandGain)
             val seekBar = rowView.findViewById<SeekBar>(R.id.sbBandSlider)
 
-            val targetProgress = EqualizerManager.getBandLevel(bandIndex) - minLevel
+            val currentBandLevel = EqualizerManager.getBandLevel(bandIndex).toInt()
+            val targetProgress = currentBandLevel - minLevel
             tvLabel.text = freqLabel
+
+            val dbVal = currentBandLevel / 100f
+            tvGain?.text = if (dbVal > 0) "+%.1f dB".format(dbVal) else "%.1f dB".format(dbVal)
+
             seekBar.max = maxLevel - minLevel
-            
+
             android.animation.ObjectAnimator.ofInt(seekBar, "progress", 0, targetProgress).apply {
                 duration = 300
                 start()
@@ -281,8 +327,15 @@ class EqualizerFragment : Fragment(R.layout.fragment_equalizer) {
                 object : SeekBar.OnSeekBarChangeListener {
                     override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
                         if (fromUser) {
+                            if (switchEqualizer?.isChecked == false) {
+                                switchEqualizer?.isChecked = true
+                            }
                             val finalLevel = (progress + minLevel).toShort()
+                            val gainDb = finalLevel / 100f
+                            tvGain?.text = if (gainDb > 0) "+%.1f dB".format(gainDb) else "%.1f dB".format(gainDb)
+
                             EqualizerManager.setBandLevel(safeAppContext, bandIndex, finalLevel)
+                            updateSpectrumCurve()
                         }
                     }
 
@@ -305,6 +358,7 @@ class EqualizerFragment : Fragment(R.layout.fragment_equalizer) {
             bandsContainer.addView(rowView)
         }
     }
+
     private fun togglePresetContainerState(isEnabled: Boolean) {
         glPresetContainer?.isEnabled = isEnabled
         llCustomSlidersWrapper?.isEnabled = isEnabled
@@ -323,7 +377,11 @@ class EqualizerFragment : Fragment(R.layout.fragment_equalizer) {
             }
         }
     }
+
     override fun onDestroyView() {
+        fftEngineManager?.release()
+        fftEngineManager = null
+        equalizerSpectrumView = null
         glPresetContainer = null
         llBandsContainer = null
         switchEqualizer = null

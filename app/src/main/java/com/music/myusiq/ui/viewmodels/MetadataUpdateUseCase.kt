@@ -92,6 +92,11 @@ class MetadataUpdateUseCase(
             Log.w("MetadataUpdateUseCase", "Skipping background update for currently playing track: ${data.songId}")
             return
         }
+
+        val originalSong = listener.getOriginalTrackList().find { it.id == data.songId }
+        if (originalSong != null) {
+            com.music.myusiq.utils.MetadataBackupUtils.logTrackEdit(context, originalSong, data)
+        }
         
         val uri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, data.songId)
         try {

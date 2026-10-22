@@ -8,18 +8,18 @@ package com.music.myusiq.utils
 object YouTubeTitleCleaner {
 
     private val bracketClutterRegex = Regex(
-        """(?i)[(\[{].*?(official|music\s+video|official\s+audio|lyric\s+video|hd\s+1080p|4k|visualizer|mv|topic|full\s+song|y2mate|ytmp3).*?[)\]}]"""
+        """(?i)[(\[{]\s*[^)\]}]*?(official|music\s+video|official\s+audio|lyric\s+video|hd\s+1080p|4k|visualizer|mv|topic|full\s+song|y2mate|ytmp3|ezmp3(\.[a-z]{2,4})?|www\.|[a-z0-9\-]+\.[a-z]{2,6})[^)\]}]*?\s*[)\]}]"""
     )
 
     private val unbracketedClutterRegex = Regex(
-        """(?i)\b(official\s+(music\s+)?video|official\s+audio|lyric\s+video|4k\s+video|hd\s+1080p|y2mate(\.is|\.com)?|ytmp3)\b"""
+        """(?i)\b(official\s+(music\s+)?video|official\s+audio|lyric\s+video|4k\s+video|hd\s+1080p|y2mate(\.is|\.com)?|ytmp3|ezmp3(\.[a-z]{2,4})?)\b"""
     )
 
     private val extensionRegex = Regex("(?i)(\\.mp3|\\.m4a|\\.wav|\\.flac|\\.aac|\\.ogg|\\.wma)$")
 
     private val trackIndexRegex = Regex("(?i)^(\\d{1,3}[.\\-_\\s]+|track[_\\s-]*\\d{1,3}[.\\-_\\s]*)")
 
-    private val domainRegex = Regex("""(?i)\b(www\.|https?://)?[a-z0-9\-]+\.(com|net|org|io|me|co|info|biz)\b""")
+    private val domainRegex = Regex("""(?i)\b(www\.|https?://)?[a-z0-9\-]+\.[a-z]{2,6}\b""")
 
     /**
      * Cleans YouTube clutter, file extensions, domain URLs, underscores, and leading track numbers from the raw title string.
@@ -34,6 +34,7 @@ object YouTubeTitleCleaner {
             .replace(domainRegex, "")
             .replace(bracketClutterRegex, "")
             .replace(unbracketedClutterRegex, "")
+            .replace(Regex("""\(\s*\)|\[\s*\]|\{\s*\}"""), "")
             .trim()
 
         val step2 = step1.replace(trackIndexRegex, "").trim()

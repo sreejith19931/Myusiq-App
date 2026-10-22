@@ -14,12 +14,25 @@ object ChangelogManager {
     private const val PREFS_NAME = "myusiq_changelog_prefs"
     private const val KEY_LAST_VERSION_CODE = "last_seen_version_code"
 
+    var isChangelogShowing: Boolean = false
+        private set
+
+    private val dismissedListeners = mutableListOf<() -> Unit>()
+
+    fun addOnDismissListener(listener: () -> Unit) {
+        if (!isChangelogShowing) {
+            listener()
+        } else {
+            dismissedListeners.add(listener)
+        }
+    }
+
     fun checkAndShowChangelog(activity: Activity, forceShow: Boolean = false) {
         val prefs = activity.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val lastSeenVersionCode = prefs.getInt(KEY_LAST_VERSION_CODE, 0)
 
-        var currentVersionCode = 10303
-        var currentVersionName = "1.3.0-beta3"
+        var currentVersionCode = 10300
+        var currentVersionName = "1.3.0"
 
         try {
             val pInfo = activity.packageManager.getPackageInfo(activity.packageName, 0)
@@ -29,7 +42,7 @@ object ChangelogManager {
                 @Suppress("DEPRECATION")
                 pInfo.versionCode
             }
-            currentVersionName = pInfo.versionName ?: "1.3.0-beta3"
+            currentVersionName = pInfo.versionName ?: "1.3.0"
         } catch (_: Exception) {}
 
         val isBetaBuild = currentVersionName.contains("beta", ignoreCase = true) || activity.packageName.endsWith(".beta")
@@ -39,6 +52,8 @@ object ChangelogManager {
                 return
             }
         }
+
+        isChangelogShowing = true
 
         val inflater = LayoutInflater.from(activity)
         val dialogView = inflater.inflate(R.layout.dialog_changelog, null)
@@ -54,8 +69,15 @@ object ChangelogManager {
             .setView(dialogView)
             .create()
 
-        btnGotIt.setOnClickListener {
+        dialog.setOnDismissListener {
+            isChangelogShowing = false
             prefs.edit { putInt(KEY_LAST_VERSION_CODE, currentVersionCode) }
+            val listeners = dismissedListeners.toList()
+            dismissedListeners.clear()
+            listeners.forEach { it() }
+        }
+
+        btnGotIt.setOnClickListener {
             dialog.dismiss()
         }
 
