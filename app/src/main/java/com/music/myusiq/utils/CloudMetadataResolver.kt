@@ -412,6 +412,64 @@ object CloudMetadataResolver {
         }
     }
 
+    suspend fun fetchMusicBrainzByMbid(mbid: String): CloudMetadata? {
+        if (mbid.isBlank()) return null
+        enforceRateLimit(250L)
+        return try {
+            val url = URL("https://musicbrainz.org/ws/2/recording/$mbid?inc=artists+releases+tags&fmt=json")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.setRequestProperty("User-Agent", "MyusiqMusicPlayer/1.0 (android.app@myusiq.internal)")
+            connection.connectTimeout = 5000
+            connection.readTimeout = 5000
+
+            if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+                val response = connection.inputStream.bufferedReader().use { it.readText() }
+                val item = JSONObject(response)
+                val foundTitle = item.optString("title").takeIf { it.isNotBlank() } ?: return null
+                val artistCredit = item.optJSONArray("artist-credit")
+                val foundArtist = if (artistCredit != null && artistCredit.length() > 0) {
+                    artistCredit.getJSONObject(0).optString("name").takeIf { it.isNotBlank() }
+                } else null
+
+                val releases = item.optJSONArray("releases")
+                var album: String? = null
+                var year: String? = null
+                if (releases != null && releases.length() > 0) {
+                    val rel = releases.getJSONObject(0)
+                    album = rel.optString("title").takeIf { it.isNotBlank() }
+                    val relDate = rel.optString("date")
+                    if (relDate.length >= 4) year = relDate.substring(0, 4)
+                }
+
+                val tags = item.optJSONArray("tags")
+                val genre = if (tags != null && tags.length() > 0) {
+                    tags.getJSONObject(0).optString("name").takeIf { it.isNotBlank() }
+                } else null
+
+                var artworkUrl: String? = null
+                if (foundArtist != null) {
+                    val itunes = fetchItunesMetadata("$foundArtist $foundTitle", foundTitle, foundArtist)
+                    artworkUrl = itunes?.artworkUrl
+                }
+
+                return CloudMetadata(
+                    album = album,
+                    year = year,
+                    genre = genre,
+                    artworkUrl = artworkUrl,
+                    foundArtist = foundArtist ?: "Unknown Artist",
+                    foundTitle = foundTitle,
+                    matchConfidence = 0.95
+                )
+            }
+            null
+        } catch (e: Exception) {
+            Log.d("CloudMetadata", "MusicBrainz MBID lookup failed for '$mbid': ${e.message}")
+            null
+        }
+    }
+
     private fun fetchLrcLibLyrics(artist: String, title: String): String? {
         val encArtist = URLEncoder.encode(artist, "UTF-8").replace("+", "%20")
         val encTitle = URLEncoder.encode(title, "UTF-8").replace("+", "%20")

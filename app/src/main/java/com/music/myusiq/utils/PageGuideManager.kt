@@ -35,6 +35,13 @@ object PageGuideManager {
             return
         }
 
+        if (pageKey == "tracks" && ChangelogManager.isChangelogShowing) {
+            ChangelogManager.addOnDismissListener {
+                showGuideIfNeeded(context, pageKey, pageTitle, headerIconRes, features, forceShow)
+            }
+            return
+        }
+
         val inflater = LayoutInflater.from(context)
         val dialogView = inflater.inflate(R.layout.dialog_page_guide, null)
 

@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2026-10-18
+
+### Added & Fixed
+- **10-Band Equalizer & Spectrum Visualizer**: Expanded equalizer to 10 frequency bands (`31Hz`, `62Hz`, `125Hz`, `250Hz`, `500Hz`, `1kHz`, `2kHz`, `4kHz`, `8kHz`, `16kHz`) with a real-time FFT frequency spectrum analyzer.
+- **Hardware AudioFX Suite**: Integrated native `BassBoost`, `Virtualizer` (3D Spatial surround), `PresetReverb`, and `LoudnessEnhancer` audio effects with live UI sliders & toggle chips.
+- **Variable Playback Speed & Pitch Control**: Variable speed controls (`0.75x`, `1.0x`, `1.25x`, `1.5x`, `2.0x`) with pitch locking via ExoPlayer `PlaybackParameters`.
+- **EBU R128 ReplayGain Normalization**: Automatic ReplayGain parsing with +6dB preamp volume compensation for dynamic, consistent volume across all tracks.
+- **Audio Output Target Routing**: Profile memory auto-switching across Device Speaker, Wired Headphones, and Bluetooth Audio outputs.
+- **Dynamic Hi-Res Quality Badges**: Real-time sample rate (`96.0 kHz`), format (`FLAC`), and bitrate badges rendered on the Now Playing player screen.
+- **Playback Engine Stability & Error Safeguards**: Error recovery, HAL resource leak prevention, and visualizer bounds safeguards across custom ROMs.
+
 ## [1.3.0-beta3] - 2026-10-16
 
 ### Added & Fixed

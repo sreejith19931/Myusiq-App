@@ -29,6 +29,15 @@ class UtilitiesTest {
     }
 
     @Test
+    fun testYouTubeTitleCleaner_CleanEzmp3Clutter() {
+        val rawTitle = "Imagine Dragons - Believer [ ezmp3.cc ].mp3"
+        val (artist, title) = YouTubeTitleCleaner.cleanAndSplit(rawTitle)
+
+        assertEquals("Imagine Dragons", artist)
+        assertEquals("Believer", title)
+    }
+
+    @Test
     fun testTransliterationUtil_FallbackOrTransliterate() {
         val input = "Namaste"
         val output = TransliterationUtil.transliterate(input)

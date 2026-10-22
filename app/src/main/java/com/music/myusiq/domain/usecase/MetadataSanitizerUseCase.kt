@@ -42,19 +42,18 @@ class MetadataSanitizerUseCase {
 
     private fun cleanTitle(title: String?): String {
         // Remove common junk characters from titles
-        return (title ?: "").replace(Regex("[^a-zA-Z0-9\\s\\-_.,()?'\"'\\:]"), "").trim()
-                   .trim()
+        return (title ?: "").replace(Regex("[^a-zA-Z0-9\\s\\-_.,()?'\":]"), "").trim()
     }
 
     private fun cleanArtist(artist: String?): String {
         // Remove common junk characters from artists
-        return (artist ?: "").replace(Regex("[^a-zA-Z0-9\\s\\-_.,()?'\"'']"), "")
+        return (artist ?: "").replace(Regex("[^a-zA-Z0-9\\s\\-_.,()?'\"]"), "")
                    .trim()
     }
 
     private fun cleanAlbum(album: String?): String {
         // Remove common junk characters from album names
-        return (album ?: "").replace(Regex("[^a-zA-Z0-9\\s\\-_.,()?'\"'']"), "")
+        return (album ?: "").replace(Regex("[^a-zA-Z0-9\\s\\-_.,()?'\"]"), "")
                    .trim()
     }
 }

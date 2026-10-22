@@ -1,15 +1,28 @@
 package com.music.myusiq.service
 
-import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
 import android.media.audiofx.Visualizer
-import com.music.myusiq.ui.components.AnimatedWaveSeekBar
+import android.util.Log
 
 class FftEngineManager(
     private val context: Context,
-    private val waveSeekBar: AnimatedWaveSeekBar,
+    private val onFftDataCaptured: ((ByteArray) -> Unit)? = null,
 ) {
+    constructor(
+        context: Context,
+        waveSeekBar: com.music.myusiq.ui.components.AnimatedWaveSeekBar,
+    ) : this(
+        context,
+        onFftDataCaptured = { fft ->
+            if (waveSeekBar.isFftModeEnabled) {
+                waveSeekBar.updateFftData(fft)
+            }
+        },
+    ) {
+        this.targetWaveSeekBar = waveSeekBar
+    }
+
+    private var targetWaveSeekBar: com.music.myusiq.ui.components.AnimatedWaveSeekBar? = null
     private var visualizer: Visualizer? = null
     private var currentAudioSessionId: Int = -1
 
@@ -19,24 +32,28 @@ class FftEngineManager(
             return
         }
         val sharedPreferences = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-        val isFeatureEnabled = sharedPreferences.getBoolean("fft_visualizer_enabled", false)
-        val hasPermission = context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-        
-        if (!isFeatureEnabled || !hasPermission) {
+        val isFeatureEnabled = sharedPreferences.getBoolean("fft_visualizer_enabled", true)
+
+        if (!isFeatureEnabled) {
             release()
             return
         }
-        
+
         if ((currentAudioSessionId == audioSessionId) && (visualizer != null)) {
-            waveSeekBar.isFftModeEnabled = true
+            targetWaveSeekBar?.isFftModeEnabled = true
             return
         }
         release()
-        waveSeekBar.isFftModeEnabled = true
+        targetWaveSeekBar?.isFftModeEnabled = true
         currentAudioSessionId = audioSessionId
         try {
             visualizer = Visualizer(audioSessionId).apply {
-                captureSize = Visualizer.getCaptureSizeRange()[1]
+                val captureRange = runCatching { Visualizer.getCaptureSizeRange() }.getOrNull()
+                captureSize = if (captureRange != null && captureRange.size >= 2) {
+                    captureRange[1]
+                } else {
+                    512
+                }
 
                 setDataCaptureListener(
                     object : Visualizer.OnDataCaptureListener {
@@ -44,9 +61,7 @@ class FftEngineManager(
                         }
 
                         override fun onFftDataCapture(v: Visualizer?, fft: ByteArray?, samplingRate: Int) {
-                            if (waveSeekBar.isFftModeEnabled) {
-                                fft?.let { waveSeekBar.updateFftData(it) }
-                            }
+                            fft?.let { onFftDataCaptured?.invoke(it) }
                         }
                     },
                     Visualizer.getMaxCaptureRate() / 2,
@@ -56,10 +71,11 @@ class FftEngineManager(
                 enabled = true
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("FftEngineManager", "Error attaching visualizer to session $audioSessionId", e)
             release()
         }
     }
+
     fun release() {
         try {
             visualizer?.enabled = false
@@ -69,6 +85,6 @@ class FftEngineManager(
         }
         visualizer = null
         currentAudioSessionId = -1
-        waveSeekBar.isFftModeEnabled = false
+        targetWaveSeekBar?.isFftModeEnabled = false
     }
 }
