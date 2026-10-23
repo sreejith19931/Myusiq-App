@@ -243,6 +243,15 @@ class TracksFragment : Fragment() {
                 if (isSelectionMode) {
                     toggleSongSelection(song.id)
                 } else {
+                    // Close keyboard if open when selecting a track to play
+                    try {
+                        val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                        etSearch?.windowToken?.let { token ->
+                            imm.hideSoftInputFromWindow(token, 0)
+                        }
+                        etSearch?.clearFocus()
+                    } catch (_: Exception) {}
+
                     val list = trackAdapter?.currentList?.map { it.song }.orEmpty()
                     val index = list.indexOfFirst { it.id == song.id }
                     if (index != -1) {

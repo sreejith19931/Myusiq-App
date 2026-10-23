@@ -56,7 +56,7 @@ class LyricLineView @JvmOverloads constructor(
         
         currentShader = if (progress > 0) {
             LinearGradient(
-                0f, 0f, 0f, h,
+                0f, 0f, w, 0f,
                 intArrayOf(activeColor, activeColor, inactiveColor, inactiveColor),
                 floatArrayOf(0f, progress, progress, 1f),
                 Shader.TileMode.CLAMP
