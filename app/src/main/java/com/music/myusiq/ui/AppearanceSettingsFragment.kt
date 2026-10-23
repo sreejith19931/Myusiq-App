@@ -132,7 +132,7 @@ class AppearanceSettingsFragment : Fragment(R.layout.fragment_settings_appearanc
 
             // FFT
             val sharedPreferences = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-            switchFftVisualizer.isChecked = sharedPreferences.getBoolean("fft_visualizer_enabled", true)
+            switchFftVisualizer.isChecked = sharedPreferences.getBoolean("fft_visualizer_enabled", false)
 
             isInitialSetup = false
         }

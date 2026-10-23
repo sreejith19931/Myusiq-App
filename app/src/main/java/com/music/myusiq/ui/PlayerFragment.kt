@@ -382,6 +382,11 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
                 viewModel.seekTo((progress * song.duration).toInt())
             }
         }
+        waveformSeekBar.setOnLongClickListener {
+            com.music.myusiq.ui.components.VisualizerStudioBottomSheet.newInstance()
+                .show(childFragmentManager, com.music.myusiq.ui.components.VisualizerStudioBottomSheet.TAG)
+            true
+        }
         
         gestureHelper.setupAlbumArt(ivFullAlbumArt)
         gestureHelper.setupLyricsBack(layoutLyricsBack)
@@ -427,14 +432,17 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
             showLyricsSearchDialog()
         }
         
-        btnLyricsPoster.isEnabled = false
-        btnLyricsPoster.alpha = 0.38f
         btnLyricsPoster.setOnClickListener {
+            com.music.myusiq.ui.components.FullscreenLyricsStageDialogFragment.newInstance()
+                .show(childFragmentManager, com.music.myusiq.ui.components.FullscreenLyricsStageDialogFragment.TAG)
+        }
+        btnLyricsPoster.setOnLongClickListener {
             if (currentLyrics.isNotEmpty()) {
                 showLyricsPosterGenerator()
             } else {
                 Toast.makeText(requireContext(), "No lyrics available to create poster", Toast.LENGTH_SHORT).show()
             }
+            true
         }
         
         btnLyricsResetSearch.setOnLongClickListener {
@@ -1388,29 +1396,8 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
     }
 
     private fun showLyricsEditorDialog() {
-        val song = viewModel.currentPlayingSong.value ?: return
-        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_edit_lyrics, null)
-        val etLyrics = dialogView.findViewById<TextInputEditText>(R.id.etLyrics)
-        
-        // Load current lyrics into editor
-        viewLifecycleOwner.lifecycleScope.launch {
-            val raw = viewModel.getLyricsForSong(song.path)
-            etLyrics.setText(raw)
-        }
-
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.edit_lyrics)
-            .setView(dialogView)
-            .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(R.string.save) { _, _ ->
-                val newLyrics = etLyrics.text?.toString().orEmpty()
-                if (newLyrics.isNotBlank()) {
-                    viewModel.saveLyrics(song.path, newLyrics)
-                    parseLyrics(newLyrics)
-                    Toast.makeText(context, R.string.lyrics_saved, Toast.LENGTH_SHORT).show()
-                }
-            }
-            .show()
+        com.music.myusiq.ui.components.LyricEditorBottomSheet.newInstance()
+            .show(childFragmentManager, com.music.myusiq.ui.components.LyricEditorBottomSheet.TAG)
     }
 
     private fun showLyricsSearchDialog() {

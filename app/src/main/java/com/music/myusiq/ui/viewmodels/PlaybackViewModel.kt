@@ -814,7 +814,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    private fun refreshAudioSessionId() {
+    fun refreshAudioSessionId() {
         val controller = mediaController ?: return
         val command = SessionCommand("GET_AUDIO_SESSION_ID", Bundle.EMPTY)
         val future = controller.sendCustomCommand(command, Bundle.EMPTY)

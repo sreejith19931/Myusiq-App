@@ -10,6 +10,7 @@ import android.view.View
 import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.min
+import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.random.Random
 
@@ -34,7 +35,16 @@ class FullscreenVisualizerView @JvmOverloads constructor(
         set(value) {
             field = value
             paint.color = value
+            strokePaint.color = value
             invalidate()
+        }
+
+    var isPlaying: Boolean = false
+        set(value) {
+            field = value
+            if (value) {
+                postInvalidateOnAnimation()
+            }
         }
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -48,19 +58,35 @@ class FullscreenVisualizerView @JvmOverloads constructor(
         color = accentColor
     }
 
-    private var magnitudes = FloatArray(64)
+    private var magnitudes = FloatArray(32)
     private val wavePath = Path()
     private val particles = List(50) { Particle() }
+    private var lastFftTime = 0L
 
     fun updateFftData(fftData: ByteArray) {
-        val n = fftData.size / 2
-        val numBars = min(64, n)
+        if (fftData.size < 4) return
+        val n = (fftData.size / 2).coerceAtMost(256)
+        lastFftTime = System.currentTimeMillis()
 
-        for (i in 0 until numBars) {
-            val r = fftData[i * 2].toFloat()
-            val im = fftData[i * 2 + 1].toFloat()
-            val mag = hypot(r, im)
-            magnitudes[i] = magnitudes[i] * 0.7f + mag * 0.3f
+        val numBands = 32
+        for (i in 0 until numBands) {
+            val logMin = 1.0
+            val logMax = n.toDouble()
+            val startIdx = (logMin * (logMax / logMin).pow(i.toDouble() / numBands)).toInt().coerceIn(1, n - 1)
+            val endIdx = (logMin * (logMax / logMin).pow((i + 1).toDouble() / numBands)).toInt().coerceIn(startIdx + 1, n)
+
+            var sum = 0f
+            var count = 0
+            for (k in startIdx until endIdx) {
+                val r = fftData[2 * k].toFloat()
+                val im = fftData[2 * k + 1].toFloat()
+                sum += hypot(r, im)
+                count++
+            }
+
+            val rawMag = if (count > 0) (sum / count) else 0f
+            // Smooth peak decay
+            magnitudes[i] = magnitudes[i] * 0.55f + rawMag * 0.45f
         }
         invalidate()
     }
@@ -71,22 +97,34 @@ class FullscreenVisualizerView @JvmOverloads constructor(
         val h = height.toFloat()
         if (w <= 0 || h <= 0) return
 
+        // Decay magnitudes if FFT stream is idle
+        val now = System.currentTimeMillis()
+        if (now - lastFftTime > 80) {
+            for (i in magnitudes.indices) {
+                magnitudes[i] *= 0.88f
+            }
+        }
+
         when (currentMode) {
             MODE_SPECTRUM -> drawSpectrumBars(canvas, w, h)
             MODE_CIRCULAR -> drawCircularPulse(canvas, w, h)
             MODE_WAVEFORM -> drawWaveform(canvas, w, h)
             MODE_PARTICLES -> drawParticles(canvas, w, h)
         }
+
+        if (isPlaying) {
+            postInvalidateOnAnimation()
+        }
     }
 
     private fun drawSpectrumBars(canvas: Canvas, w: Float, h: Float) {
         val numBars = 32
-        val barWidth = (w / numBars) * 0.7f
-        val gap = (w / numBars) * 0.3f
+        val barWidth = (w / numBars) * 0.72f
+        val gap = (w / numBars) * 0.28f
 
         for (i in 0 until numBars) {
-            val mag = (magnitudes[i] / 128f).coerceIn(0.05f, 1.0f)
-            val barHeight = h * 0.6f * mag
+            val mag = (magnitudes[i] / 90f).coerceIn(0.04f, 1.0f)
+            val barHeight = h * 0.55f * mag
             val left = i * (barWidth + gap) + gap / 2
             val top = h - barHeight
             val right = left + barWidth
@@ -98,9 +136,9 @@ class FullscreenVisualizerView @JvmOverloads constructor(
     private fun drawCircularPulse(canvas: Canvas, w: Float, h: Float) {
         val cx = w / 2f
         val cy = h / 2f
-        val baseRadius = min(w, h) * 0.25f
-        val avgMag = magnitudes.take(16).average().toFloat() / 128f
-        val currentRadius = baseRadius + (avgMag * 60f)
+        val baseRadius = min(w, h) * 0.22f
+        val bassEnergy = magnitudes.take(4).average().toFloat() / 90f
+        val currentRadius = baseRadius + (bassEnergy * 55f)
 
         strokePaint.color = accentColor
         canvas.drawCircle(cx, cy, currentRadius, strokePaint)
@@ -108,8 +146,8 @@ class FullscreenVisualizerView @JvmOverloads constructor(
         val numSpokes = 24
         for (i in 0 until numSpokes) {
             val angle = (2 * Math.PI * i / numSpokes).toFloat()
-            val mag = (magnitudes[i % magnitudes.size] / 128f).coerceIn(0.1f, 1.0f)
-            val spokeLen = 40f * mag
+            val mag = (magnitudes[i % magnitudes.size] / 90f).coerceIn(0.08f, 1.0f)
+            val spokeLen = 45f * mag
             val x1 = cx + cos(angle) * currentRadius
             val y1 = cy + sin(angle) * currentRadius
             val x2 = cx + cos(angle) * (currentRadius + spokeLen)
@@ -127,8 +165,8 @@ class FullscreenVisualizerView @JvmOverloads constructor(
         val step = w / (points - 1)
 
         for (i in 0 until points) {
-            val mag = (magnitudes[i] / 128f).coerceIn(0f, 1f)
-            val y = cy + sin(i * 0.5f) * (mag * h * 0.25f)
+            val mag = (magnitudes[i] / 90f).coerceIn(0.02f, 1f)
+            val y = cy + sin(i * 0.45f) * (mag * h * 0.25f)
             wavePath.lineTo(i * step, y)
         }
 
@@ -137,7 +175,7 @@ class FullscreenVisualizerView @JvmOverloads constructor(
     }
 
     private fun drawParticles(canvas: Canvas, w: Float, h: Float) {
-        val energy = magnitudes.take(8).average().toFloat() / 128f
+        val energy = magnitudes.take(6).average().toFloat() / 90f
         particles.forEach { p ->
             p.update(w, h, energy)
             paint.alpha = (p.alpha * 255).toInt()
@@ -146,7 +184,7 @@ class FullscreenVisualizerView @JvmOverloads constructor(
         paint.alpha = 255
     }
 
-    private inner class Particle {
+    private class Particle {
         var x: Float = Random.nextFloat() * 1000f
         var y: Float = Random.nextFloat() * 1000f
         var radius: Float = Random.nextFloat() * 6f + 4f
@@ -154,7 +192,7 @@ class FullscreenVisualizerView @JvmOverloads constructor(
         var alpha: Float = Random.nextFloat() * 0.7f + 0.3f
 
         fun update(w: Float, h: Float, energy: Float) {
-            y -= speedY * (1f + energy * 2f)
+            y -= speedY * (1f + energy * 2.5f)
             if (y < 0) {
                 y = h
                 x = Random.nextFloat() * w
