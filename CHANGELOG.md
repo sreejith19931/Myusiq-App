@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0-beta1] - 2026-10-19
+
+### Added & Fixed
+- **Interactive Tap-to-Sync Lyric Creator**: Built real-time tap-to-sync lyric creator bottom sheet allowing users to stamp LRC timestamps `[mm:ss.xx]` line-by-line during track playback and embed into audio ID3 tags.
+- **Sub-Second Karaoke Line Shading**: Upgraded `LyricLineView` to render smooth horizontal left-to-right text fill gradient shading as audio progresses.
+- **60fps Visualizer Studio**: Added standalone 60fps Visualizer Studio with 4 audio-reactive render modes (*Spectrum Analyzer, Circular Pulse Ring, Liquid Waveform, Particle Field*).
+
 ## [1.3.0] - 2026-10-18
 
 ### Added & Fixed

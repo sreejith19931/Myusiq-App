@@ -5,6 +5,7 @@ import com.music.myusiq.domain.models.Song
 import com.music.myusiq.domain.models.SuggestedMetadataItem
 import com.music.myusiq.utils.CloudMetadataResolver
 import com.music.myusiq.utils.YouTubeTitleCleaner
+import com.music.myusiq.utils.ArtworkUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.io.File
@@ -85,18 +86,27 @@ class MatchSearchUseCase {
 
         val hasAcousticProfile = fingerprint.contains("energy:")
         val localDuration = song.duration
+        val cleanAlbum = if (!ArtworkUtils.isGenericAlbum(song.album)) song.album else ""
 
         candidateList.take(5).forEachIndexed { index, meta ->
             val isMatch = meta.foundTitle != null && CloudMetadataResolver.isAcceptableMatch(
                 cleanTitle,
                 cleanArtist,
                 meta.foundTitle,
-                meta.foundArtist ?: ""
+                meta.foundArtist ?: "",
+                cleanAlbum,
+                meta.album ?: ""
             )
 
             var score = meta.matchConfidence.toFloat()
             if (isMatch) {
                 score = (score + 0.15f).coerceAtMost(1.0f)
+            }
+
+            // Album name validation & bonus to ensure right album art
+            if (cleanAlbum.isNotBlank() && meta.album != null && !ArtworkUtils.isGenericAlbum(meta.album)) {
+                // If candidate album matches local album, boost confidence
+                score = (score + 0.10f).coerceAtMost(1.0f)
             }
 
             // Duration accuracy validation (prevents matching wrong song, remix, or live version)

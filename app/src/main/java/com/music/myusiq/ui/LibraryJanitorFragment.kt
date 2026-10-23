@@ -159,11 +159,7 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
         val candidates = if (allFixCandidates.isNotEmpty()) {
             allFixCandidates
         } else {
-            val savedOverridePaths = com.music.myusiq.utils.MetadataBackupUtils.loadOverridesFromBackup(appContext)
-                .map { PlatformUtils.normalizePath(it.path) }.toSet()
             allSongs.filter { song ->
-                val normPath = PlatformUtils.normalizePath(song.path)
-                if (savedOverridePaths.contains(normPath)) return@filter false
                 needsFixOrArtwork(appContext, song)
             }
         }
@@ -436,29 +432,19 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
             val prefs = appContext.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
             val initialScanDone = prefs.getBoolean("janitor_initial_scan_done", false)
 
-            val savedOverridePaths = com.music.myusiq.utils.MetadataBackupUtils.loadOverridesFromBackup(appContext)
-                .map { PlatformUtils.normalizePath(it.path) }.toSet()
-
             val missingArt = allSongs
                 .distinctBy { PlatformUtils.normalizePath(it.path) }
                 .filter { song ->
-                    val normPath = PlatformUtils.normalizePath(song.path)
-                    if (savedOverridePaths.contains(normPath)) return@filter false
                     val artFile = ArtworkUtils.getArtworkFile(appContext, song.id, song.path, song.album)
                     artFile == null || !artFile.exists() || artFile.length() == 0L
                 }
 
             val toRepair = allSongs.filter { song ->
-                val normPath = PlatformUtils.normalizePath(song.path)
-                if (savedOverridePaths.contains(normPath)) return@filter false
                 isMessyOrUnknownTrack(song)
             }
 
             val consolidatedCandidates = if (!initialScanDone) {
-                allSongs.filter { song ->
-                    val normPath = PlatformUtils.normalizePath(song.path)
-                    !savedOverridePaths.contains(normPath)
-                }
+                allSongs
             } else {
                 (missingArt + toRepair).distinctBy { it.id }
             }

@@ -138,7 +138,9 @@ object CloudMetadataResolver {
         cleanTitle: String,
         cleanArtist: String,
         candidateTitle: String,
-        candidateArtist: String
+        candidateArtist: String,
+        cleanAlbum: String = "",
+        candidateAlbum: String = ""
     ): Boolean {
         val pureTitle = if (cleanTitle.contains(" - ")) cleanTitle.substringAfter(" - ").trim() else cleanTitle
         val pureArtist = if (cleanArtist.isBlank() && cleanTitle.contains(" - ")) cleanTitle.substringBefore(" - ").trim() else cleanArtist
@@ -149,6 +151,16 @@ object CloudMetadataResolver {
 
         val titleScore = calculateTokenSimilarity(pureTitle, candidateTitle)
         val artistScore = calculateTokenSimilarity(pureArtist, candidateArtist)
+
+        val hasCleanAlbum = cleanAlbum.isNotBlank() && !ArtworkUtils.isGenericAlbum(cleanAlbum)
+        val hasCandAlbum = candidateAlbum.isNotBlank() && !ArtworkUtils.isGenericAlbum(candidateAlbum)
+
+        if (hasCleanAlbum && hasCandAlbum) {
+            val albumSim = calculateTokenSimilarity(cleanAlbum, candidateAlbum)
+            if (albumSim < 0.15) {
+                return false // Heavy album mismatch -> ensures correct album and album art
+            }
+        }
 
         val isGenericTitleLocal = normCleanTitle.matches(Regex("(?i)^(track|audio|sound|recording)[_\\s\\-]*\\d*$")) || normCleanTitle.length < 3
         val isGenericArtistLocal = isGenericArtist(pureArtist) || normCleanArtist.isBlank()
