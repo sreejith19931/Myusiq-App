@@ -31,12 +31,13 @@ class FftEngineManager(
             release()
             return
         }
-        val sharedPreferences = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-        val isFeatureEnabled = sharedPreferences.getBoolean("fft_visualizer_enabled", true)
-
-        if (!isFeatureEnabled) {
-            release()
-            return
+        if (targetWaveSeekBar != null) {
+            val sharedPreferences = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+            val isFeatureEnabled = sharedPreferences.getBoolean("fft_visualizer_enabled", false)
+            if (!isFeatureEnabled) {
+                release()
+                return
+            }
         }
 
         if ((currentAudioSessionId == audioSessionId) && (visualizer != null)) {
