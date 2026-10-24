@@ -115,30 +115,30 @@ def update_website():
     with open(index_path, 'r', encoding='utf-8') as f:
         html = f.read()
 
-    # 1. Update version buttons and download links to latest APK (even if patch)
+    # 1. Update version buttons and download links to latest APK without showing version numbers
     html = re.sub(
-        r'Get APK \(v[\d\.]+\)',
-        f'Get APK (v{clean_version})',
+        r'Get APK(?:\s*\(v[\d\.]+\))?',
+        'Get APK',
         html
     )
     html = re.sub(
-        r'Download APK \(v[\d\.]+\)',
-        f'Download APK (v{clean_version})',
+        r'Download APK(?:\s*\(v[\d\.]+\))?',
+        'Download APK',
         html
     )
     html = re.sub(
-        r'Download Latest Release \(v[\d\.]+\)',
-        f'Download Latest Release (v{clean_version})',
+        r'Download Latest Release(?:\s*\(v[\d\.]+\))?',
+        'Download Latest Release',
         html
     )
     html = re.sub(
         r'Download Myusiq-v[\d\.]+\.apk',
-        f'Download Myusiq-v{clean_version}.apk',
+        'Download Myusiq APK',
         html
     )
     html = re.sub(
         r'<code>Myusiq-v[\d\.]+\.apk</code>',
-        f'<code>Myusiq-v{clean_version}.apk</code>',
+        '<code>Myusiq APK</code>',
         html
     )
     html = re.sub(
