@@ -149,16 +149,20 @@ fun WearNowPlayingScreen(
             IconButton(
                 onClick = { controller.adjustVolume(-1) },
                 colors = prevNextColors,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(36.dp)
             ) {
-                Text("-", style = MaterialTheme.typography.titleMedium, color = Color.White)
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_volume_low),
+                    contentDescription = "Volume Down",
+                    modifier = Modifier.size(18.dp)
+                )
             }
 
             Button(
                 onClick = onOpenQueue,
                 colors = queueColors,
                 modifier = Modifier
-                    .height(32.dp)
+                    .height(34.dp)
                     .padding(horizontal = 8.dp)
             ) {
                 Text(text = "Queue", style = MaterialTheme.typography.labelSmall)
@@ -167,9 +171,13 @@ fun WearNowPlayingScreen(
             IconButton(
                 onClick = { controller.adjustVolume(1) },
                 colors = prevNextColors,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(36.dp)
             ) {
-                Text("+", style = MaterialTheme.typography.titleMedium, color = Color.White)
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_volume_up),
+                    contentDescription = "Volume Up",
+                    modifier = Modifier.size(18.dp)
+                )
             }
         }
     }

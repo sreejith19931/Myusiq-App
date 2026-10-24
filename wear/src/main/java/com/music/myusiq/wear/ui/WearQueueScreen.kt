@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumnDefaults
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ListHeader
@@ -33,7 +34,8 @@ fun WearQueueScreen(
     ScreenScaffold(scrollState = columnState) { contentPadding ->
         TransformingLazyColumn(
             state = columnState,
-            contentPadding = contentPadding
+            contentPadding = contentPadding,
+            flingBehavior = TransformingLazyColumnDefaults.snapFlingBehavior(columnState)
         ) {
             item {
                 Button(
