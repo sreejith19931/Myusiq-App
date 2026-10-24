@@ -221,6 +221,8 @@ class SetupActivity : AppCompatActivity() {
         selectedFolders = folders
     }
 
+    fun getSelectedFolders(): List<Uri> = selectedFolders
+
     fun onThemeChanged(theme: String) {
         chosenThemeMode = theme
     }

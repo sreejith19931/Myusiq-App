@@ -19,6 +19,15 @@ class MusicRepository(
         val blacklistedPaths = musicScanner.getBlacklistedFolderPaths().asSequence().map { PlatformUtils.normalizePath(it).lowercase() }.toSet()
         val allowedPaths = musicScanner.getAllowedFolderUris()
         
+        val effectiveAllowedPaths = if (allowedPaths.isNotEmpty() && rawSongs.none { raw ->
+            val normPathLower = PlatformUtils.normalizePath(raw.path).lowercase()
+            allowedPaths.any { normPathLower.startsWith(it) }
+        }) {
+            emptySet()
+        } else {
+            allowedPaths
+        }
+        
         val overrides = songDao.getAllOverrides().associateBy { PlatformUtils.normalizePath(it.path).lowercase() }
         
         rawSongs.asSequence().filter { raw ->
@@ -29,7 +38,7 @@ class MusicRepository(
             if (filterShortAudio && (raw.duration in 1..29999)) return@filter false
             
             // Check allowed folders
-            val isAllowed = allowedPaths.isEmpty() || allowedPaths.any { normPathLower.startsWith(it) }
+            val isAllowed = effectiveAllowedPaths.isEmpty() || effectiveAllowedPaths.any { normPathLower.startsWith(it) }
             if (!isAllowed) return@filter false
             
             // Check blacklist
@@ -62,6 +71,15 @@ class MusicRepository(
         val blacklistedPaths = musicScanner.getBlacklistedFolderPaths()
         val allowedPaths = musicScanner.getAllowedFolderUris()
 
+        val effectiveAllowedPaths = if (allowedPaths.isNotEmpty() && songs.none { song ->
+            val normPathLower = PlatformUtils.normalizePath(song.path).lowercase()
+            allowedPaths.any { normPathLower.startsWith(it) }
+        }) {
+            emptySet()
+        } else {
+            allowedPaths
+        }
+
         val folderMap = mutableMapOf<String, Int>()
         songs.forEach { song ->
             val lastSlash = song.path.lastIndexOf('/')
@@ -72,7 +90,7 @@ class MusicRepository(
         }
 
         folderMap.map { (path, count) ->
-            val isAllowed = allowedPaths.isEmpty() || allowedPaths.any { path.lowercase().startsWith(it.lowercase()) }
+            val isAllowed = effectiveAllowedPaths.isEmpty() || effectiveAllowedPaths.any { path.lowercase().startsWith(it.lowercase()) }
             val isBlacklisted = blacklistedPaths.contains(path)
             FolderItem(path, count, isAllowed && !isBlacklisted)
         }.sortedBy { it.folderName.lowercase() }

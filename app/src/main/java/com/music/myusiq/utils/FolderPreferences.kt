@@ -22,6 +22,9 @@ class FolderPreferences(context: Context) {
         current.remove(uriString)
         prefs.edit { putStringSet(KEY_ALLOWED_URIS, current) }
     }
+    fun clearAllowedFolderUris() {
+        prefs.edit { remove(KEY_ALLOWED_URIS) }
+    }
     fun getBlacklistedFolderPaths(): Set<String> {
         return prefs.getStringSet(KEY_BLACKLISTED_PATHS, emptySet()) ?: emptySet()
     }

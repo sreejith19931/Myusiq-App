@@ -33,6 +33,12 @@ class LibrarySettingsFragment : Fragment(R.layout.fragment_settings_library) {
             Toast.makeText(requireContext(), "Scanning music library...", Toast.LENGTH_SHORT).show()
         }
 
+        view.findViewById<View>(R.id.rowResetFolderRestrictions)?.setOnClickListener {
+            com.music.myusiq.utils.FolderPreferences(requireContext()).clearAllowedFolderUris()
+            viewModel.forceScanMediaLibrary()
+            Toast.makeText(requireContext(), "Cleared folder restrictions. Scanning all device music...", Toast.LENGTH_SHORT).show()
+        }
+
         val switchFilter = view.findViewById<MaterialSwitch>(R.id.switchFilterShort)
         switchFilter.isChecked = sharedPreferences.getBoolean("filter_short_audio", true)
         switchFilter.setOnCheckedChangeListener { _, isChecked ->
