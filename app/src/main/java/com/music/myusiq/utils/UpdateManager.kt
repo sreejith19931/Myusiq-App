@@ -20,6 +20,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import com.google.gson.annotations.SerializedName
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -52,6 +53,7 @@ data class UpdateInfo(
     val latestVersion: String,
     val releaseNotes: String,
     val apkDownloadUrl: String?,
+    val wearApkDownloadUrl: String?,
     val releasePageUrl: String
 )
 
@@ -126,12 +128,17 @@ object UpdateManager {
                     it.name.endsWith(".apk", ignoreCase = true)
                 } ?: release.assets.firstOrNull()
 
+                val wearAsset = release.assets.find {
+                    it.name.contains("wear", ignoreCase = true) && it.name.endsWith(".apk", ignoreCase = true)
+                }
+
                 val updateInfo = UpdateInfo(
                     hasUpdate = hasUpdate,
                     currentVersion = currentVersion,
                     latestVersion = release.tagName,
                     releaseNotes = release.body ?: "No release notes provided.",
                     apkDownloadUrl = apkAsset?.downloadUrl,
+                    wearApkDownloadUrl = wearAsset?.downloadUrl,
                     releasePageUrl = release.htmlUrl
                 )
 
@@ -237,6 +244,9 @@ object UpdateManager {
             .setTitle("New Update Available 🚀")
             .setMessage(message)
             .setPositiveButton("Install Update") { _, _ ->
+                if (!updateInfo.wearApkDownloadUrl.isNullOrEmpty()) {
+                    downloadAndPushWearApk(context, updateInfo.wearApkDownloadUrl, updateInfo.latestVersion)
+                }
                 if (!updateInfo.apkDownloadUrl.isNullOrEmpty()) {
                     downloadAndInstallApk(context, updateInfo.apkDownloadUrl, updateInfo.latestVersion)
                 } else {
@@ -405,6 +415,52 @@ object UpdateManager {
             context.startActivity(intent)
         } catch (_: Exception) {
             Toast.makeText(context, "Could not open browser", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun downloadAndPushWearApk(context: Context, wearApkUrl: String, version: String) {
+        kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val fileName = "Myusiq-Wear-$version.apk"
+                val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                val wearApkFile = File(downloadDir, fileName)
+
+                if (wearApkFile.exists() && wearApkFile.length() > 0) {
+                    pushWearApkToWatch(context, wearApkFile)
+                    return@launch
+                }
+
+                val request = Request.Builder().url(wearApkUrl).build()
+                okHttpClient.newCall(request).execute().use { response ->
+                    if (response.isSuccessful && response.body != null) {
+                        wearApkFile.outputStream().use { output ->
+                            response.body!!.byteStream().copyTo(output)
+                        }
+                        pushWearApkToWatch(context, wearApkFile)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error downloading Wear APK", e)
+            }
+        }
+    }
+
+    fun pushWearApkToWatch(context: Context, wearApkFile: File) {
+        kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
+            try {
+                if (!wearApkFile.exists() || wearApkFile.length() == 0L) return@launch
+                val bytes = wearApkFile.readBytes()
+                val asset = com.google.android.gms.wearable.Asset.createFromBytes(bytes)
+                val request = com.google.android.gms.wearable.PutDataMapRequest.create("/myusiq/wear_apk").apply {
+                    dataMap.putAsset("apkAsset", asset)
+                    dataMap.putLong("timestamp", System.currentTimeMillis())
+                }.asPutDataRequest().setUrgent()
+
+                com.google.android.gms.wearable.Wearable.getDataClient(context).putDataItem(request)
+                Log.d(TAG, "Transferred Wear APK asset to Wearable DataClient (${bytes.size} bytes)")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to push Wear APK to watch", e)
+            }
         }
     }
 }
