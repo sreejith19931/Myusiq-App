@@ -39,15 +39,13 @@ class SetupFoldersFragment : Fragment(R.layout.fragment_setup_folders) {
 
     private fun addFolder(uri: Uri) {
         try {
-            requireContext().contentResolver.takePersistableUriPermission(
-                uri,
-                Intent.FLAG_GRANT_READ_URI_PERMISSION,
-            )
-            selectedFolders.add(uri)
-            updateUI()
+            val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            requireContext().contentResolver.takePersistableUriPermission(uri, flags)
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.w("SetupFoldersFragment", "Could not take persistable URI permission for $uri: ${e.message}")
         }
+        selectedFolders.add(uri)
+        updateUI()
     }
 
     private fun updateUI() {
