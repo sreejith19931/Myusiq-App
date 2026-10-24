@@ -23,9 +23,9 @@
 <body>
 
     <!-- Announcement Banner for Major Releases -->
-    <div id="announcement-banner" class="announcement-banner" style="display: none;">
+    <div id="announcement-banner" class="announcement-banner" style="display: flex;">
         <span class="banner-badge">🎉 Major Release</span>
-        <span id="banner-text">🎉 Major Release! Welcome to Myusiq v1.3.0-beta4 — Experience the next level of offline audio!</span>
+        <span id="banner-text">🎉 Major Release! Welcome to Myusiq v1.4.0 — Experience the next level of offline audio!</span>
         <a id="banner-action" href="#download" class="banner-link">Get Update</a>
         <button class="banner-close" onclick="closeBanner()" aria-label="Close Announcement">&times;</button>
     </div>
@@ -91,46 +91,48 @@
 
     <!-- Interactive Features Section -->
 
-                                    <!-- Latest Release Blog Announcement -->
+                                        <!-- Latest Release Blog Announcement -->
     <section id="latest-blog-post" class="blog-announcement-section">
         <div class="container">
             <div class="glass-card blog-card reveal">
                 <div class="blog-header">
                     <div class="blog-badge-wrap">
                         <span class="blog-badge">🚀 FEATURED RELEASE</span>
-                        <span class="blog-version">v1.3.0-beta4</span>
+                        <span class="blog-version">v1.4.0</span>
                     </div>
-                    <span class="blog-date">Oct 17, 2026</span>
+                    <span class="blog-date">Oct 20, 2026</span>
                 </div>
-                <h2 class="blog-title">What's New in Myusiq v1.3.0-beta4</h2>
+                <h2 class="blog-title">What's New in Myusiq v1.4.0</h2>
                 <div class="blog-body">
-                    <p class="blog-intro">We are excited to announce the official release of <strong>Myusiq v1.3.0-beta4</strong>! This update brings key feature additions, performance optimizations, and important usability upgrades to your audio experience.</p>
+                    <p class="blog-intro">We are excited to announce the official release of <strong>Myusiq v1.4.0</strong>! This update brings key feature additions, performance optimizations, and important usability upgrades to your audio experience.</p>
                     <div class="blog-highlights-box">
                         <h4 class="blog-highlights-title">✨ Key Features &amp; Changes Implemented</h4>
                         <ul class="blog-items-list">
-                            <li><strong>Playback Engine Exception Recovery & Auto-Skip Guard</strong>: Handled all ExoPlayer media errors (missing files, network stream drops, codec initialization, audio track errors) with descriptive Toast notifications and a 5-error threshold guard to prevent infinite skip loops.</li>
-                            <li><strong>AudioEffect HAL Isolation & Leak Prevention</strong>: Isolated `Equalizer`, `BassBoost`, `Virtualizer`, `PresetReverb`, and `LoudnessEnhancer` cleanup in `EqualizerManager` to prevent HAL resource leaks on custom OEM devices.</li>
-                            <li><strong>Visualizer Capture Range Safeguard</strong>: Added null/bounds fallback for `Visualizer.getCaptureSizeRange()` in `FftEngineManager` for custom ROMs and emulators.</li>
-                            <li><strong>ViewModel Player Error State Propagation</strong>: Connected `onPlayerError` listener in `PlaybackViewModel` to keep UI components synchronized during playback errors.</li>
+                            <li><strong>Interactive Tap-to-Sync Lyric Creator</strong>: Built real-time tap-to-sync lyric creator bottom sheet allowing users to stamp LRC timestamps `[mm:ss.xx]` line-by-line during track playback and embed into audio ID3 tags.</li>
+                            <li><strong>Sub-Second Karaoke Line Shading</strong>: Upgraded `LyricLineView` to render smooth horizontal left-to-right text fill gradient shading as audio progresses.</li>
+                            <li><strong>60fps Visualizer Studio</strong>: Added standalone 60fps Visualizer Studio with 4 audio-reactive render modes (*Spectrum Analyzer, Circular Pulse Ring, Liquid Waveform, Particle Field*).</li>
+                            <li><strong>Persistent Metadata Fix History</strong>: Mirror track edit history to public shared storage (`.myusiq_backup`) and MediaStore, guaranteeing survival across app updates and reinstalls.</li>
+                            <li><strong>10-Band Equalizer & Spectrum Visualizer</strong>: Expanded equalizer to 10 frequency bands (`31Hz`, `62Hz`, `125Hz`, `250Hz`, `500Hz`, `1kHz`, `2kHz`, `4kHz`, `8kHz`, `16kHz`) with a real-time FFT frequency spectrum analyzer.</li>
+                            <li><strong>Hardware AudioFX Suite</strong>: Integrated native `BassBoost`, `Virtualizer` (3D Spatial surround), `PresetReverb`, and `LoudnessEnhancer` audio effects with live UI sliders & toggle chips.</li>
+                            <li><strong>Variable Playback Speed & Pitch Control</strong>: Variable speed controls (`0.75x`, `1.0x`, `1.25x`, `1.5x`, `2.0x`) with pitch locking via ExoPlayer `PlaybackParameters`.</li>
+                            <li><strong>EBU R128 ReplayGain Normalization</strong>: Automatic ReplayGain parsing with +6dB preamp volume compensation for dynamic, consistent volume across all tracks.</li>
+                            <li><strong>Audio Output Target Routing</strong>: Profile memory auto-switching across Device Speaker, Wired Headphones, and Bluetooth Audio outputs.</li>
+                            <li><strong>Dynamic Hi-Res Quality Badges</strong>: Real-time sample rate (`96.0 kHz`), format (`FLAC`), and bitrate badges rendered on the Now Playing player screen.</li>
+                            <li><strong>Playback Engine Stability & Error Safeguards</strong>: Error recovery, HAL resource leak prevention, and visualizer bounds safeguards across custom ROMs.</li>
                             <li><strong>Parallel Auto-Fix & Bounded Processing</strong>: Accelerated Library Janitor cloud scans with 4x parallel speedup via Kotlin Coroutines `Semaphore(4)` permit locks.</li>
                             <li><strong>Shared Album Artwork Auto-Assignment</strong>: Tracks belonging to the same album automatically share and reuse official album artwork, instantly filling missing covers across multi-track albums.</li>
                             <li><strong>In-Memory LRU Search Query Caching</strong>: Cached online metadata search results with an LRU cache (100-entry capacity) to prevent duplicate API queries and speed up manual searches.</li>
                             <li><strong>Dialog Overflow & Fixed Button Placement</strong>: Optimized review pop-up dialog height and button anchoring so "Apply Selected" is always visible across all device screen sizes.</li>
                             <li><strong>Smart First-Time Scan Lifecycle</strong>: Runs a comprehensive artwork & metadata scan once on initial launch, then smartly filters subsequent scans strictly for tracks with missing art or messy metadata.</li>
                             <li><strong>Metadata Verification Accuracy</strong>: Enhanced clutter detection and path synchronization to eliminate false positives for clean or previously updated tracks.</li>
-                            <li><strong>Smart Janitor Candidate Verification & Similarity Scoring</strong>: Added token Jaccard similarity and duration match bonus to candidate evaluation, eliminating false positives and wrong suggestions.</li>
-                            <li><strong>Interactive Manual Online Search</strong>: Added a "Search Online" button in the Janitor review pop-up with a search picker (`dialog_manual_cloud_search.xml`) displaying iTunes & Deezer candidate results with high-res artwork, album info, and match confidence scores.</li>
-                            <li><strong>One-Tap Metadata Revert / Undo</strong>: Implemented pre-edit JSON snapshots before applying bulk/single metadata updates, with a 1-tap "Undo Last Fix" card in Library Janitor.</li>
-                            <li><strong>Offline Title Case Sanitizer</strong>: Converts ALL-CAPS or all-lowercase titles to Title Case and strips website domains (`www.site.com`), stray underscores, and web converter tags offline.</li>
-                            <li><strong>Auto Metadata Fix Optimization</strong>: Prevented infinite re-scanning of clean or already-fixed tracks when toggling the Auto-Improve switch ON/OFF.</li>
                         </ul>
                     </div>
                 </div>
                 <div class="blog-actions">
-                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/download/v1.3.0-beta4/Myusiq-v1.3.0-beta4.apk" class="btn btn-primary btn-sm">
-                        ⚡ Download Myusiq-v1.3.0-beta4.apk
+                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/download/v1.4.0/Myusiq-v1.4.0.apk" class="btn btn-primary btn-sm">
+                        ⚡ Download Myusiq-v1.4.0.apk
                     </a>
-                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/tag/v1.3.0-beta4" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
+                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/tag/v1.4.0" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
                         📦 View Release Notes on GitHub
                     </a>
                 </div>
@@ -293,14 +295,32 @@
                     <div class="timeline-dot"></div>
                     <div class="timeline-content glass-card">
                         <div class="timeline-header">
-                            <span class="version-badge">v1.3.0-beta4</span>
-                            <span class="date">Oct 17, 2026</span>
+                            <span class="version-badge">v1.4.0</span>
+                            <span class="date">Oct 20, 2026</span>
                         </div>
                         <ul class="changelog-list">
-                            <li><strong>Playback Engine Exception Recovery & Auto-Skip Guard</strong>: Handled all ExoPlayer media errors (missing files, network stream drops, codec initialization, audio track errors) with descriptive Toast notifications and a 5-error threshold guard to prevent infinite skip loops.</li>
-                            <li><strong>AudioEffect HAL Isolation & Leak Prevention</strong>: Isolated `Equalizer`, `BassBoost`, `Virtualizer`, `PresetReverb`, and `LoudnessEnhancer` cleanup in `EqualizerManager` to prevent HAL resource leaks on custom OEM devices.</li>
-                            <li><strong>Visualizer Capture Range Safeguard</strong>: Added null/bounds fallback for `Visualizer.getCaptureSizeRange()` in `FftEngineManager` for custom ROMs and emulators.</li>
-                            <li><strong>ViewModel Player Error State Propagation</strong>: Connected `onPlayerError` listener in `PlaybackViewModel` to keep UI components synchronized during playback errors.</li>
+                            <li><strong>Interactive Tap-to-Sync Lyric Creator</strong>: Built real-time tap-to-sync lyric creator bottom sheet allowing users to stamp LRC timestamps `[mm:ss.xx]` line-by-line during track playback and embed into audio ID3 tags.</li>
+                            <li><strong>Sub-Second Karaoke Line Shading</strong>: Upgraded `LyricLineView` to render smooth horizontal left-to-right text fill gradient shading as audio progresses.</li>
+                            <li><strong>60fps Visualizer Studio</strong>: Added standalone 60fps Visualizer Studio with 4 audio-reactive render modes (*Spectrum Analyzer, Circular Pulse Ring, Liquid Waveform, Particle Field*).</li>
+                            <li><strong>Persistent Metadata Fix History</strong>: Mirror track edit history to public shared storage (`.myusiq_backup`) and MediaStore, guaranteeing survival across app updates and reinstalls.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content glass-card">
+                        <div class="timeline-header">
+                            <span class="version-badge">v1.3.0</span>
+                            <span class="date">Oct 18, 2026</span>
+                        </div>
+                        <ul class="changelog-list">
+                            <li><strong>10-Band Equalizer & Spectrum Visualizer</strong>: Expanded equalizer to 10 frequency bands (`31Hz`, `62Hz`, `125Hz`, `250Hz`, `500Hz`, `1kHz`, `2kHz`, `4kHz`, `8kHz`, `16kHz`) with a real-time FFT frequency spectrum analyzer.</li>
+                            <li><strong>Hardware AudioFX Suite</strong>: Integrated native `BassBoost`, `Virtualizer` (3D Spatial surround), `PresetReverb`, and `LoudnessEnhancer` audio effects with live UI sliders & toggle chips.</li>
+                            <li><strong>Variable Playback Speed & Pitch Control</strong>: Variable speed controls (`0.75x`, `1.0x`, `1.25x`, `1.5x`, `2.0x`) with pitch locking via ExoPlayer `PlaybackParameters`.</li>
+                            <li><strong>EBU R128 ReplayGain Normalization</strong>: Automatic ReplayGain parsing with +6dB preamp volume compensation for dynamic, consistent volume across all tracks.</li>
+                            <li><strong>Audio Output Target Routing</strong>: Profile memory auto-switching across Device Speaker, Wired Headphones, and Bluetooth Audio outputs.</li>
+                            <li><strong>Dynamic Hi-Res Quality Badges</strong>: Real-time sample rate (`96.0 kHz`), format (`FLAC`), and bitrate badges rendered on the Now Playing player screen.</li>
+                            <li><strong>Playback Engine Stability & Error Safeguards</strong>: Error recovery, HAL resource leak prevention, and visualizer bounds safeguards across custom ROMs.</li>
                         </ul>
                     </div>
                 </div>
@@ -474,7 +494,7 @@
                 <h3 style="font-size: 2rem; margin-bottom: 16px;">Download Latest Release (v1.3.0-beta3)</h3>
                 <p style="color: var(--on-surface-variant); margin-bottom: 32px;">Compatible with Android 8.0 (API 26) and above. Includes phone and Wear OS APKs.</p>
                 <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 32px;">
-                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/tag/v1.3.0-beta4-beta3" class="btn btn-primary">
+                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/tag/v1.4.0-beta4-beta3" class="btn btn-primary">
                         📥 Download Myusiq-v1.3.0-beta3.apk
                     </a>
                     <a href="https://github.com/sreejith19931/Myusiq-App/releases" target="_blank" rel="noopener" class="btn btn-outlined">
