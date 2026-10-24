@@ -93,9 +93,11 @@
     <string name="media_access_desc">Required to discover and read local soundtracks on this device.</string>
     <string name="all_permissions_desc">Grant access to media files, playback notifications, audio visualizer, and Bluetooth devices so Myusiq can function fully.</string>
     <string name="grant_access">Grant Access</string>
-    <string name="select_music_folder">2. Select Music Folder</string>
-    <string name="no_directory_selected">No directory target locked yet.</string>
-    <string name="choose_directory">Choose Directory</string>
+    <string name="select_music_folder">Select Music Folder (Optional)</string>
+    <string name="folder_selection_optional_desc">Myusiq automatically scans all music on your device by default. Select specific subfolders below only if you wish to restrict scanning.</string>
+    <string name="android_11_folder_notice">On Android 11+, select a custom subfolder (e.g. Music/Playlist). Google restricts selecting top-level root folders.</string>
+    <string name="no_directory_selected">No restricted folders selected (scanning all device music)</string>
+    <string name="choose_directory">Choose Subfolder</string>
     <string name="personalize_experience">3. Personalize Experience</string>
     <string name="choose_theme_desc">Choose your preferred theme to match your style.</string>
     <string name="light">Light</string>
