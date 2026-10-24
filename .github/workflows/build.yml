@@ -105,6 +105,20 @@ jobs:
           name: app-release-apk
           path: release-artifacts
 
+      - name: Extract Version Release Notes
+        run: |
+          python -c "
+          import re
+          tag = '${{ github.ref_name }}'.lstrip('v')
+          with open('CHANGELOG.md', 'r', encoding='utf-8') as f:
+              content = f.read()
+          pattern = rf'##\s+\[{tag}\].*?(?=\n##\s+\[|\Z)'
+          match = re.search(pattern, content, re.DOTALL)
+          notes = match.group(0).strip() if match else f'Release v{tag}'
+          with open('release-notes.txt', 'w', encoding='utf-8') as out:
+              out.write(notes)
+          "
+
       - name: Create Release on Public Repo
         uses: softprops/action-gh-release@v2
         with:
@@ -116,7 +130,7 @@ jobs:
             release-artifacts/*.apk
             README.md
             CHANGELOG.md
-          body_path: CHANGELOG.md
+          body_path: release-notes.txt
           draft: false
           prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') || contains(github.ref_name, 'alpha') }}
           generate_release_notes: false
