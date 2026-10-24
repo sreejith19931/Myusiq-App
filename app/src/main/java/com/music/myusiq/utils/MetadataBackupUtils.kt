@@ -316,9 +316,94 @@ object MetadataBackupUtils {
         } catch (_: Exception) {}
     }
 
+    private fun getPublicHistoryFile(): File? {
+        val dirs = listOfNotNull(
+            try { Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) } catch (_: Exception) { null },
+            try { Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) } catch (_: Exception) { null },
+            try { Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC) } catch (_: Exception) { null }
+        )
+        for (dir in dirs) {
+            try {
+                val myusiqDir = File(dir, ".myusiq_backup")
+                if (!myusiqDir.exists()) {
+                    try { myusiqDir.mkdirs() } catch (_: Exception) {}
+                }
+                val file = File(myusiqDir, "track_edit_history.json")
+                if (file.exists() || myusiqDir.canWrite()) return file
+            } catch (_: Exception) {}
+        }
+        return null
+    }
+
+    private fun getAppHistoryFile(context: Context): File {
+        return File(context.getExternalFilesDir(null), "track_edit_history.json")
+    }
+
+    private fun saveHistoryToPublicMediaStore(context: Context, jsonString: String) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                val resolver = context.contentResolver
+                val contentValues = ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, "track_edit_history.json")
+                    put(MediaStore.MediaColumns.MIME_TYPE, "application/json")
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_DOWNLOADS}/.myusiq_backup")
+                }
+
+                val projection = arrayOf(MediaStore.MediaColumns._ID)
+                val selection = "${MediaStore.MediaColumns.DISPLAY_NAME} = ? AND ${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ?"
+                val selectionArgs = arrayOf("track_edit_history.json", "%${Environment.DIRECTORY_DOWNLOADS}/.myusiq_backup%")
+                val queryUri = MediaStore.Downloads.EXTERNAL_CONTENT_URI
+
+                var existingUri: Uri? = null
+                resolver.query(queryUri, projection, selection, selectionArgs, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID))
+                        existingUri = ContentUris.withAppendedId(queryUri, id)
+                    }
+                }
+
+                val targetUri = existingUri ?: resolver.insert(queryUri, contentValues)
+                if (targetUri != null) {
+                    resolver.openOutputStream(targetUri, "rwt")?.use { output ->
+                        output.write(jsonString.toByteArray(Charsets.UTF_8))
+                        output.flush()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.d("MetadataBackupUtils", "MediaStore public history save failed: ${e.message}")
+            }
+        }
+    }
+
+    private fun readHistoryFromPublicMediaStore(context: Context): String? {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                val resolver = context.contentResolver
+                val projection = arrayOf(MediaStore.MediaColumns._ID)
+                val selection = "${MediaStore.MediaColumns.DISPLAY_NAME} = ?"
+                val selectionArgs = arrayOf("track_edit_history.json")
+                val queryUri = MediaStore.Downloads.EXTERNAL_CONTENT_URI
+
+                resolver.query(queryUri, projection, selection, selectionArgs, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID))
+                        val uri = ContentUris.withAppendedId(queryUri, id)
+                        resolver.openInputStream(uri)?.use { input ->
+                            return input.bufferedReader(Charsets.UTF_8).readText()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.d("MetadataBackupUtils", "MediaStore public history read failed: ${e.message}")
+            }
+        }
+        return null
+    }
+
     fun logTrackEdit(context: Context, oldSong: com.music.myusiq.domain.models.Song, newEdit: com.music.myusiq.ui.viewmodels.PendingTrackEdit) {
         try {
-            val historyFile = File(context.getExternalFilesDir(null), "track_edit_history.json")
+            val historyFile = getAppHistoryFile(context)
+            val publicFile = getPublicHistoryFile()
             val existing = loadTrackEditHistory(context).toMutableList()
             existing.removeAll { it.songId == oldSong.id }
             val item = TrackEditHistoryItem(
@@ -357,18 +442,48 @@ object MetadataBackupUtils {
                 }
                 jsonArray.put(obj)
             }
-            historyFile.writeText(jsonArray.toString())
+            val jsonString = jsonArray.toString()
+            try {
+                historyFile.writeText(jsonString)
+            } catch (e: Exception) {
+                Log.d("MetadataBackupUtils", "App history write failed: ${e.message}")
+            }
+            try {
+                publicFile?.writeText(jsonString)
+            } catch (e: Exception) {
+                Log.d("MetadataBackupUtils", "Public history write failed: ${e.message}")
+            }
+            saveHistoryToPublicMediaStore(context, jsonString)
         } catch (e: Exception) {
             Log.e("MetadataBackupUtils", "Failed to log track edit history", e)
         }
     }
 
     fun loadTrackEditHistory(context: Context): List<TrackEditHistoryItem> {
-        return try {
-            val historyFile = File(context.getExternalFilesDir(null), "track_edit_history.json")
-            if (!historyFile.exists() || historyFile.length() == 0L) return emptyList()
+        val appFile = getAppHistoryFile(context)
+        val publicFile = getPublicHistoryFile()
+        var jsonText: String? = null
 
-            val jsonArray = JSONArray(historyFile.readText())
+        if (try { appFile.exists() && appFile.length() > 0L } catch (_: Exception) { false }) {
+            jsonText = try { appFile.readText() } catch (_: Exception) { null }
+        }
+        if (jsonText.isNullOrBlank() && publicFile != null) {
+            if (try { publicFile.exists() && publicFile.length() > 0L } catch (_: Exception) { false }) {
+                jsonText = try { publicFile.readText() } catch (_: Exception) { null }
+            }
+        }
+        if (jsonText.isNullOrBlank()) {
+            jsonText = readHistoryFromPublicMediaStore(context)
+        }
+
+        if (jsonText.isNullOrBlank()) return emptyList()
+
+        if (try { !appFile.exists() || appFile.length() == 0L } catch (_: Exception) { true }) {
+            try { appFile.writeText(jsonText) } catch (_: Exception) {}
+        }
+
+        return try {
+            val jsonArray = JSONArray(jsonText)
             val list = mutableListOf<TrackEditHistoryItem>()
             for (i in 0 until jsonArray.length()) {
                 val obj = jsonArray.getJSONObject(i)
@@ -399,8 +514,10 @@ object MetadataBackupUtils {
 
     fun clearTrackEditHistory(context: Context) {
         try {
-            val historyFile = File(context.getExternalFilesDir(null), "track_edit_history.json")
-            if (historyFile.exists()) historyFile.delete()
+            val appFile = getAppHistoryFile(context)
+            val publicFile = getPublicHistoryFile()
+            if (appFile.exists()) appFile.delete()
+            if (publicFile != null && publicFile.exists()) publicFile.delete()
         } catch (_: Exception) {}
     }
 }
