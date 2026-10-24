@@ -17,8 +17,8 @@ android {
         applicationId = "com.music.myusiq"
         minSdk = 26
         targetSdk = 37
-        versionCode = 10200
-        versionName = "1.2.0"
+        versionCode = 10400
+        versionName = "1.4.0"
     }
 
     signingConfigs {
@@ -60,6 +60,11 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+        }
+        create("beta") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".beta"
+            matchingFallbacks += listOf("release")
         }
     }
     buildFeatures {
