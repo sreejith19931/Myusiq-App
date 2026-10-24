@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.4.0] - 2026-10-20
+## [1.4.0] - 2026-10-24
 
 ### Added & Fixed
 - **Interactive Tap-to-Sync Lyric Creator**: Built real-time tap-to-sync lyric creator bottom sheet allowing users to stamp LRC timestamps `[mm:ss.xx]` line-by-line during track playback and embed into audio ID3 tags.
