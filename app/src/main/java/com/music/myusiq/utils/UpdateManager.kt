@@ -226,19 +226,14 @@ object UpdateManager {
             .filter { it.startsWith("-") || it.startsWith("*") }
             .map { it.replace(Regex("\\[(.*?)\\]\\((.*?)\\)"), "$1") }
 
-        val conciseNotes = if (bulletPoints.isNotEmpty()) {
-            bulletPoints.take(6).joinToString("\n")
+        val highlights = if (bulletPoints.isNotEmpty()) {
+            bulletPoints.take(4).joinToString("\n")
         } else {
-            rawNotes
-                .replace(Regex("\\[(.*?)\\]\\((.*?)\\)"), "")
-                .replace(Regex("https?://\\S+"), "")
-                .replace(Regex("#{1,6}\\s*"), "")
-                .trim()
-                .take(400)
+            "- Full feature update and performance optimizations"
         }
 
         val message = "A new version (${updateInfo.latestVersion}) is available!\n\n" +
-                conciseNotes
+                "Highlights:\n$highlights"
 
         MaterialAlertDialogBuilder(context)
             .setTitle("New Update Available 🚀")
