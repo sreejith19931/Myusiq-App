@@ -224,7 +224,7 @@ object UpdateManager {
         val lines = rawNotes.split("\n")
         val bulletPoints = lines.map { it.trim() }
             .filter { it.startsWith("-") || it.startsWith("*") }
-            .map { it.replace(Regex("\\[(.*?)\\]\\((.*?)\\)"), "$1") }
+            .map { it.replace(Regex("\\[(.*?)\\]\\((.*?)\\)"), "$1").replace("**", "") }
 
         val highlights = if (bulletPoints.isNotEmpty()) {
             bulletPoints.take(4).joinToString("\n")
