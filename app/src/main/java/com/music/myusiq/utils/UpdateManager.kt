@@ -214,19 +214,24 @@ object UpdateManager {
 
     fun showUpdateDialog(context: Context, updateInfo: UpdateInfo) {
         val rawNotes = updateInfo.releaseNotes
-        val cleanNotes = rawNotes
-            .replace(Regex("\\[(.*?)\\]\\((.*?)\\)"), "$1")
-            .replace(Regex("#{1,6}\\s*"), "")
-            .trim()
+        val lines = rawNotes.split("\n")
+        val bulletPoints = lines.map { it.trim() }
+            .filter { it.startsWith("-") || it.startsWith("*") }
+            .map { it.replace(Regex("\\[(.*?)\\]\\((.*?)\\)"), "$1") }
 
-        val conciseNotes = if (cleanNotes.length > 600) {
-            cleanNotes.substring(0, 600) + "...\n(See GitHub for full changelog)"
+        val conciseNotes = if (bulletPoints.isNotEmpty()) {
+            bulletPoints.take(6).joinToString("\n")
         } else {
-            cleanNotes
+            rawNotes
+                .replace(Regex("\\[(.*?)\\]\\((.*?)\\)"), "")
+                .replace(Regex("https?://\\S+"), "")
+                .replace(Regex("#{1,6}\\s*"), "")
+                .trim()
+                .take(400)
         }
 
         val message = "A new version (${updateInfo.latestVersion}) is available!\n\n" +
-                "Highlights:\n$conciseNotes"
+                conciseNotes
 
         MaterialAlertDialogBuilder(context)
             .setTitle("New Update Available 🚀")

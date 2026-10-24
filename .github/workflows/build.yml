@@ -114,9 +114,10 @@ jobs:
             release-artifacts/*.apk
             README.md
             CHANGELOG.md
+          body_path: CHANGELOG.md
           draft: false
           prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') || contains(github.ref_name, 'alpha') }}
-          generate_release_notes: true
+          generate_release_notes: false
 
       - name: Send Telegram Announcement
         if: "!contains(github.ref_name, 'beta') && !contains(github.ref_name, 'rc') && !contains(github.ref_name, 'alpha')"
