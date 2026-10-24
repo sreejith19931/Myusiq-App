@@ -191,11 +191,8 @@ class SetupActivity : AppCompatActivity() {
                     }
                 }
                 2 -> {
-                    if (selectedFolders.isNotEmpty()) {
-                        binding.viewPagerSetup.currentItem = 3
-                    } else {
-                        Toast.makeText(this, R.string.select_directory_toast, Toast.LENGTH_SHORT).show()
-                    }
+                    // Folder selection is optional - proceed to step 3 (personalize) automatically scanning all device music if none selected
+                    binding.viewPagerSetup.currentItem = 3
                 }
                 3 -> {
                     finishSetup()
