@@ -32,7 +32,7 @@ object ChangelogManager {
         val lastSeenVersionCode = prefs.getInt(KEY_LAST_VERSION_CODE, 0)
 
         var currentVersionCode = 10400
-        var currentVersionName = "1.4.0-beta1"
+        var currentVersionName = "1.4.0"
 
         try {
             val pInfo = activity.packageManager.getPackageInfo(activity.packageName, 0)
@@ -42,7 +42,7 @@ object ChangelogManager {
                 @Suppress("DEPRECATION")
                 pInfo.versionCode
             }
-            currentVersionName = pInfo.versionName ?: "1.4.0-beta1"
+            currentVersionName = pInfo.versionName ?: "1.4.0"
         } catch (_: Exception) {}
 
         val isBetaBuild = currentVersionName.contains("beta", ignoreCase = true) || activity.packageName.endsWith(".beta")
