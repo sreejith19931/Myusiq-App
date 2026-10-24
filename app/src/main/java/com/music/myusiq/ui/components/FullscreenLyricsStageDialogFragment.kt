@@ -96,6 +96,10 @@ class FullscreenLyricsStageDialogFragment : DialogFragment() {
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (isGranted) {
                 viewModel.refreshAudioSessionId()
+                val id = viewModel.audioSessionId.value
+                if (id > 0) {
+                    fftEngineManager?.attachToSession(id)
+                }
             }
         }
 
@@ -110,6 +114,10 @@ class FullscreenLyricsStageDialogFragment : DialogFragment() {
             requestAudioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
         } else {
             viewModel.refreshAudioSessionId()
+            val id = viewModel.audioSessionId.value
+            if (id > 0) {
+                fftEngineManager?.attachToSession(id)
+            }
         }
     }
 
