@@ -68,10 +68,12 @@ jobs:
         mkdir -p release-output
         if [ -f app/build/outputs/apk/beta/app-beta.apk ]; then
           cp app/build/outputs/apk/beta/app-beta.apk release-output/Myusiq-${VERSION_NAME}.apk
-        else
+        elif [ -f app/build/outputs/apk/release/app-release.apk ]; then
           cp app/build/outputs/apk/release/app-release.apk release-output/Myusiq-${VERSION_NAME}.apk
         fi
-        if [ -f wear/build/outputs/apk/release/wear-release.apk ]; then
+        if [ -f wear/build/outputs/apk/beta/wear-beta.apk ]; then
+          cp wear/build/outputs/apk/beta/wear-beta.apk release-output/Myusiq-Wear-${VERSION_NAME}.apk
+        elif [ -f wear/build/outputs/apk/release/wear-release.apk ]; then
           cp wear/build/outputs/apk/release/wear-release.apk release-output/Myusiq-Wear-${VERSION_NAME}.apk
         fi
 
