@@ -58,5 +58,6 @@
     <com.google.android.material.materialswitch.MaterialSwitch
         android:id="@+id/switchFolder"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        app:thumbIcon="@drawable/ic_switch_headphone_thumb" />
 </LinearLayout>

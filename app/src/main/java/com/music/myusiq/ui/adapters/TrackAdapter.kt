@@ -57,21 +57,32 @@ class TrackAdapter(
     private var sectionPositions = ArrayList<Int>()
     private var sectionsArray = arrayOf<Any>()
 
-    override fun getSections(): Array<Any> {
+    override fun submitList(list: List<TrackUiModel>?) {
+        updateSections(list ?: emptyList())
+        super.submitList(list)
+    }
+
+    override fun submitList(list: List<TrackUiModel>?, commitCallback: Runnable?) {
+        updateSections(list ?: emptyList())
+        super.submitList(list, commitCallback)
+    }
+
+    private fun updateSections(list: List<TrackUiModel>) {
         val sections = ArrayList<String>()
-        sectionPositions = ArrayList()
-        val list = currentList
-        for (i in 0 until list.size) {
+        val positions = ArrayList<Int>()
+        for (i in list.indices) {
             val title = list[i].song.title.trim()
             val section = if (title.isNotEmpty()) title.first().uppercaseChar().toString() else "#"
             if (!sections.contains(section)) {
                 sections.add(section)
-                sectionPositions.add(i)
+                positions.add(i)
             }
         }
         sectionsArray = sections.toArray()
-        return sectionsArray
+        sectionPositions = positions
     }
+
+    override fun getSections(): Array<Any> = sectionsArray
 
     override fun getPositionForSection(sectionIndex: Int): Int {
         if (sectionIndex < 0 || sectionIndex >= sectionPositions.size) return 0
@@ -254,7 +265,7 @@ class TrackAdapter(
             val context = itemView.context
             if (!context.isActivityDestroyed()) {
                 val currentSignature = artworkSignature ?: 0L
-                val cachedArtFile = com.music.myusiq.utils.ArtworkUtils.getArtworkFile(context, song.id, song.path)
+                val cachedArtFile = com.music.myusiq.utils.ArtworkUtils.getQuickArtworkFile(context, song.id, song.path, song.album)
 
                 if (cachedArtFile != null) {
                     Glide.with(context)
@@ -263,8 +274,7 @@ class TrackAdapter(
                         .signature(ObjectKey(currentSignature))
                         .placeholder(R.drawable.ic_music_note_2)
                         .error(R.drawable.ic_music_note_2)
-                        .diskCacheStrategy(DiskCacheStrategy.NONE)
-                        .skipMemoryCache(true)
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
                         .override(120, 120)
                         .into(ivTrackArt)
                 } else {

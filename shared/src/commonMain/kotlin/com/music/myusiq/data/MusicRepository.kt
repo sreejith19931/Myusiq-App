@@ -67,6 +67,7 @@ class MusicRepository(
     }
 
     suspend fun getFolderItems(): List<FolderItem> = withContext(Dispatchers.Default) {
+        // Always scan all raw songs so deselected/blacklisted folders remain visible on the folders page
         val songs = musicScanner.scanAllSongs()
         val blacklistedPaths = musicScanner.getBlacklistedFolderPaths()
         val allowedPaths = musicScanner.getAllowedFolderUris()

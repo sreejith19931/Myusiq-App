@@ -60,6 +60,7 @@
             android:layout_marginTop="8dp"
             android:scaleX="0.85"
             android:scaleY="0.85"
+            app:thumbIcon="@drawable/ic_switch_headphone_thumb"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/divider" />

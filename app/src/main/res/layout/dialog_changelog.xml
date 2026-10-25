@@ -40,11 +40,11 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="44dp"
             android:layout_marginBottom="16dp"
-            android:text="Version 1.4.0"
+            android:text="Version 1.4.1"
             android:textAppearance="?attr/textAppearanceLabelMedium"
             android:textColor="?attr/colorOnSurfaceVariant" />
 
-        <!-- Highlight 1: Interactive Tap-to-Sync Lyric Creator -->
+        <!-- Highlight 1: Streamlined Setup & Permissions Wizard -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -54,7 +54,7 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_edit"
+                android:src="@drawable/ic_check"
                 app:tint="?attr/colorPrimary"
                 android:importantForAccessibility="no" />
 
@@ -68,20 +68,20 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Tap-to-Sync Lyric Creator"
+                    android:text="Streamlined Setup &amp; Permissions"
                     android:textAppearance="?attr/textAppearanceBodyMedium"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Real-time tap-to-sync lyric editor bottom sheet to stamp LRC timestamps line-by-line and embed into audio ID3 tags."
+                    android:text="Green verified permission cards with bold typography and badge-free clean design."
                     android:textAppearance="?attr/textAppearanceBodySmall"
                     android:textColor="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Highlight 2: Sub-Second Karaoke Line Shading -->
+        <!-- Highlight 2: Default-Deselected Folder Setup -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -91,7 +91,7 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_blur"
+                android:src="@drawable/ic_folder"
                 app:tint="?attr/colorPrimary"
                 android:importantForAccessibility="no" />
 
@@ -105,20 +105,20 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Sub-Second Karaoke Line Shading"
+                    android:text="Default-Deselected Folder Setup"
                     android:textAppearance="?attr/textAppearanceBodyMedium"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Smooth horizontal left-to-right text fill gradient shading rendered in real-time as audio progresses."
+                    android:text="Discovered folders start deselected by default, allowing users to explicitly pick directories to scan."
                     android:textAppearance="?attr/textAppearanceBodySmall"
                     android:textColor="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Highlight 3: 60fps Visualizer Studio -->
+        <!-- Highlight 3: Zero-Delay Folder Toggling -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -128,7 +128,7 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_equalizer"
+                android:src="@drawable/ic_speed"
                 app:tint="?attr/colorPrimary"
                 android:importantForAccessibility="no" />
 
@@ -142,20 +142,20 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="60fps Visualizer Studio"
+                    android:text="Zero-Delay Folder Toggling"
                     android:textAppearance="?attr/textAppearanceBodyMedium"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Standalone 60fps Visualizer Studio with 4 audio-reactive render modes (Spectrum, Circular Pulse, Waveform, Particles)."
+                    android:text="In-memory folder map caching providing instant UI feedback when toggling exclusions and smart noise filters."
                     android:textAppearance="?attr/textAppearanceBodySmall"
                     android:textColor="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Highlight 4: Persistent Metadata Fix History -->
+        <!-- Highlight 4: Personalized Setup Theme Icon -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -165,7 +165,7 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_refresh"
+                android:src="@drawable/ic_palette"
                 app:tint="?attr/colorPrimary"
                 android:importantForAccessibility="no" />
 
@@ -179,14 +179,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Persistent Metadata Fix History"
+                    android:text="Personalized Setup Theme Icon"
                     android:textAppearance="?attr/textAppearanceBodyMedium"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Track edit history mirrored to public shared storage and MediaStore, surviving app updates and reinstalls."
+                    android:text="Added themed color palette header illustration in setup personalize step."
                     android:textAppearance="?attr/textAppearanceBodySmall"
                     android:textColor="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
