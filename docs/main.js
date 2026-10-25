@@ -252,7 +252,6 @@ function initScrollThemeMorphing() {
         { selector: '#latest-blog-post', primary: '#8B5CF6', container: '#1E1B4B', glow: 'rgba(139, 92, 246, 0.25)' },
         { selector: '#features', primary: '#38BDF8', container: '#0F172A', glow: 'rgba(56, 189, 248, 0.25)' },
         { selector: '#gallery', primary: '#43A047', container: '#1B5E20', glow: 'rgba(67, 160, 71, 0.25)' },
-        { selector: '#timeline', primary: '#FB8C00', container: '#E65100', glow: 'rgba(251, 140, 0, 0.25)' },
         { selector: '#download', primary: '#EC4899', container: '#831843', glow: 'rgba(236, 72, 153, 0.25)' }
     ];
 
@@ -306,26 +305,6 @@ function initLyricKaraokeScrollDemo() {
             });
         }
     }, { passive: true });
-}
-
-function initTimelineScrollObserver() {
-    const timelineItems = document.querySelectorAll('.timeline-item');
-    if (!timelineItems.length) return;
-
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('active');
-            } else {
-                entry.target.classList.remove('active');
-            }
-        });
-    }, {
-        threshold: 0.3,
-        rootMargin: '-5% 0px -20% 0px'
-    });
-
-    timelineItems.forEach(item => observer.observe(item));
 }
 
 function initScrollAudioWaveCanvas() {
@@ -414,7 +393,6 @@ function initScrollAnimations() {
     initHeroPhoneTiltOnScroll();
     initScrollThemeMorphing();
     initLyricKaraokeScrollDemo();
-    initTimelineScrollObserver();
     initScrollAudioWaveCanvas();
 }
 

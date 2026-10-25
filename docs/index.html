@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Myusiq | Modern Open-Source Music Player for Android</title>
+    <title>Myusiq | Modern Offline Music Player for Android</title>
 
     <link rel="icon" type="image/svg+xml" href="images/app_logo.svg">
 
     <!-- OpenGraph / Social Metadata -->
-    <meta property="og:title" content="Myusiq | Modern Open-Source Music Player for Android">
-    <meta property="og:description" content="Experience studio-grade audio with Material You dynamic theming. 100% offline, privacy-first, and open-source.">
+    <meta property="og:title" content="Myusiq | Modern Offline Music Player for Android">
+    <meta property="og:description" content="Experience studio-grade audio with Material You dynamic theming. 100% offline, privacy-first, and ad-free.">
     <meta property="og:image" content="https://myusiq.vercel.app/images/app_logo.png">
     <meta property="og:url" content="https://myusiq.vercel.app">
     <meta name="twitter:card" content="summary_large_image">
@@ -26,8 +26,8 @@
 
     <!-- Announcement Banner for Major Releases -->
     <div id="announcement-banner" class="announcement-banner" style="display: flex;">
-        <span class="banner-badge">🎉 Major Release</span>
-        <span id="banner-text">🎉 Major Release! Welcome to Myusiq v1.4.0 — Experience the next level of offline audio!</span>
+        <span class="banner-badge">🎉 Latest Release</span>
+        <span id="banner-text">🎉 Welcome to Myusiq v1.4.1 — Streamlined permissions, zero-delay caching & enhanced audio controls!</span>
         <a id="banner-action" href="#download" class="banner-link">Get Update</a>
         <button class="banner-close" onclick="closeBanner()" aria-label="Close Announcement">&times;</button>
     </div>
@@ -55,7 +55,7 @@
         <div class="container hero-grid reveal active">
             <div class="hero-text">
                 <h1>The Music Player Built for Audiophiles & Privacy Purists</h1>
-                <p>Experience studio-grade audio with dynamic Material You theming that adapts to your album art. 100% open-source, ad-free, and offline.</p>
+                <p>Experience studio-grade audio with dynamic Material You theming that adapts to your album art. 100% ad-free, private, and offline.</p>
                 <div class="hero-actions">
                     <a href="https://github.com/sreejith19931/Myusiq-App/releases" class="btn btn-primary">
                         📥 Download APK
@@ -103,41 +103,29 @@
                 <div class="blog-header">
                     <div class="blog-badge-wrap">
                         <span class="blog-badge">🚀 FEATURED RELEASE</span>
-                        <span class="blog-version">v1.4.0</span>
+                        <span class="blog-version">v1.4.1</span>
                     </div>
-                    <span class="blog-date">Oct 24, 2026</span>
+                    <span class="blog-date">Oct 25, 2026</span>
                 </div>
-                <h2 class="blog-title">What's New in Myusiq v1.4.0</h2>
+                <h2 class="blog-title">What's New in Myusiq v1.4.1</h2>
                 <div class="blog-body">
-                    <p class="blog-intro">We are excited to announce the official release of <strong>Myusiq v1.4.0</strong>! This update brings key feature additions, performance optimizations, and important usability upgrades to your audio experience.</p>
+                    <p class="blog-intro"><strong>Myusiq v1.4.1</strong> brings streamlined setup permission cards, zero-delay folder toggling, and core stability enhancements to your audio experience.</p>
                     <div class="blog-highlights-box">
-                        <h4 class="blog-highlights-title">✨ Key Features &amp; Changes Implemented</h4>
+                        <h4 class="blog-highlights-title">✨ Key Highlights</h4>
                         <ul class="blog-items-list">
-                            <li><strong>Interactive Tap-to-Sync Lyric Creator</strong>: Built real-time tap-to-sync lyric creator bottom sheet allowing users to stamp LRC timestamps `[mm:ss.xx]` line-by-line during track playback and embed into audio ID3 tags.</li>
-                            <li><strong>Sub-Second Karaoke Line Shading</strong>: Upgraded `LyricLineView` to render smooth horizontal left-to-right text fill gradient shading as audio progresses.</li>
-                            <li><strong>60fps Visualizer Studio</strong>: Added standalone 60fps Visualizer Studio with 4 audio-reactive render modes (*Spectrum Analyzer, Circular Pulse Ring, Liquid Waveform, Particle Field*).</li>
-                            <li><strong>Persistent Metadata Fix History</strong>: Mirror track edit history to public shared storage (`.myusiq_backup`) and MediaStore, guaranteeing survival across app updates and reinstalls.</li>
-                            <li><strong>10-Band Equalizer & Spectrum Visualizer</strong>: Expanded equalizer to 10 frequency bands (`31Hz`, `62Hz`, `125Hz`, `250Hz`, `500Hz`, `1kHz`, `2kHz`, `4kHz`, `8kHz`, `16kHz`) with a real-time FFT frequency spectrum analyzer.</li>
-                            <li><strong>Hardware AudioFX Suite</strong>: Integrated native `BassBoost`, `Virtualizer` (3D Spatial surround), `PresetReverb`, and `LoudnessEnhancer` audio effects with live UI sliders & toggle chips.</li>
-                            <li><strong>Variable Playback Speed & Pitch Control</strong>: Variable speed controls (`0.75x`, `1.0x`, `1.25x`, `1.5x`, `2.0x`) with pitch locking via ExoPlayer `PlaybackParameters`.</li>
-                            <li><strong>EBU R128 ReplayGain Normalization</strong>: Automatic ReplayGain parsing with +6dB preamp volume compensation for dynamic, consistent volume across all tracks.</li>
-                            <li><strong>Audio Output Target Routing</strong>: Profile memory auto-switching across Device Speaker, Wired Headphones, and Bluetooth Audio outputs.</li>
-                            <li><strong>Dynamic Hi-Res Quality Badges</strong>: Real-time sample rate (`96.0 kHz`), format (`FLAC`), and bitrate badges rendered on the Now Playing player screen.</li>
-                            <li><strong>Playback Engine Stability & Error Safeguards</strong>: Error recovery, HAL resource leak prevention, and visualizer bounds safeguards across custom ROMs.</li>
-                            <li><strong>Parallel Auto-Fix & Bounded Processing</strong>: Accelerated Library Janitor cloud scans with 4x parallel speedup via Kotlin Coroutines `Semaphore(4)` permit locks.</li>
-                            <li><strong>Shared Album Artwork Auto-Assignment</strong>: Tracks belonging to the same album automatically share and reuse official album artwork, instantly filling missing covers across multi-track albums.</li>
-                            <li><strong>In-Memory LRU Search Query Caching</strong>: Cached online metadata search results with an LRU cache (100-entry capacity) to prevent duplicate API queries and speed up manual searches.</li>
-                            <li><strong>Dialog Overflow & Fixed Button Placement</strong>: Optimized review pop-up dialog height and button anchoring so "Apply Selected" is always visible across all device screen sizes.</li>
-                            <li><strong>Smart First-Time Scan Lifecycle</strong>: Runs a comprehensive artwork & metadata scan once on initial launch, then smartly filters subsequent scans strictly for tracks with missing art or messy metadata.</li>
-                            <li><strong>Metadata Verification Accuracy</strong>: Enhanced clutter detection and path synchronization to eliminate false positives for clean or previously updated tracks.</li>
+                            <li><strong>Streamlined Setup &amp; Permissions Wizard</strong>: Clean green verification cards and themed header icons for easy setup.</li>
+                            <li><strong>Default-Deselected Folder Setup</strong>: Discovered music directories start deselected by default, putting directory scanning strictly in your control.</li>
+                            <li><strong>Zero-Delay Folder Toggling</strong>: In-memory folder caching for instant UI responsiveness when toggling folder exclusions and noise filters.</li>
+                            <li><strong>Interactive Tap-to-Sync Lyric Creator</strong>: Real-time timestamp editor to stamp LRC timestamps line-by-line during track playback.</li>
+                            <li><strong>60fps Visualizer Studio &amp; 10-Band EQ</strong>: Hardware-accelerated audio spectrum visualizer suite and precision 10-band equalizer.</li>
                         </ul>
                     </div>
                 </div>
                 <div class="blog-actions">
-                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/download/v1.4.0/Myusiq-v1.4.0.apk" class="btn btn-primary btn-sm">
-                        ⚡ Download Myusiq-v1.4.0.apk
+                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/download/v1.4.1/Myusiq-v1.4.1.apk" class="btn btn-primary btn-sm">
+                        ⚡ Download Myusiq-v1.4.1.apk
                     </a>
-                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/tag/v1.4.0" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
+                    <a href="https://github.com/sreejith19931/Myusiq-App/releases/tag/v1.4.1" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
                         📦 View Release Notes on GitHub
                     </a>
                 </div>
@@ -295,205 +283,6 @@
                 </div>
                 <div class="screenshot-card" data-category="tools" onclick="openLightbox('images/screenshot_driving.png', 'Myusiq - High-Contrast Driving Mode')">
                     <img src="images/screenshot_driving.png" alt="Driving Mode Screen">
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Timeline / Roadmap Section (Auto-populated by scripts/update_roadmap.py) -->
-                            <section id="timeline" class="timeline-section">
-        <div class="container">
-            <div class="section-header reveal">
-                <span class="section-badge">Roadmap & History</span>
-                <h2 class="section-title">What's New in Myusiq</h2>
-                <p class="section-subtitle">Track the latest user features, design updates, and audio enhancements.</p>
-            </div>
-            <div class="timeline reveal">
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-content glass-card">
-                        <div class="timeline-header">
-                            <span class="version-badge">v1.4.0</span>
-                            <span class="date">Oct 24, 2026</span>
-                        </div>
-                        <ul class="changelog-list">
-                            <li><strong>Interactive Tap-to-Sync Lyric Creator</strong>: Built real-time tap-to-sync lyric creator bottom sheet allowing users to stamp LRC timestamps `[mm:ss.xx]` line-by-line during track playback and embed into audio ID3 tags.</li>
-                            <li><strong>Sub-Second Karaoke Line Shading</strong>: Upgraded `LyricLineView` to render smooth horizontal left-to-right text fill gradient shading as audio progresses.</li>
-                            <li><strong>60fps Visualizer Studio</strong>: Added standalone 60fps Visualizer Studio with 4 audio-reactive render modes (*Spectrum Analyzer, Circular Pulse Ring, Liquid Waveform, Particle Field*).</li>
-                            <li><strong>Persistent Metadata Fix History</strong>: Mirror track edit history to public shared storage (`.myusiq_backup`) and MediaStore, guaranteeing survival across app updates and reinstalls.</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-content glass-card">
-                        <div class="timeline-header">
-                            <span class="version-badge">v1.3.0</span>
-                            <span class="date">Oct 18, 2026</span>
-                        </div>
-                        <ul class="changelog-list">
-                            <li><strong>10-Band Equalizer & Spectrum Visualizer</strong>: Expanded equalizer to 10 frequency bands (`31Hz`, `62Hz`, `125Hz`, `250Hz`, `500Hz`, `1kHz`, `2kHz`, `4kHz`, `8kHz`, `16kHz`) with a real-time FFT frequency spectrum analyzer.</li>
-                            <li><strong>Hardware AudioFX Suite</strong>: Integrated native `BassBoost`, `Virtualizer` (3D Spatial surround), `PresetReverb`, and `LoudnessEnhancer` audio effects with live UI sliders & toggle chips.</li>
-                            <li><strong>Variable Playback Speed & Pitch Control</strong>: Variable speed controls (`0.75x`, `1.0x`, `1.25x`, `1.5x`, `2.0x`) with pitch locking via ExoPlayer `PlaybackParameters`.</li>
-                            <li><strong>EBU R128 ReplayGain Normalization</strong>: Automatic ReplayGain parsing with +6dB preamp volume compensation for dynamic, consistent volume across all tracks.</li>
-                            <li><strong>Audio Output Target Routing</strong>: Profile memory auto-switching across Device Speaker, Wired Headphones, and Bluetooth Audio outputs.</li>
-                            <li><strong>Dynamic Hi-Res Quality Badges</strong>: Real-time sample rate (`96.0 kHz`), format (`FLAC`), and bitrate badges rendered on the Now Playing player screen.</li>
-                            <li><strong>Playback Engine Stability & Error Safeguards</strong>: Error recovery, HAL resource leak prevention, and visualizer bounds safeguards across custom ROMs.</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-content glass-card">
-                        <div class="timeline-header">
-                            <span class="version-badge">v1.3.0-beta3</span>
-                            <span class="date">Oct 16, 2026</span>
-                        </div>
-                        <ul class="changelog-list">
-                            <li><strong>Parallel Auto-Fix & Bounded Processing</strong>: Accelerated Library Janitor cloud scans with 4x parallel speedup via Kotlin Coroutines `Semaphore(4)` permit locks.</li>
-                            <li><strong>Shared Album Artwork Auto-Assignment</strong>: Tracks belonging to the same album automatically share and reuse official album artwork, instantly filling missing covers across multi-track albums.</li>
-                            <li><strong>In-Memory LRU Search Query Caching</strong>: Cached online metadata search results with an LRU cache (100-entry capacity) to prevent duplicate API queries and speed up manual searches.</li>
-                            <li><strong>Dialog Overflow & Fixed Button Placement</strong>: Optimized review pop-up dialog height and button anchoring so "Apply Selected" is always visible across all device screen sizes.</li>
-                            <li><strong>Smart First-Time Scan Lifecycle</strong>: Runs a comprehensive artwork & metadata scan once on initial launch, then smartly filters subsequent scans strictly for tracks with missing art or messy metadata.</li>
-                            <li><strong>Metadata Verification Accuracy</strong>: Enhanced clutter detection and path synchronization to eliminate false positives for clean or previously updated tracks.</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-content glass-card">
-                        <div class="timeline-header">
-                            <span class="version-badge">v1.3.0-beta2</span>
-                            <span class="date">Oct 15, 2026</span>
-                        </div>
-                        <ul class="changelog-list">
-                            <li><strong>Smart Janitor Candidate Verification & Similarity Scoring</strong>: Added token Jaccard similarity and duration match bonus to candidate evaluation, eliminating false positives and wrong suggestions.</li>
-                            <li><strong>Interactive Manual Online Search</strong>: Added a "Search Online" button in the Janitor review pop-up with a search picker (`dialog_manual_cloud_search.xml`) displaying iTunes & Deezer candidate results with high-res artwork, album info, and match confidence scores.</li>
-                            <li><strong>One-Tap Metadata Revert / Undo</strong>: Implemented pre-edit JSON snapshots before applying bulk/single metadata updates, with a 1-tap "Undo Last Fix" card in Library Janitor.</li>
-                            <li><strong>Offline Title Case Sanitizer</strong>: Converts ALL-CAPS or all-lowercase titles to Title Case and strips website domains (`www.site.com`), stray underscores, and web converter tags offline.</li>
-                            <li><strong>Auto Metadata Fix Optimization</strong>: Prevented infinite re-scanning of clean or already-fixed tracks when toggling the Auto-Improve switch ON/OFF.</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-content glass-card">
-                        <div class="timeline-header">
-                            <span class="version-badge">v1.3.0-beta1</span>
-                            <span class="date">Oct 15, 2026</span>
-                        </div>
-                        <ul class="changelog-list">
-                            <li><strong>10-Band Equalizer Core Engine</strong>: Expanded equalizer from 5 bands to 10 bands (`31Hz`, `62Hz`, `125Hz`, `250Hz`, `500Hz`, `1kHz`, `2kHz`, `4kHz`, `8kHz`, `16kHz`) with profile auto-switching.</li>
-                            <li><strong>Hardware AudioFX Extensions</strong>: Integrated native Android `BassBoost`, `Virtualizer` (3D Spatial surround), `PresetReverb`, and `LoudnessEnhancer` instances tied to ExoPlayer audio session IDs.</li>
-                            <li><strong>Dual-Player AudioFX Crossfade Sync</strong>: Preserved primary and secondary AudioFX session switching for smooth dual-ExoPlayer crossfading without popping.</li>
-                            <li><strong>Equalizer UI Redesign</strong>: Added 10-band slider interface with horizontal scrolling and live interactive controls for Bass Boost & 3D Virtualizer strength.</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-content glass-card">
-                        <div class="timeline-header">
-                            <span class="version-badge">v1.2.0</span>
-                            <span class="date">Oct 12, 2026</span>
-                        </div>
-                        <ul class="changelog-list">
-                            <li><strong>A-Z FastScroller Enhancements</strong>: Positioned '#' symbol on top and implemented smooth 3D fisheye wave zoom animation with smoothstep curve.</li>
-                            <li><strong>Settings Page Reorganization</strong>: Grouped all Settings categories and sub-screens into clean Material 3 card sections with section headers.</li>
-                            <li><strong>Whole-Track Energy Analysis & Smart Mixes</strong>: Updated waveform extractor to sample 100 points across the entire track duration and guaranteed full 20-50 track smart playlist generation.</li>
-                            <li><strong>App Launch Responsiveness</strong>: Optimized PlaybackViewModel to start playback instantly when tapping a track on app launch with zero latency.</li>
-                            <li><strong>In-App GitHub Update Engine</strong>: Automated release checks, direct APK downloading with progress status, rate limit handling, and Android 8.0+ installer permissions.</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-content glass-card">
-                        <div class="timeline-header">
-                            <span class="version-badge">v1.1.1</span>
-                            <span class="date">Oct 10, 2026</span>
-                        </div>
-                        <ul class="changelog-list">
-                            <li><strong>In-App Update Checker Fixes</strong>: Fixed issue where "Check for Updates" reported "Unable to check. Check internet connection" by adding Proguard/R8 `@Keep` rules for Gson models.</li>
-                            <li><strong>Specific Error Feedback</strong>: Enhanced update check status reporting to distinguish network disconnections from GitHub API rate limits (HTTP 403/429), HTTP 404, or parse errors.</li>
-                            <li><strong>Multi-Repository Fallback & Asset Filtering</strong>: Added fallback endpoint support and improved APK asset matching to reliably download phone installer binaries.</li>
-                            <li><strong>Package Install Permission Handling</strong>: Handled Android 8.0+ unknown app installation permissions gracefully.</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-content glass-card">
-                        <div class="timeline-header">
-                            <span class="version-badge">v1.1.0</span>
-                            <span class="date">Oct 09, 2026</span>
-                        </div>
-                        <ul class="changelog-list">
-                            <li><strong>In-App GitHub Update Tracker</strong>: Automatic update check on app launch and manual check in Settings -> About with direct APK download & installation.</li>
-                            <li><strong>Telegram Announcement Automation</strong>: Integrated automated release publishing & Telegram channel notifications.</li>
-                            <li><strong>UI & Performance Enhancements</strong>: General polish, bug fixes, and stability improvements.</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-content glass-card">
-                        <div class="timeline-header">
-                            <span class="version-badge">v1.0.2</span>
-                            <span class="date">Oct 08, 2026</span>
-                        </div>
-                        <ul class="changelog-list">
-                            <li><strong>Physical ID3 Tag & Artwork Persistence</strong>: Embedded ID3v2 tags and cover art directly into audio files on disk and added persistent public backups.</li>
-                            <li><strong>Permission Optimization</strong>: Removed unnecessary `RECORD_AUDIO` prompt on startup, asking for audio recording permission strictly on-demand when enabling the FFT visualizer.</li>
-                            <li><strong>Performance & Playback Responsiveness</strong>: Accelerated library scan speed to <50ms and eliminated Binder IPC queue latency for instant track playback.</li>
-                            <li><strong>CI/CD Build Speed</strong>: Optimized GitHub Actions workflow with Gradle build cache and parallel task execution.</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-content glass-card">
-                        <div class="timeline-header">
-                            <span class="version-badge">v1.0.1</span>
-                            <span class="date">Oct 08, 2026</span>
-                        </div>
-                        <ul class="changelog-list">
-                            <li><strong>Release Key Integration</strong>: Configured release keystore and signing configs for automated GitHub releases and seamless in-place app updates.</li>
-                            <li><strong>CI/CD Build Pipeline</strong>: Updated GitHub Actions build workflow to generate production release APKs automatically.</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-content glass-card">
-                        <div class="timeline-header">
-                            <span class="version-badge">v1.0.0</span>
-                            <span class="date">Oct 06, 2026</span>
-                        </div>
-                        <ul class="changelog-list">
-                            <li><strong>Official Rebranding to Myusiq</strong>: Complete project and app rebrand from Rhythm to Myusiq across code, themes, widgets, navigation, build configurations, and website.</li>
-                            <li><strong>Album Grouping & Normalization</strong>: Resolved duplicate album cards for multi-artist albums by grouping tracks strictly by normalized album key.</li>
-                            <li><strong>Persistent Library Sorting</strong>: Added album sorting options (Alphabetical, Artist, Track Count, Recently Added) and track sorting options (Alphabetical, Recently Added, File Size, Popularity, Artist, Album, Recently Played) with Ascending/Descending toggles.</li>
-                            <li><strong>Interactive Janitor Review Pop-up</strong>: Added side-by-side comparison pop-ups for Auto-Fix Missing Artwork and Repair Missing Info displaying CURRENT vs PROPOSED info with checkboxes.</li>
-                            <li><strong>Lyrics Management & Transliteration</strong>: Added lyrics management with transliteration loaded on-demand.</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-content glass-card">
-                        <div class="timeline-header">
-                            <span class="version-badge">v0.9.5</span>
-                            <span class="date">Sep 20, 2026</span>
-                        </div>
-                        <ul class="changelog-list">
-                            <li><strong>Core Playback Engine</strong>: Robust local audio playback powered by Media3 and ExoPlayer.</li>
-                            <li><strong>Material Design 3 UI</strong>: Modern interface with seamless transitions, dynamic color extraction, Light/Dark mode.</li>
-                            <li><strong>Studio Equalizer</strong>: Built-in 5-band equalizer with presets and bass boost.</li>
-                            <li><strong>Audio Trimmer</strong>: Utility to clip and save audio segments.</li>
-                            <li><strong>Driving Mode</strong>: Simplified distraction-free UI for safe use while driving.</li>
-                        </ul>
-                    </div>
                 </div>
             </div>
         </div>

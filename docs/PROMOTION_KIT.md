@@ -7,18 +7,19 @@ This kit contains copy-paste ready posts and listing descriptions to launch and 
 ## 1. Reddit Post Template (`r/androidapps` & `r/Android`)
 
 **Title:**
-> [DEV] Myusiq v1.4.0 — A 100% Offline, Ad-Free Music Player with Material You, 10-Band EQ, 60fps Visualizer & Tap-to-Sync Lyric Creator
+> [DEV] Myusiq v1.4.1 — A 100% Offline, Ad-Free Music Player with Material You, 10-Band EQ, 60fps Visualizer & Tap-to-Sync Lyric Creator
 
 **Body:**
 ```markdown
 Hey everyone! 👋
 
-I'm the developer of **Myusiq**, an open-source, ad-free offline music player built for Android with modern Material Design 3 and Jetpack Media3.
+I'm the developer of **Myusiq**, an ad-free offline music player built for Android with modern Material Design 3 and Jetpack Media3.
 
 ### 🌟 Why Myusiq?
 Most modern music players are bloated with streaming ads or locked behind subscriptions. Myusiq is built strictly for local music lovers who want studio-grade audio output and total library control.
 
-### ✨ What's New in v1.4.0:
+### ✨ What's New in v1.4.1:
+- 📲 **Streamlined Permissions & Directory Discovery**: Refined verification wizard, default-deselected folder scanning, native directory browser, and zero-delay folder toggling.
 - 🎨 **Material You Dynamic Theming**: Interface colors breathe and extract swatches live from your album art.
 - 🎤 **Interactive Tap-to-Sync Lyric Creator**: Stamp LRC timestamps `[mm:ss.xx]` line-by-line while playing tracks and embed them into ID3 tags.
 - ⚡ **60fps Visualizer Studio**: Hardware-accelerated Spectrum Analyzer, Circular Pulse Ring, Liquid Waveform, and Particle Field.
@@ -28,8 +29,7 @@ Most modern music players are bloated with streaming ads or locked behind subscr
 - 🔒 **Zero Tracking**: 100% offline, zero analytics, zero ads.
 
 🌐 **Website & Interactive Demo:** [myusiq.vercel.app](https://myusiq.vercel.app)
-📥 **GitHub Release APK:** [Myusiq v1.4.0 on GitHub](https://github.com/sreejith19931/Myusiq-App/releases)
-⭐ **Source Code:** [GitHub Repository](https://github.com/sreejith19931/Myusiq)
+📥 **GitHub Release APK:** [Myusiq v1.4.1 on GitHub](https://github.com/sreejith19931/Myusiq-App/releases/tag/v1.4.1)
 
 I'd love your feedback, bug reports, and feature suggestions!
 ```
@@ -43,10 +43,11 @@ I'd love your feedback, bug reports, and feature suggestions!
 
 **Full Description:**
 ```markdown
-Myusiq is an open-source, high-fidelity offline Android music player engineered for audiophiles and privacy purists. 
+Myusiq is a high-fidelity, offline Android music player engineered for audiophiles and privacy purists. 
 
 Key Capabilities:
 - Material You Dynamic Theming: Adapts interface colors live to active album artwork.
+- Streamlined Setup & Directory Browser: Native directory picker with zero-delay folder caching.
 - Tap-to-Sync Lyric Creator: Real-time LRC timestamp editor to stamp lyrics line-by-line.
 - 60fps Audio Visualizer Studio: 4 audio-reactive render modes.
 - 10-Band Studio Equalizer: Hardware BassBoost, 3D Spatial Virtualizer, and FFT spectrum analyzer.
@@ -68,7 +69,8 @@ Hi Product Hunt! 👋
 
 I created Myusiq because I wanted an offline Android music player that combines modern Material You design with studio-grade audio controls, without tracking or ads.
 
-Today I'm excited to share Myusiq v1.4.0 featuring:
+Today I'm excited to share Myusiq v1.4.1 featuring:
+• 📲 Streamlined setup wizard & native music directory browser
 • 🎨 Dynamic Material You album art theme extraction
 • 🎤 Real-time Tap-to-Sync LRC lyric creator
 • ⚡ 60fps Visualizer Studio with 4 audio-reactive modes
@@ -83,11 +85,11 @@ Check out the interactive web demo at https://myusiq.vercel.app or download the 
 ## 4. X (Twitter) / Social Media Thread
 
 ```text
-🎵 Introducing Myusiq v1.4.0 — A 100% offline, ad-free Android music player with Material You dynamic theming, 10-band studio EQ & real-time lyric sync! 🚀
+🎵 Introducing Myusiq v1.4.1 — A 100% offline, ad-free Android music player with Material You dynamic theming, 10-band studio EQ & real-time lyric sync! 🚀
 
-1/4 🎨 Colors extract live from your album art.
-2/4 🎤 Interactive tap-to-sync LRC lyric creator bottom sheet.
-3/4 ⚡ 60fps Audio Visualizer Studio + hardware 3D AudioFX.
+1/4 📲 Streamlined setup & native folder discovery.
+2/4 🎨 Colors extract live from your album art.
+3/4 🎤 Interactive tap-to-sync LRC lyric creator.
 4/4 🔒 Zero tracking, zero ads, 100% private.
 
 Explore the interactive web demo: https://myusiq.vercel.app

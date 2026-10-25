@@ -60,8 +60,9 @@
 
 ---
 
-## 🚀 Key Capabilities (`v1.4.0`)
+## 🚀 Key Capabilities (`v1.4.1`)
 
+* 📲 **Streamlined Permissions & Directory Discovery**: Refined verification wizard, default-deselected folder scanning, native directory browser, and zero-delay folder toggling.
 * 🎨 **Material You Expressive Theming**: UI accent colors breathe and extract dynamic swatches live from your active track's album art.
 * 🎤 **Tap-to-Sync Lyric Creator**: Interactive timestamp editor to stamp LRC timestamps `[mm:ss.xx]` line-by-line during track playback and embed directly into ID3 tags.
 * ⚡ **60fps Visualizer Studio**: Hardware-accelerated visualizer suite featuring 4 audio-reactive modes (*Spectrum Analyzer, Circular Pulse Ring, Liquid Waveform, Particle Field*).
@@ -91,27 +92,7 @@
 ### Option 1: Direct APK Download (Recommended)
 Download the latest signed release APK from GitHub Releases:
 
-👉 **[Download Myusiq-v1.4.0.apk](https://github.com/sreejith19931/Myusiq-App/releases/download/v1.4.0/Myusiq-v1.4.0.apk)**
-
-### Option 2: Build from Source
-
-#### Prerequisites
-* Android Studio Koala | 2024.1.1 or newer
-* Android SDK 37 (Build Tools 35.0.0+)
-* JDK 17
-
-#### Build Steps
-```bash
-# 1. Clone the repository
-git clone https://github.com/sreejith19931/Myusiq.git
-cd Myusiq
-
-# 2. Build Debug APK using Gradle
-./gradlew app:assembleDebug
-
-# 3. Install on connected device
-./gradlew app:installDebug
-```
+👉 **[Download Myusiq-v1.4.1.apk](https://github.com/sreejith19931/Myusiq-App/releases/download/v1.4.1/Myusiq-v1.4.1.apk)**
 
 ---
 
