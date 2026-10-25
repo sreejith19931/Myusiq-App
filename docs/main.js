@@ -1,7 +1,7 @@
 /**
  * Myusiq Website Interactive Functionality
  * Features: Theme Sandbox, Interactive EQ Visualizer, Janitor Before/After Toggle,
- * Screenshot Lightbox, Scroll Animations & Dark/Light Mode.
+ * Screenshot Lightbox, Scroll-Driven 3D Parallax, Audio Wave Canvas, Lyric Sync & Dynamic Theme Morphing.
  */
 
 function closeBanner() {
@@ -209,7 +209,178 @@ function closeLightbox() {
     document.body.style.overflow = 'auto';
 }
 
-// --- 5. Scroll Animations & Navbar Scroll ---
+// --- 5. Advanced Scroll Animations, Parallax, Audio Canvas & Theme Morphing ---
+
+let lastScrollY = window.scrollY;
+let scrollVelocity = 0;
+
+function initScrollProgressBar() {
+    const progressBar = document.getElementById('scroll-progress-bar');
+    if (!progressBar) return;
+
+    window.addEventListener('scroll', () => {
+        const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (totalHeight > 0) {
+            const progress = (window.scrollY / totalHeight) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+    }, { passive: true });
+}
+
+function initHeroPhoneTiltOnScroll() {
+    const phoneFrame = document.querySelector('.phone-frame');
+    const heroSection = document.querySelector('.hero');
+    if (!phoneFrame || !heroSection) return;
+
+    window.addEventListener('scroll', () => {
+        const heroRect = heroSection.getBoundingClientRect();
+        if (heroRect.bottom > 0 && heroRect.top < window.innerHeight) {
+            const scrollRatio = window.scrollY / (heroSection.offsetHeight || 1);
+            const rotateX = Math.min(25, Math.max(-10, (scrollRatio * 30) - 10));
+            const rotateY = Math.min(15, Math.max(-15, (scrollRatio * -20) + 10));
+            const scale = Math.max(0.9, 1 - (scrollRatio * 0.15));
+            const translateY = scrollRatio * 40;
+
+            phoneFrame.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${scale}) translateY(${translateY}px)`;
+        }
+    }, { passive: true });
+}
+
+function initScrollThemeMorphing() {
+    const sectionThemes = [
+        { selector: '.hero', primary: '#A78BFA', container: '#2E1065', glow: 'rgba(167, 139, 250, 0.25)' },
+        { selector: '#latest-blog-post', primary: '#8B5CF6', container: '#1E1B4B', glow: 'rgba(139, 92, 246, 0.25)' },
+        { selector: '#features', primary: '#38BDF8', container: '#0F172A', glow: 'rgba(56, 189, 248, 0.25)' },
+        { selector: '#gallery', primary: '#43A047', container: '#1B5E20', glow: 'rgba(67, 160, 71, 0.25)' },
+        { selector: '#timeline', primary: '#FB8C00', container: '#E65100', glow: 'rgba(251, 140, 0, 0.25)' },
+        { selector: '#download', primary: '#EC4899', container: '#831843', glow: 'rgba(236, 72, 153, 0.25)' }
+    ];
+
+    window.addEventListener('scroll', () => {
+        const viewportMid = window.innerHeight / 2;
+        for (const theme of sectionThemes) {
+            const el = document.querySelector(theme.selector);
+            if (el) {
+                const rect = el.getBoundingClientRect();
+                if (rect.top <= viewportMid && rect.bottom >= viewportMid) {
+                    if (!isPickerOpen) {
+                        document.documentElement.style.setProperty('--primary', theme.primary);
+                        document.documentElement.style.setProperty('--primary-container', theme.container);
+                        document.documentElement.style.setProperty('--glow-primary', theme.glow);
+                    }
+                    break;
+                }
+            }
+        }
+    }, { passive: true });
+}
+
+function initLyricKaraokeScrollDemo() {
+    const demoCard = document.getElementById('lyric-scroll-demo');
+    if (!demoCard) return;
+
+    const items = demoCard.querySelectorAll('.lyric-line-item');
+    if (!items.length) return;
+
+    window.addEventListener('scroll', () => {
+        const rect = demoCard.getBoundingClientRect();
+        const cardHeight = demoCard.offsetHeight;
+        const windowHeight = window.innerHeight;
+
+        if (rect.top < windowHeight && rect.bottom > 0) {
+            const progress = Math.min(1, Math.max(0, (windowHeight * 0.7 - rect.top) / cardHeight));
+            const activeIndex = Math.min(items.length - 1, Math.floor(progress * items.length));
+
+            items.forEach((item, idx) => {
+                if (idx === activeIndex) {
+                    item.classList.add('active');
+                    const fillPercent = Math.min(100, Math.max(0, ((progress * items.length) - idx) * 100));
+                    item.style.setProperty('--lyric-fill-percent', `${fillPercent}%`);
+                } else if (idx < activeIndex) {
+                    item.classList.remove('active');
+                    item.style.setProperty('--lyric-fill-percent', '100%');
+                } else {
+                    item.classList.remove('active');
+                    item.style.setProperty('--lyric-fill-percent', '0%');
+                }
+            });
+        }
+    }, { passive: true });
+}
+
+function initTimelineScrollObserver() {
+    const timelineItems = document.querySelectorAll('.timeline-item');
+    if (!timelineItems.length) return;
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('active');
+            } else {
+                entry.target.classList.remove('active');
+            }
+        });
+    }, {
+        threshold: 0.3,
+        rootMargin: '-5% 0px -20% 0px'
+    });
+
+    timelineItems.forEach(item => observer.observe(item));
+}
+
+function initScrollAudioWaveCanvas() {
+    const canvas = document.getElementById('scroll-audio-canvas');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+        canvas.width = canvas.parentElement.offsetWidth || 400;
+        canvas.height = canvas.parentElement.offsetHeight || 570;
+    }
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    let phase = 0;
+
+    function drawWave() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const currentScrollY = window.scrollY;
+        scrollVelocity = Math.abs(currentScrollY - lastScrollY);
+        lastScrollY = currentScrollY;
+
+        const baseAmplitude = 18 + Math.min(40, scrollVelocity * 1.5);
+        const baseFrequency = 0.015 + Math.min(0.02, scrollVelocity * 0.001);
+        phase += 0.03 + Math.min(0.05, scrollVelocity * 0.002);
+
+        const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#A78BFA';
+
+        for (let waveIdx = 0; waveIdx < 3; waveIdx++) {
+            ctx.beginPath();
+            ctx.strokeStyle = primaryColor;
+            ctx.globalAlpha = 0.3 / (waveIdx + 1);
+            ctx.lineWidth = 3 - waveIdx;
+
+            const waveAmp = baseAmplitude * (1 - waveIdx * 0.25);
+            const waveFreq = baseFrequency * (1 + waveIdx * 0.3);
+            const centerY = canvas.height / 2 + (waveIdx * 15 - 15);
+
+            for (let x = 0; x < canvas.width; x += 5) {
+                const y = centerY + Math.sin(x * waveFreq + phase + waveIdx) * waveAmp;
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        }
+
+        requestAnimationFrame(drawWave);
+    }
+
+    drawWave();
+}
+
 function initScrollAnimations() {
     const observerOptions = {
         threshold: 0.15,
@@ -235,8 +406,16 @@ function initScrollAnimations() {
             } else {
                 navbar.classList.remove('scrolled');
             }
-        });
+        }, { passive: true });
     }
+
+    // Initialize all scroll-driven interactive components
+    initScrollProgressBar();
+    initHeroPhoneTiltOnScroll();
+    initScrollThemeMorphing();
+    initLyricKaraokeScrollDemo();
+    initTimelineScrollObserver();
+    initScrollAudioWaveCanvas();
 }
 
 // Filter screenshots gallery
