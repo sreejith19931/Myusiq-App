@@ -51,6 +51,19 @@ html {
     scroll-behavior: smooth;
 }
 
+/* --- Scroll Reading Progress Bar --- */
+#scroll-progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    width: 0%;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    z-index: 1002;
+    transition: width 0.1s linear;
+    box-shadow: 0 0 10px var(--primary);
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -332,11 +345,30 @@ button, input, select {
     margin-bottom: 32px;
 }
 
-/* Phone Frame Mockup */
+/* Phone Frame Mockup with 3D Tilt & Audio Wave Canvas */
 .hero-visual {
     display: flex;
     justify-content: center;
+    align-items: center;
     position: relative;
+    min-height: 570px;
+}
+
+#scroll-audio-canvas {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 140%;
+    height: 140%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.phone-3d-wrapper {
+    perspective: 1000px;
+    z-index: 1;
 }
 
 .phone-frame {
@@ -348,6 +380,9 @@ button, input, select {
     box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 50px var(--glow-primary);
     position: relative;
     overflow: hidden;
+    transform-style: preserve-3d;
+    transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease;
+    will-change: transform;
 }
 
 .phone-notch {
@@ -522,6 +557,58 @@ button, input, select {
     background: linear-gradient(135deg, var(--primary), var(--secondary));
 }
 
+/* Tap-to-Sync Karaoke Lyric Scroll Demo Card */
+.lyric-scroll-demo {
+    margin-top: 24px;
+    background: var(--surface-container);
+    border-radius: 16px;
+    padding: 16px;
+    border: 1px solid var(--outline-variant);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.lyric-line-item {
+    font-size: 0.9rem;
+    color: var(--on-surface-variant);
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid transparent;
+}
+
+.lyric-stamp {
+    font-family: 'Space Grotesk', monospace;
+    font-size: 0.78rem;
+    color: var(--primary);
+    opacity: 0.8;
+    flex-shrink: 0;
+    font-weight: 700;
+}
+
+.lyric-text {
+    background: linear-gradient(90deg, var(--primary) 0%, var(--primary) var(--lyric-fill-percent, 0%), var(--on-surface-variant) var(--lyric-fill-percent, 0%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transition: background 0.1s linear;
+}
+
+.lyric-line-item.active {
+    background: var(--surface-container-high);
+    border-color: var(--primary);
+    box-shadow: 0 4px 15px var(--glow-primary);
+    transform: translateX(8px);
+}
+
+.lyric-line-item.active .lyric-text {
+    font-weight: 700;
+}
+
 /* --- Screenshot Gallery --- */
 .gallery-section {
     padding: 100px 0;
@@ -606,6 +693,7 @@ button, input, select {
     position: relative;
     padding-left: 56px;
     margin-bottom: 40px;
+    transition: transform 0.4s ease, opacity 0.4s ease;
 }
 
 .timeline-dot {
@@ -615,9 +703,22 @@ button, input, select {
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background: var(--primary);
+    background: var(--outline);
     border: 4px solid var(--surface);
-    box-shadow: 0 0 12px var(--primary);
+    box-shadow: 0 0 8px transparent;
+    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.timeline-item.active .timeline-dot {
+    background: var(--secondary);
+    border-color: var(--surface);
+    box-shadow: 0 0 20px var(--secondary), 0 0 35px var(--primary);
+    transform: scale(1.35);
+}
+
+.timeline-item.active .glass-card {
+    border-color: var(--primary);
+    box-shadow: 0 10px 30px var(--glow-primary);
 }
 
 .timeline-header {

@@ -21,6 +21,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Top Scroll Reading Progress Bar -->
+    <div id="scroll-progress-bar"></div>
 
     <!-- Announcement Banner for Major Releases -->
     <div id="announcement-banner" class="announcement-banner" style="display: flex;">
@@ -79,11 +81,14 @@
                 </div>
             </div>
 
-            <!-- Hero Phone Mockup -->
+            <!-- Hero Phone Mockup with 3D Tilt & Audio Wave Canvas -->
             <div class="hero-visual">
-                <div class="phone-frame">
-                    <div class="phone-notch"></div>
-                    <img src="images/screenshot_player.png" alt="Myusiq Player Screen" class="phone-screen">
+                <canvas id="scroll-audio-canvas"></canvas>
+                <div class="phone-3d-wrapper">
+                    <div class="phone-frame">
+                        <div class="phone-notch"></div>
+                        <img src="images/screenshot_player.png" alt="Myusiq Player Screen" class="phone-screen">
+                    </div>
                 </div>
             </div>
         </div>
@@ -216,7 +221,20 @@
                     </div>
                 </div>
 
-                <!-- Card 4: Driving Mode -->
+                <!-- Card 4: Tap-to-Sync Karaoke Lyric Scroll Demo -->
+                <div class="glass-card feature-card lyric-sync-card reveal">
+                    <span class="icon">🎤</span>
+                    <h3>Tap-to-Sync Karaoke Lyrics</h3>
+                    <p>Scroll down to preview live sub-second line shading matching audio timestamp syncs.</p>
+                    <div class="lyric-scroll-demo" id="lyric-scroll-demo">
+                        <div class="lyric-line-item"><span class="lyric-stamp">[00:14.20]</span> <span class="lyric-text">I hear the sound of the distant rain...</span></div>
+                        <div class="lyric-line-item"><span class="lyric-stamp">[00:18.50]</span> <span class="lyric-text">Fading slowly as the night begins...</span></div>
+                        <div class="lyric-line-item active"><span class="lyric-stamp">[00:22.80]</span> <span class="lyric-text">In the pulse of myusiq we find our rhythm.</span></div>
+                        <div class="lyric-line-item"><span class="lyric-stamp">[00:27.10]</span> <span class="lyric-text">Pure offline sound, unfiltered and true.</span></div>
+                    </div>
+                </div>
+
+                <!-- Card 5: Driving Mode -->
                 <div class="glass-card feature-card reveal">
                     <span class="icon">🚗</span>
                     <h3>Driving Mode</h3>
