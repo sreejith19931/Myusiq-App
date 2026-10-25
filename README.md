@@ -58,6 +58,21 @@
   </table>
 </div>
 
+<div align="center">
+  <table>
+    <tr>
+      <td width="33%"><img src="docs/images/screenshot_setup.png" alt="Setup Wizard" /></td>
+      <td width="33%"><img src="docs/images/screenshot_setup_folders.png" alt="Folder Discovery" /></td>
+      <td width="33%"><img src="docs/images/screenshot_visualizer.png" alt="Visualizer Studio" /></td>
+    </tr>
+    <tr align="center">
+      <td><b>Streamlined Setup Wizard</b></td>
+      <td><b>Directory Discovery & Folders</b></td>
+      <td><b>60fps Visualizer Studio</b></td>
+    </tr>
+  </table>
+</div>
+
 ---
 
 ## 🚀 Key Capabilities (`v1.4.1`)
