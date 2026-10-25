@@ -100,6 +100,28 @@ object ArtworkUtils {
         return null
     }
 
+    fun getQuickArtworkFile(context: Context, songId: Long, songPath: String, albumName: String = ""): File? {
+        val cacheDir = File(context.filesDir, "artwork_cache")
+        val idFile = File(cacheDir, "$songId.jpg")
+        if (idFile.exists() && idFile.length() > 0) return idFile
+
+        val normPath = PlatformUtils.normalizePath(songPath)
+        if (normPath.isNotBlank()) {
+            val hashFile = File(cacheDir, "${normPath.hashCode()}.jpg")
+            if (hashFile.exists() && hashFile.length() > 0) return hashFile
+
+            val hashLowerFile = File(cacheDir, "${normPath.lowercase().hashCode()}.jpg")
+            if (hashLowerFile.exists() && hashLowerFile.length() > 0) return hashLowerFile
+        }
+
+        if (!isGenericAlbum(albumName)) {
+            val albumFile = File(cacheDir, "album_${albumName.trim().lowercase().hashCode()}.jpg")
+            if (albumFile.exists() && albumFile.length() > 0) return albumFile
+        }
+
+        return null
+    }
+
     fun getArtworkFile(context: Context, songId: Long, songPath: String, albumName: String = ""): File? {
         val cacheDir = File(context.filesDir, "artwork_cache")
         val idFile = File(cacheDir, "$songId.jpg")

@@ -48,6 +48,7 @@ import com.music.myusiq.data.dao.SongHistoryDao
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.flow.combine
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -161,16 +162,24 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         permissionManager = PermissionManager(this)
         sharedPreferences = getSharedPreferences("app_prefs", MODE_PRIVATE)
 
-        // Synchronously fetch and apply theme/color settings before super.onCreate to prevent flickering.
-        runBlocking {
-            try {
-                val mode = themeSettingsManager.themeModeFlow.first()
-                val style = themeSettingsManager.colorStyleFlow.first()
-                val useCustomFont = themeSettingsManager.useCustomFontFlow.first()
-                themeSettingsManager.applyThemeMode(mode)
-                themeSettingsManager.applyColorStyle(this@MainActivity, style, useCustomFont)
-            } catch (e: Exception) {
-                Log.e("MainActivity", "Error applying theme sync", e)
+        // Apply cached theme settings synchronously from SharedPreferences without blocking UI thread
+        val cachedMode = sharedPreferences.getString("cached_theme_mode", "system") ?: "system"
+        val cachedStyle = sharedPreferences.getString("cached_color_style", "system_colors") ?: "system_colors"
+        val cachedFont = sharedPreferences.getBoolean("cached_use_custom_font", true)
+        themeSettingsManager.applyThemeMode(cachedMode)
+        themeSettingsManager.applyColorStyle(this, cachedStyle, cachedFont)
+
+        lifecycleScope.launch {
+            combine(
+                themeSettingsManager.themeModeFlow,
+                themeSettingsManager.colorStyleFlow,
+                themeSettingsManager.useCustomFontFlow
+            ) { m, s, f -> Triple(m, s, f) }.collect { (m, s, f) ->
+                sharedPreferences.edit()
+                    .putString("cached_theme_mode", m)
+                    .putString("cached_color_style", s)
+                    .putBoolean("cached_use_custom_font", f)
+                    .apply()
             }
         }
 

@@ -17,6 +17,7 @@
             android:layout_height="80dp"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="16dp"
+            android:contentDescription="@null"
             android:src="@drawable/ic_music_note_2"
             app:tint="?attr/colorPrimary" />
 
@@ -54,22 +55,14 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:padding="16dp"
-                android:gravity="center_vertical">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_check"
-                    app:tint="?attr/colorPrimary" />
+                android:padding="16dp">
 
                 <TextView
                     android:id="@+id/tvAndroid11Notice"
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="12dp"
                     android:text="@string/android_11_google_permission_notice"
                     android:textAppearance="?attr/textAppearanceBodySmall"
                     android:textColor="?attr/colorOnSurface" />
@@ -107,13 +100,14 @@
                         android:orientation="vertical">
 
                         <TextView
+                            android:id="@+id/tvMediaTitle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/perm_media_title"
-                            android:textAppearance="?attr/textAppearanceTitleSmall"
-                            android:textStyle="bold" />
+                            android:textAppearance="?attr/textAppearanceTitleSmall" />
 
                         <TextView
+                            android:id="@+id/tvMediaDesc"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
@@ -130,7 +124,6 @@
                         android:layout_centerVertical="true"
                         android:paddingHorizontal="12dp"
                         android:paddingVertical="6dp"
-                        android:text="@string/perm_status_pending"
                         android:textAppearance="?attr/textAppearanceLabelMedium"
                         android:textStyle="bold" />
                 </RelativeLayout>
@@ -160,13 +153,14 @@
                         android:orientation="vertical">
 
                         <TextView
+                            android:id="@+id/tvNotifTitle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/perm_notif_title"
-                            android:textAppearance="?attr/textAppearanceTitleSmall"
-                            android:textStyle="bold" />
+                            android:textAppearance="?attr/textAppearanceTitleSmall" />
 
                         <TextView
+                            android:id="@+id/tvNotifDesc"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
@@ -183,7 +177,6 @@
                         android:layout_centerVertical="true"
                         android:paddingHorizontal="12dp"
                         android:paddingVertical="6dp"
-                        android:text="@string/perm_status_pending"
                         android:textAppearance="?attr/textAppearanceLabelMedium"
                         android:textStyle="bold" />
                 </RelativeLayout>
@@ -213,13 +206,14 @@
                         android:orientation="vertical">
 
                         <TextView
+                            android:id="@+id/tvBtTitle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/perm_bt_title"
-                            android:textAppearance="?attr/textAppearanceTitleSmall"
-                            android:textStyle="bold" />
+                            android:textAppearance="?attr/textAppearanceTitleSmall" />
 
                         <TextView
+                            android:id="@+id/tvBtDesc"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
@@ -236,7 +230,6 @@
                         android:layout_centerVertical="true"
                         android:paddingHorizontal="12dp"
                         android:paddingVertical="6dp"
-                        android:text="@string/perm_status_pending"
                         android:textAppearance="?attr/textAppearanceLabelMedium"
                         android:textStyle="bold" />
                 </RelativeLayout>

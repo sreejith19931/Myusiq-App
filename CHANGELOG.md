@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.1] - 2026-10-25
+
+### Added & Fixed
+- **Streamlined Setup & Permissions Wizard**: Refined Access permissions page with clean green verification cards, bold typography upon grant, badge-free minimal design, and themed header icons.
+- **Default-Deselected Folder Setup**: Discovered folders now start deselected (OFF) by default during setup, allowing users to explicitly choose which directories to scan.
+- **Zero-Delay Folder Toggling**: Implemented in-memory folder map caching for instant, zero-delay UI responsiveness when toggling folder exclusions and smart noise filter presets.
+- **Website & Telegram Update Integration**: Updated web companion and official Telegram announcement channel references.
+
 ## [1.4.0] - 2026-10-24
 
 ### Added & Fixed

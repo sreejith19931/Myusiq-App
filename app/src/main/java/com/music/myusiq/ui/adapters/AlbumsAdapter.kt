@@ -85,7 +85,7 @@ class AlbumsAdapter(
         if (representativeSong != null) {
             val context = holder.itemView.context
             if (!context.isActivityDestroyed()) {
-                val cachedArtFile = com.music.myusiq.utils.ArtworkUtils.getArtworkFile(context, representativeSong.id, representativeSong.path)
+                val cachedArtFile = com.music.myusiq.utils.ArtworkUtils.getQuickArtworkFile(context, representativeSong.id, representativeSong.path, representativeSong.album)
                 val sArtworkUri = "content://media/external/audio/albumart".toUri()
                 val albumArtUri = ContentUris.withAppendedId(sArtworkUri, representativeSong.albumId)
                 val modelToLoad: Any = cachedArtFile ?: albumArtUri

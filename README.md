@@ -12,6 +12,7 @@
   <img src="https://img.shields.io/badge/Platform-Android-brightgreen.svg" alt="Platform" />
   <img src="https://img.shields.io/badge/API-26%2B-blue.svg" alt="API Level" />
   <a href="https://myusiq.vercel.app"><img src="https://img.shields.io/badge/Website-myusiq.vercel.app-orange.svg" alt="Website" /></a>
+  <a href="https://t.me/myusiq_updates"><img src="https://img.shields.io/badge/Telegram-Updates-blue.svg" alt="Telegram" /></a>
   <img src="https://img.shields.io/github/license/sreejith19931/Myusiq" alt="License" />
   <img src="https://img.shields.io/github/repo-size/sreejith19931/Myusiq" alt="Repo Size" />
   <img src="https://img.shields.io/github/issues-pr/sreejith19931/Myusiq" alt="PRs Welcome" />

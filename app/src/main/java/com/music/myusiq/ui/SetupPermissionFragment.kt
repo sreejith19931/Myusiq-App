@@ -2,7 +2,9 @@ package com.music.myusiq.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
 import android.view.View
@@ -10,8 +12,9 @@ import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import com.music.myusiq.databinding.FragmentSetupPermissionBinding
+import com.google.android.material.card.MaterialCardView
 import com.music.myusiq.R
+import com.music.myusiq.databinding.FragmentSetupPermissionBinding
 
 class SetupPermissionFragment : Fragment(R.layout.fragment_setup_permission) {
     private var _binding: FragmentSetupPermissionBinding? = null
@@ -131,29 +134,50 @@ class SetupPermissionFragment : Fragment(R.layout.fragment_setup_permission) {
         val btGranted = checkBluetoothPermission()
         val coreGranted = checkCorePermissions()
 
-        updateStatusBadge(binding.tvStatusMedia, storageGranted)
-        updateStatusBadge(binding.tvStatusNotif, notifGranted)
-        updateStatusBadge(binding.tvStatusBt, btGranted)
+        updateCardStatus(binding.cardMedia, binding.tvMediaTitle, binding.tvMediaDesc, binding.tvStatusMedia, storageGranted)
+        updateCardStatus(binding.cardNotif, binding.tvNotifTitle, binding.tvNotifDesc, binding.tvStatusNotif, notifGranted)
+        updateCardStatus(binding.cardBluetooth, binding.tvBtTitle, binding.tvBtDesc, binding.tvStatusBt, btGranted)
 
+        val greenColor = Color.parseColor("#4CAF50")
         if (coreGranted) {
             binding.btnGrantPermission.text = getString(R.string.permission_verified)
             binding.btnGrantPermission.setIconResource(R.drawable.ic_check)
+            binding.btnGrantPermission.setTextColor(greenColor)
+            binding.btnGrantPermission.iconTint = ColorStateList.valueOf(greenColor)
         } else {
             binding.btnGrantPermission.text = getString(R.string.grant_access)
             binding.btnGrantPermission.setIconResource(0)
+            binding.btnGrantPermission.setTextColor(ContextCompat.getColor(requireContext(), R.color.md_theme_default_primary))
+            binding.btnGrantPermission.iconTint = null
         }
 
         (activity as? SetupActivity)?.onPermissionChanged(coreGranted)
     }
 
-    private fun updateStatusBadge(textView: TextView, isGranted: Boolean) {
+    private fun updateCardStatus(
+        card: MaterialCardView,
+        titleTv: TextView,
+        descTv: TextView,
+        statusTv: TextView,
+        isGranted: Boolean
+    ) {
+        val isDark = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+
         if (isGranted) {
-            textView.text = getString(R.string.perm_status_granted)
-            textView.setTextColor(Color.parseColor("#4CAF50"))
+            card.setCardBackgroundColor(if (isDark) Color.parseColor("#1B3E20") else Color.parseColor("#E8F5E9"))
+            card.strokeColor = Color.parseColor("#4CAF50")
+            card.alpha = 1.0f
+            titleTv.setTypeface(null, Typeface.BOLD)
+            descTv.setTypeface(null, Typeface.BOLD)
         } else {
-            textView.text = getString(R.string.perm_status_pending)
-            textView.setTextColor(Color.parseColor("#E53935"))
+            card.setCardBackgroundColor(if (isDark) Color.parseColor("#1A1A1A") else Color.parseColor("#F5F5F5"))
+            card.strokeColor = if (isDark) Color.parseColor("#444444") else Color.parseColor("#CCCCCC")
+            card.alpha = 0.55f
+            titleTv.setTypeface(null, Typeface.NORMAL)
+            descTv.setTypeface(null, Typeface.NORMAL)
         }
+        statusTv.text = ""
+        statusTv.visibility = View.GONE
     }
 
     override fun onDestroyView() {

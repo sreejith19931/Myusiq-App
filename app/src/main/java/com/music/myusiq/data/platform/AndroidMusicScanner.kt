@@ -75,32 +75,24 @@ class AndroidMusicScanner(private val context: Context) : MusicScanner {
                             continue
                         }
 
-                        // Check physical ID3 metadata directly from the file only if MediaStore metadata is generic or missing
-                        val isGenericArtist = artist.isBlank() || artist.equals("<unknown>", ignoreCase = true) || artist.equals("unknown artist", ignoreCase = true)
-                        val isGenericTitle = title.isBlank() || title.endsWith(".mp3", ignoreCase = true) || title.equals("track", ignoreCase = true)
-                        if (isGenericArtist || isGenericTitle || album.isBlank() || album.equals("<unknown>", ignoreCase = true)) {
+                        // Fallback to filename if title is blank or track default
+                        if (title.isBlank() || title.equals("track", ignoreCase = true)) {
                             try {
                                 val file = java.io.File(path)
-                                if (file.exists() && file.length() > 0) {
-                                    val fileNameTitle = file.nameWithoutExtension
-                                    val retriever = android.media.MediaMetadataRetriever()
-                                    retriever.setDataSource(path)
-                                    val fileTitle = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_TITLE)
-                                    val fileArtist = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ARTIST)
-                                    val fileAlbum = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ALBUM)
-                                    val fileGenre = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_GENRE)
-                                    retriever.release()
-
-                                    if (!fileTitle.isNullOrBlank()) {
-                                        title = fileTitle
-                                    } else if (isGenericTitle && fileNameTitle.isNotBlank()) {
-                                        title = fileNameTitle
+                                if (file.exists()) {
+                                    val fileName = file.nameWithoutExtension
+                                    if (fileName.isNotBlank()) {
+                                        title = fileName
                                     }
-                                    if (!fileArtist.isNullOrBlank()) artist = fileArtist
-                                    if (!fileAlbum.isNullOrBlank()) album = fileAlbum
-                                    if (!fileGenre.isNullOrBlank()) genre = fileGenre
                                 }
                             } catch (_: Exception) {}
+                        }
+
+                        if (artist.isBlank() || artist.equals("<unknown>", ignoreCase = true)) {
+                            artist = "Unknown Artist"
+                        }
+                        if (album.isBlank() || album.equals("<unknown>", ignoreCase = true)) {
+                            album = "Unknown Album"
                         }
 
                         songs.add(RawSong(id, title, artist, path, duration, albumId, album, genre, dateAdded, size))
@@ -111,22 +103,39 @@ class AndroidMusicScanner(private val context: Context) : MusicScanner {
             }
         }
 
-        // Direct File System Fallback across all internal and external storage roots
+        // Always perform targeted direct file system scan on standard music & download directories to catch un-indexed files reliably and quickly
         try {
-            val scannedPaths = songs.map { PlatformUtils.normalizePath(it.path).lowercase() }.toMutableSet()
+            val scannedPaths = songs.asSequence().map { PlatformUtils.normalizePath(it.path).lowercase() }.toMutableSet()
             val storageRoots = mutableListOf<java.io.File>()
+
+            val allowedUris = getAllowedFolderUris()
+            if (allowedUris.isNotEmpty()) {
+                allowedUris.forEach { path ->
+                    val f = java.io.File(path)
+                    if (f.exists() && f.isDirectory) storageRoots.add(f)
+                }
+            }
 
             val extDir = Environment.getExternalStorageDirectory()
             if (extDir != null && extDir.exists()) {
-                storageRoots.add(extDir)
-            }
-
-            val storageParent = java.io.File("/storage")
-            if (storageParent.exists() && storageParent.isDirectory) {
-                storageParent.listFiles()?.forEach { file ->
-                    if (file.isDirectory && file.canRead() && !file.name.equals("self", true) && !file.name.equals("emulated", true)) {
-                        storageRoots.add(file)
-                    }
+                listOf(
+                    Environment.DIRECTORY_MUSIC,
+                    Environment.DIRECTORY_DOWNLOADS,
+                    Environment.DIRECTORY_PODCASTS,
+                    Environment.DIRECTORY_RINGTONES,
+                    "Audiobooks",
+                    "Music",
+                    "Download",
+                    "Podcasts",
+                    "Ringtones"
+                ).forEach { dirName ->
+                    try {
+                        val dir = java.io.File(extDir, dirName)
+                        if (dir.exists() && dir.isDirectory) storageRoots.add(dir)
+                    } catch (_: Exception) {}
+                }
+                if (storageRoots.isEmpty()) {
+                    storageRoots.add(extDir)
                 }
             }
 
@@ -138,7 +147,7 @@ class AndroidMusicScanner(private val context: Context) : MusicScanner {
                         val name = dir.name
                         !name.startsWith(".") && !name.equals("Android", ignoreCase = true)
                     }
-                    .maxDepth(10)
+                    .maxDepth(6)
                     .forEach { file ->
                         try {
                             if (file.isFile && file.length() > 0 && file.extension.lowercase() in audioExtensions) {
@@ -146,38 +155,19 @@ class AndroidMusicScanner(private val context: Context) : MusicScanner {
                                 if (normPath.lowercase() !in scannedPaths) {
                                     scannedPaths.add(normPath.lowercase())
                                     val songId = kotlin.math.abs(file.absolutePath.hashCode().toLong())
-                                    var title = file.nameWithoutExtension
-                                    var artist = "Unknown Artist"
-                                    var album = "Unknown Album"
-                                    var genre = ""
-                                    var duration = 0
-
-                                    try {
-                                        val retriever = android.media.MediaMetadataRetriever()
-                                        retriever.setDataSource(file.absolutePath)
-                                        val t = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_TITLE)
-                                        val a = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ARTIST)
-                                        val alb = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ALBUM)
-                                        val g = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_GENRE)
-                                        val dur = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)?.toIntOrNull()
-                                        retriever.release()
-
-                                        if (!t.isNullOrBlank()) title = t
-                                        if (!a.isNullOrBlank()) artist = a
-                                        if (!alb.isNullOrBlank()) album = alb
-                                        if (!g.isNullOrBlank()) genre = g
-                                        if (dur != null) duration = dur
-                                    } catch (_: Exception) {}
+                                    val title = file.nameWithoutExtension
+                                    val artist = "Unknown Artist"
+                                    val album = "Unknown Album"
 
                                     val raw = RawSong(
                                         id = songId,
                                         title = title,
                                         artist = artist,
                                         path = normPath,
-                                        duration = duration,
+                                        duration = 0,
                                         albumId = 0L,
                                         album = album,
-                                        genre = genre,
+                                        genre = "",
                                         dateAdded = file.lastModified() / 1000,
                                         size = file.length()
                                     )
@@ -188,14 +178,85 @@ class AndroidMusicScanner(private val context: Context) : MusicScanner {
                     }
             }
         } catch (e: Exception) {
-            Log.w("AndroidMusicScanner", "Error during direct file system scan: ${e.message}")
+            Log.w("AndroidMusicScanner", "Error during targeted file system scan: ${e.message}")
+        }
+
+        // Also scan any content URIs (SAF tree URIs) granted via OpenDocumentTree on custom AOSP/Axion ROMs
+        try {
+            val scannedPaths = songs.asSequence().map { PlatformUtils.normalizePath(it.path).lowercase() }.toMutableSet()
+            for (uriString in folderPreferences.getAllowedFolderUris()) {
+                if (uriString.startsWith("content://")) {
+                    try {
+                        val treeUri = uriString.toUri()
+                        val docDir = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, treeUri)
+                        if (docDir != null) {
+                            scanDocFileRecursive(docDir, songs, scannedPaths)
+                        }
+                    } catch (e: Exception) {
+                        Log.e("AndroidMusicScanner", "Error scanning content URI tree $uriString", e)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.w("AndroidMusicScanner", "Error during content URI scan: ${e.message}")
         }
 
         songs
     }
 
+    private fun scanDocFileRecursive(
+        dir: androidx.documentfile.provider.DocumentFile,
+        songs: MutableList<RawSong>,
+        scannedPaths: MutableSet<String>
+    ) {
+        val audioExtensions = setOf("mp3", "m4a", "flac", "wav", "aac", "ogg", "opus", "wma")
+        try {
+            dir.listFiles().forEach { file ->
+                if (file.isDirectory) {
+                    scanDocFileRecursive(file, songs, scannedPaths)
+                } else if (file.isFile && file.length() > 0) {
+                    val name = file.name ?: ""
+                    val ext = name.substringAfterLast('.', "").lowercase()
+                    if (ext in audioExtensions) {
+                        val uri = file.uri
+                        val path = uri.toString()
+                        val normPath = PlatformUtils.normalizePath(path)
+                        if (normPath.lowercase() !in scannedPaths) {
+                            scannedPaths.add(normPath.lowercase())
+                            val songId = kotlin.math.abs(path.hashCode().toLong())
+                            val title = name.substringBeforeLast('.')
+                            val raw = RawSong(
+                                id = songId,
+                                title = title,
+                                artist = "Unknown Artist",
+                                path = path,
+                                duration = 0,
+                                albumId = 0L,
+                                album = "Unknown Album",
+                                genre = "",
+                                dateAdded = file.lastModified() / 1000,
+                                size = file.length()
+                            )
+                            songs.add(raw)
+                        }
+                    }
+                }
+            }
+        } catch (_: Exception) {}
+    }
+
     override fun getBlacklistedFolderPaths(): Set<String> {
-        return folderPreferences.getBlacklistedFolderPaths()
+        val paths = folderPreferences.getBlacklistedFolderPaths().toMutableSet()
+        if (folderPreferences.isExcludeVoiceNotesEnabled()) {
+            paths.addAll(listOf("voice recorder", "sound recorder", "voice notes", "recordings"))
+        }
+        if (folderPreferences.isExcludeMessagingEnabled()) {
+            paths.addAll(listOf("whatsapp audio", "whatsapp voice notes", "telegram audio", "telegram documents"))
+        }
+        if (folderPreferences.isExcludeRingtonesEnabled()) {
+            paths.addAll(listOf("ringtones", "notifications", "alarms"))
+        }
+        return paths
     }
 
     override fun getAllowedFolderUris(): Set<String> {
@@ -213,22 +274,32 @@ class AndroidMusicScanner(private val context: Context) : MusicScanner {
                     val uri = uriString.toUri()
                     if (DocumentsContract.isTreeUri(uri)) {
                         val treeId = DocumentsContract.getTreeDocumentId(uri)
-                        if (treeId.startsWith("primary", ignoreCase = true)) {
-                            val relativePathInId = treeId.substringAfter("primary:").trim()
-                            val basePrimary = Environment.getExternalStorageDirectory().absolutePath
-                            val allowedPath = if (relativePathInId.isEmpty()) basePrimary 
-                                              else "$basePrimary/$relativePathInId"
-                            PlatformUtils.normalizePath(allowedPath).lowercase()
+                        val relativePath = if (treeId.contains(":")) treeId.substringAfter(":").trim() else treeId
+                        val basePrimary = Environment.getExternalStorageDirectory().absolutePath
+                        val resolvedPath = if (relativePath.isBlank()) basePrimary else "$basePrimary/$relativePath"
+                        
+                        val f = java.io.File(resolvedPath)
+                        if (f.exists()) {
+                            PlatformUtils.normalizePath(f.absolutePath).lowercase()
                         } else {
-                            val parts = treeId.split(":")
-                            if (parts.size >= 2) {
-                                val volumeId = parts[0]
-                                val relativePath = parts[1]
-                                val allowedPath = "/storage/$volumeId/$relativePath"
-                                PlatformUtils.normalizePath(allowedPath).lowercase()
-                            } else null
+                            var foundPath: String? = null
+                            val storageParent = java.io.File("/storage")
+                            if (storageParent.exists() && storageParent.isDirectory) {
+                                storageParent.listFiles()?.forEach { vol ->
+                                    if (vol.isDirectory && !vol.name.equals("self", true)) {
+                                        val candidate = java.io.File(vol, relativePath)
+                                        if (candidate.exists()) {
+                                            foundPath = PlatformUtils.normalizePath(candidate.absolutePath).lowercase()
+                                        }
+                                    }
+                                }
+                            }
+                            foundPath ?: PlatformUtils.normalizePath(resolvedPath).lowercase()
                         }
-                    } else null
+                    } else {
+                        val path = uri.path
+                        if (path != null) PlatformUtils.normalizePath(path).lowercase() else null
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("AndroidMusicScanner", "Error pre-processing allowed folder: $uriString", e)
