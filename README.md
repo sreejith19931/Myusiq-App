@@ -33,12 +33,12 @@
     <tr>
       <td width="33%"><img src="docs/images/screenshot_tracks.png" alt="Tracks List" /></td>
       <td width="33%"><img src="docs/images/screenshot_player.png" alt="Music Player" /></td>
-      <td width="33%"><img src="docs/images/screenshot_driving.png" alt="Driving Mode" /></td>
+      <td width="33%"><img src="docs/images/screenshot_folders.png" alt="Folders Explorer" /></td>
     </tr>
     <tr align="center">
       <td><b>Library & Tracks</b></td>
       <td><b>Now Playing (Hi-Res Badge)</b></td>
-      <td><b>Driving Mode</b></td>
+      <td><b>Folders Explorer</b></td>
     </tr>
   </table>
 </div>
@@ -63,12 +63,27 @@
     <tr>
       <td width="33%"><img src="docs/images/screenshot_setup.png" alt="Setup Wizard" /></td>
       <td width="33%"><img src="docs/images/screenshot_setup_folders.png" alt="Folder Discovery" /></td>
-      <td width="33%"><img src="docs/images/screenshot_visualizer.png" alt="Visualizer Studio" /></td>
+      <td width="33%"><img src="docs/images/screenshot_setup_personalize.png" alt="Personalize & Palette" /></td>
     </tr>
     <tr align="center">
       <td><b>Streamlined Setup Wizard</b></td>
       <td><b>Directory Discovery & Folders</b></td>
+      <td><b>Theme & Color Palette</b></td>
+    </tr>
+  </table>
+</div>
+
+<div align="center">
+  <table>
+    <tr>
+      <td width="33%"><img src="docs/images/screenshot_visualizer.png" alt="Visualizer Studio" /></td>
+      <td width="33%"><img src="docs/images/screenshot_driving.png" alt="Driving Mode" /></td>
+      <td width="33%"><img src="docs/images/screenshot_changelog.png" alt="What's New Changelog" /></td>
+    </tr>
+    <tr align="center">
       <td><b>60fps Visualizer Studio</b></td>
+      <td><b>Driving Mode</b></td>
+      <td><b>What's New / Changelog</b></td>
     </tr>
   </table>
 </div>
