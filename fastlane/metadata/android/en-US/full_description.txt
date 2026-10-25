@@ -1,0 +1,11 @@
+Myusiq is a high-fidelity, 100% offline Android music player designed for audiophiles and privacy purists.
+
+Key Features:
+• Material You Expressive UI: Dynamic theme color swatches extracted live from album art.
+• Tap-to-Sync Lyric Creator: Real-time timestamp editor to stamp LRC timestamps line-by-line during track playback.
+• 60fps Visualizer Studio: Audio-reactive Spectrum Analyzer, Circular Pulse Ring, Liquid Waveform, and Particle Field.
+• 10-Band Studio Equalizer: Hardware BassBoost, 3D Virtualizer, PresetReverb, and FFT spectrum visualizer.
+• Library Janitor: Auto-fixes missing album art, repairs ID3 metadata tags, sanitizes titles, and groups multi-artist albums offline.
+• Jetpack Media3 & ExoPlayer: EBU R128 ReplayGain normalization, dynamic Hi-Res sample rate badges (96.0 kHz FLAC), and variable pitch/speed controls.
+• Driving Mode & Wear OS: Large-touch driving UI and companion smartwatch support.
+• Zero Tracking Privacy: 100% offline, ad-free, with zero analytics or telemetry.
