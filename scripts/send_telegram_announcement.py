@@ -62,7 +62,7 @@ def send_telegram_announcement():
 📋 <b>Changelog:</b>
 {changelog_str}
 
-⚡ <i>Studio-grade audio player with Material You dynamic themes. 100% private, ad-free & offline.</i>"""
+⚡ <i>Studio-grade audio player with Material You dynamic themes. 100% ad-free & offline.</i>"""
 
     reply_markup = {
         'inline_keyboard': [
