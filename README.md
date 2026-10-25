@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp" width="128" height="128" alt="Myusiq Logo" />
+  <img src="docs/images/social_banner.svg" alt="Myusiq Banner" width="100%" />
 </p>
 
 # Myusiq - Modern Offline Android Music Player
@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://github.com/sreejith19931/Myusiq-App/releases/latest"><img src="https://img.shields.io/github/v/release/sreejith19931/Myusiq-App?color=brightgreen&label=Latest%20Release" alt="Latest Release" /></a>
   <a href="https://myusiq.vercel.app"><img src="https://img.shields.io/badge/Website-myusiq.vercel.app-7C3AED?style=flat&logo=vercel" alt="Website" /></a>
-  <a href="https://t.me/myusiq_updates"><img src="https://img.shields.io/badge/Telegram-Updates-26A5E4?style=flat&logo=telegram" alt="Telegram" /></a>
+  <a href="https://t.me/+j2pPQYhxkz1mN2Yy"><img src="https://img.shields.io/badge/Telegram-Support%20Chat-26A5E4?style=flat&logo=telegram" alt="Telegram Support" /></a>
   <img src="https://img.shields.io/badge/Platform-Android%208.0%2B%20(API%2026%2B)-blue.svg" alt="Platform" />
   <img src="https://img.shields.io/github/license/sreejith19931/Myusiq" alt="License" />
   <img src="https://img.shields.io/github/stars/sreejith19931/Myusiq?style=social" alt="GitHub Stars" />
@@ -84,6 +84,16 @@
 | **Audio Processing** | Android Native `AudioEffect` Framework (`BassBoost`, `Virtualizer`, `PresetReverb`) |
 | **Tagging & Metadata** | JAudioTagger ID3v2, Shared Public Storage Backups (`.myusiq_backup`) |
 | **Caching & Network** | LRU In-Memory Cache (100 entries), iTunes & Deezer Metadata API Resolvers |
+
+---
+
+## 💬 Community & Support
+
+Need help, have feature requests, or want to discuss Myusiq? Join our official community channels:
+
+* 💬 **Telegram Support Chat**: [t.me/+j2pPQYhxkz1mN2Yy](https://t.me/+j2pPQYhxkz1mN2Yy)
+* 📢 **Telegram Updates Channel**: [t.me/myusiq_updates](https://t.me/myusiq_updates)
+* 🐛 **GitHub Issues**: [Report a Bug](https://github.com/sreejith19931/Myusiq/issues)
 
 ---
 
