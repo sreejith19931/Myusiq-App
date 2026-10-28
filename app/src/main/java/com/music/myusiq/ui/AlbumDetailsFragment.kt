@@ -240,7 +240,7 @@ class AlbumDetailsFragment : Fragment(R.layout.fragment_tracks) {
                 isFavorite = favoriteTrackIds.contains(song.id.toString()),
                 isActive = song.id == currentSong?.id,
                 isPlaying = (song.id == currentSong?.id && isPlaying),
-                artworkSignature = signatures[normPath] ?: 0L
+                artworkSignature = signatures[normPath] ?: signatures[song.id.toString()] ?: 0L
             )
         }
         trackAdapter.submitList(uiModels)

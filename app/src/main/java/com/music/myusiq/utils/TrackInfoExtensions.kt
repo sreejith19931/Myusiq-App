@@ -148,13 +148,15 @@ fun fetchTrackDetailedInfo(context: Context, song: Song): TrackDetailedInfo {
     )
 }
 
+private val ALBUM_ART_BASE_URI = "content://media/external/audio/albumart".toUri()
+
 fun Song.toMediaItem(): MediaItem {
     val trackUri = ContentUris.withAppendedId(
         MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
         this.id
     )
     val artworkUri = ContentUris.withAppendedId(
-        "content://media/external/audio/albumart".toUri(),
+        ALBUM_ART_BASE_URI,
         this.albumId
     )
 

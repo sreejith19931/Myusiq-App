@@ -89,5 +89,14 @@ class AboutFragment : Fragment(R.layout.fragment_about) {
                 Log.e("AboutFragment", "Error launching GitHub issues link", e)
             }
         }
+
+        view.findViewById<View>(R.id.btnTelegramSupport)?.setOnClickListener {
+            try {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/+j2pPQYhxkz1mN2Yy"))
+                startActivity(intent)
+            } catch (e: Exception) {
+                Log.e("AboutFragment", "Error launching Telegram support link", e)
+            }
+        }
     }
 }

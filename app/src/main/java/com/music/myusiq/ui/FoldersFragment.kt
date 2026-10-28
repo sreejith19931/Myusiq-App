@@ -27,7 +27,17 @@ import com.music.myusiq.ui.adapters.FolderAdapter
 import com.music.myusiq.ui.viewmodels.PlaybackViewModel
 import com.music.myusiq.utils.*
 
-class FoldersFragment : Fragment(R.layout.fragment_folders) {
+class FoldersFragment : Fragment(R.layout.fragment_folders), BackPressHandler {
+    override fun onBackPressed(): Boolean {
+        if (searchView?.isShowing == true || !searchBar?.text.isNullOrEmpty() || !searchView?.editText?.text.isNullOrEmpty() || viewModel.lastSearchQuery.isNotBlank()) {
+            searchView?.hide()
+            searchBar?.setText("")
+            searchView?.setText("")
+            viewModel.applyFilterAndSearch("")
+            return true
+        }
+        return false
+    }
     private val viewModel: PlaybackViewModel by activityViewModels()
     private var rvFolders: RecyclerView? = null
     private var swipeRefresh: SwipeRefreshLayout? = null

@@ -297,7 +297,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     val bulkUpdateCurrentTitle: StateFlow<String> = _bulkUpdateCurrentTitle.asStateFlow()
 
     fun setBulkUpdateProgress(current: Int, total: Int, title: String) {
-        _isBulkUpdating.value = total > 0 && current <= total
+        _isBulkUpdating.value = true
         _bulkUpdateProgress.value = current to total
         _bulkUpdateCurrentTitle.value = title
     }
@@ -308,11 +308,17 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         _bulkUpdateCurrentTitle.value = ""
     }
 
-    fun notifyArtworkUpdated(songPath: String) {
-        if (songPath.isBlank()) return
-        val normPath = PlatformUtils.normalizePath(songPath)
+    fun notifyArtworkUpdated(songPath: String, songId: Long = 0L) {
         val newTimestamp = System.currentTimeMillis()
-        _artworkRefreshSignatures.value = _artworkRefreshSignatures.value + (normPath to newTimestamp)
+        val map = _artworkRefreshSignatures.value.toMutableMap()
+        if (songPath.isNotBlank()) {
+            val normPath = PlatformUtils.normalizePath(songPath)
+            map[normPath] = newTimestamp
+        }
+        if (songId > 0) {
+            map[songId.toString()] = newTimestamp
+        }
+        _artworkRefreshSignatures.value = map
     }
 
     private val _pendingWriteIntent = MutableStateFlow<IntentSenderRequest?>(null)
@@ -428,7 +434,12 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     fun navigateToTab(tabId: Int) { _navigateToTab.value = tabId }
     fun consumeNavigateToTab() { _navigateToTab.value = null }
-    fun clearPendingWriteIntent() { _pendingWriteIntent.value = null; pendingTrackEditData = null }
+    fun clearPendingWriteIntent() { 
+        _pendingWriteIntent.value = null
+        pendingTrackEditData = null
+        pendingBulkTrackEditData = null
+        finishBulkUpdate()
+    }
 
     fun clearPlaybackHistory() {
         viewModelScope.launch {
@@ -574,8 +585,10 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                 } else song
             }
             
-            if (data.artworkUri != null) {
-                notifyArtworkUpdated(data.path)
+            notifyArtworkUpdated(data.path, data.songId)
+            val newPath = data.path.ifEmpty { "" }
+            if (newPath.isNotBlank()) {
+                notifyArtworkUpdated(newPath, data.songId)
             }
 
             // Ensure currentSortedList is also updated by re-sorting, which also calls refreshLibraryDisplay()
@@ -664,7 +677,27 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         EqualizerManager.updateDetectedHardwareRoute(route)
     }
 
-    fun forceScanMediaLibrary() { viewModelScope.launch(Dispatchers.IO) { _isLibraryLoading.value = true; isSongsLoaded = false; loadSongsInternal() } }
+    fun forceScanMediaLibrary(context: Context? = null) { 
+        viewModelScope.launch(Dispatchers.IO) { 
+            AndroidMusicScanner.invalidateCache()
+            context?.let { ctx ->
+                try {
+                    val musicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
+                    if (musicDir.exists()) {
+                        MediaScannerConnection.scanFile(
+                            ctx,
+                            arrayOf(musicDir.absolutePath),
+                            null,
+                            null
+                        )
+                    }
+                } catch (_: Exception) {}
+            }
+            _isLibraryLoading.value = true
+            isSongsLoaded = false
+            loadSongsInternal() 
+        } 
+    }
 
     fun deleteTrackFromStorage(context: Context, song: Song) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -898,6 +931,9 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                 _isCurrentTrackFavorite.value = fav
                 _currentTrackWaveform.value = entity?.waveformAmplitudes
 
+                // Defer heavy waveform extraction so ExoPlayer gets 100% of I/O priority at playback start
+                delay(750)
+
                 if (entity?.waveformAmplitudes == null) {
                     val waveform = WaveformExtractor.extractWaveform(getApplication(), songItem.path.toUri())
                     if (waveform != null) {
@@ -967,14 +1003,22 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             return
         }
 
-        // 3. Set items and start playback
-        val items = list.map { it.toMediaItem() }
-        controller.setMediaItems(items, index, C.TIME_UNSET)
-        if (playImmediately) {
-            controller.prepare()
-            controller.play()
-        } else {
-            controller.playWhenReady = false
+        // 3. Set items asynchronously off the main thread to prevent UI freezes
+        viewModelScope.launch(Dispatchers.Default) {
+            val items = list.map { it.toMediaItem() }
+            withContext(Dispatchers.Main) {
+                if (!isActive) return@withContext
+                controller.setMediaItems(items, index, C.TIME_UNSET)
+                if (playImmediately) {
+                    if (controller.playbackState == Player.STATE_IDLE) {
+                        controller.prepare()
+                    }
+                    controller.play()
+                } else {
+                    controller.playWhenReady = false
+                    controller.prepare()
+                }
+            }
         }
         
         viewModelScope.launch(Dispatchers.IO) {
@@ -1244,6 +1288,8 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                 return@launch
             }
 
+            val songDir = song.path.substringBeforeLast('/', "")
+
             fun calculateSimilarityScore(candidate: Song): Int {
                 var score = 1
 
@@ -1262,9 +1308,8 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                     score += 5
                 }
 
-                val songDir = File(song.path).parent
-                val candidateDir = File(candidate.path).parent
-                if (songDir != null && songDir == candidateDir) {
+                val candidateDir = candidate.path.substringBeforeLast('/', "")
+                if (songDir.isNotEmpty() && songDir == candidateDir) {
                     score += 4
                 }
 
@@ -1331,8 +1376,9 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun loadFolders() { viewModelScope.launch(Dispatchers.IO) { loadFoldersInternal() } }
-    private suspend fun loadFoldersInternal() { 
+    fun loadFolders(force: Boolean = false) { viewModelScope.launch(Dispatchers.IO) { loadFoldersInternal(force) } }
+    private suspend fun loadFoldersInternal(force: Boolean = false) { 
+        if (!force && _allFolderItems.value.isNotEmpty()) return
         val items = musicRepository.getFolderItems()
         _allFolderItems.value = items
         refreshLibraryDisplay()
@@ -1354,7 +1400,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         } finally { 
             isSongsLoaded = true
             _isLibraryLoading.value = false
-            loadFoldersInternal()
+            loadFoldersInternal(force = true)
             startAutoMetadataImprovement()
             startBackgroundWaveformAnalysis()
         }
@@ -1534,6 +1580,10 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             _pendingWriteIntent.value = intent
             pendingBulkTrackEditData = updates
         }
+    }
+
+    fun cancelBulkUpdate() {
+        metadataUpdateUseCase.cancelBulkUpdate()
     }
 
     fun setAsRingtone(context: Context, song: Song) {

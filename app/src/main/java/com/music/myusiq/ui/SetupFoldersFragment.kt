@@ -51,6 +51,7 @@ class SetupFoldersFragment : Fragment(R.layout.fragment_setup_folders) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentSetupFoldersBinding.bind(view)
+        (activity as? SetupActivity)?.registerFoldersFragment(this)
 
         setupRecyclerViews()
         setupModeToggle()
@@ -339,6 +340,24 @@ class SetupFoldersFragment : Fragment(R.layout.fragment_setup_folders) {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        (activity as? SetupActivity)?.registerFoldersFragment(null)
         _binding = null
+    }
+
+    fun hasSelectedFolders(): Boolean {
+        val prefs = FolderPreferences(requireContext())
+        val isWhitelistMode = prefs.getScanMode() == FolderPreferences.SCAN_MODE_WHITELIST
+        return if (isWhitelistMode) {
+            selectedFolders.isNotEmpty() || prefs.getAllowedFolderUris().isNotEmpty()
+        } else {
+            if (discoveredFoldersList.isNotEmpty()) {
+                discoveredFoldersList.any { it.isIncluded }
+            } else {
+                val blacklistedPaths = AndroidMusicScanner(requireContext()).getBlacklistedFolderPaths()
+                cachedFolderMap?.let { map ->
+                    map.keys.any { path -> !blacklistedPaths.any { path.lowercase().contains(it.lowercase()) } }
+                } ?: false
+            }
+        }
     }
 }

@@ -25,6 +25,23 @@ class FftEngineManager(
     private var targetWaveSeekBar: com.music.myusiq.ui.components.AnimatedWaveSeekBar? = null
     private var visualizer: Visualizer? = null
     private var currentAudioSessionId: Int = -1
+    private var isPaused: Boolean = false
+
+    fun setPaused(paused: Boolean) {
+        if (isPaused == paused) return
+        isPaused = paused
+        try {
+            if (paused) {
+                visualizer?.enabled = false
+            } else if (currentAudioSessionId > 0) {
+                visualizer?.enabled = true
+            }
+        } catch (e: Exception) {
+            Log.e("FftEngineManager", "Error setting visualizer paused state: $paused", e)
+        }
+    }
+
+    fun isPaused(): Boolean = isPaused
 
     fun attachToSession(audioSessionId: Int) {
         if (audioSessionId <= 0) {
@@ -42,6 +59,11 @@ class FftEngineManager(
 
         if ((currentAudioSessionId == audioSessionId) && (visualizer != null)) {
             targetWaveSeekBar?.isFftModeEnabled = true
+            if (!isPaused) {
+                try {
+                    visualizer?.enabled = true
+                } catch (_: Exception) {}
+            }
             return
         }
         release()
@@ -62,14 +84,16 @@ class FftEngineManager(
                         }
 
                         override fun onFftDataCapture(v: Visualizer?, fft: ByteArray?, samplingRate: Int) {
-                            fft?.let { onFftDataCaptured?.invoke(it) }
+                            if (!isPaused) {
+                                fft?.let { onFftDataCaptured?.invoke(it) }
+                            }
                         }
                     },
                     Visualizer.getMaxCaptureRate() / 2,
                     false,
                     true,
                 )
-                enabled = true
+                enabled = !isPaused
             }
         } catch (e: Exception) {
             Log.e("FftEngineManager", "Error attaching visualizer to session $audioSessionId", e)

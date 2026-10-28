@@ -346,6 +346,15 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
         }
         btnFavorite.setOnClickListener { 
             animateButton(it)
+            viewModel.currentPlayingSong.value?.let { song ->
+                val willBeFav = !(viewModel.isCurrentTrackFavorite.value)
+                val msg = if (willBeFav) {
+                    "${song.title} added to Favourites!"
+                } else {
+                    "${song.title} removed from Favourites!"
+                }
+                Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+            }
             viewModel.toggleFavoriteForCurrentTrack() 
         }
         btnMoreLikeThis.setOnClickListener { 
@@ -529,7 +538,8 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
                     themeManager.useAlbumArtThemingFlow.collectLatest { useAdaptive ->
                         if (!useAdaptive) {
                             animationHelper.cancelBackgroundAnimation()
-                            val baseColor = ThemeUtils.getThemeColor(requireContext(), android.R.attr.colorBackground)
+                            val ctx = context ?: return@collectLatest
+                            val baseColor = ThemeUtils.getThemeColor(ctx, android.R.attr.colorBackground)
                             view?.findViewById<View>(R.id.playerPageBackground)?.setBackgroundColor(baseColor)
                             view?.findViewById<View>(R.id.playerRootLayout)?.setBackgroundColor(Color.TRANSPARENT)
                             syncControlTints()
@@ -643,7 +653,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
             val artworkUri = ContentUris.withAppendedId("content://media/external/audio/albumart".toUri(), song.albumId)
             val modelToLoad: Any = cachedArtFile ?: artworkUri
             val normPath = PlatformUtils.normalizePath(song.path)
-            val signature = viewModel.artworkRefreshSignatures.value[normPath] ?: 0L
+            val signature = viewModel.artworkRefreshSignatures.value[normPath] ?: viewModel.artworkRefreshSignatures.value[song.id.toString()] ?: 0L
 
             Glide.with(this)
                 .asBitmap()
@@ -882,15 +892,16 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
 
     private fun syncControlTints() {
         viewLifecycleOwner.lifecycleScope.launch {
+            val ctx = context ?: return@launch
             val useAdaptive = themeManager.useAlbumArtThemingFlow.first()
-            val colorPrimary = ThemeUtils.getThemeColor(requireContext(), androidx.appcompat.R.attr.colorPrimary)
+            val colorPrimary = ThemeUtils.getThemeColor(ctx, androidx.appcompat.R.attr.colorPrimary)
             val accent = if (useAdaptive) {
                 viewModel.currentVibrantColor.value ?: colorPrimary
             } else {
                 colorPrimary
             }
 
-            val themeBg = ThemeUtils.getThemeColor(requireContext(), android.R.attr.colorBackground)
+            val themeBg = ThemeUtils.getThemeColor(ctx, android.R.attr.colorBackground)
             val isExpanded = animationHelper.getCurrentAlphaOffset() > 0.5f
 
             // Text Contrast Sync - Dynamically calculate based on the current adaptive background
@@ -900,7 +911,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
                 val dominantColor = viewModel.currentBgColor.value ?: themeBg
                 if (ColorUtils.calculateLuminance(dominantColor) > 0.5) Color.BLACK else Color.WHITE
             } else {
-                ThemeUtils.getThemeColor(requireContext(), android.R.attr.textColorPrimary)
+                ThemeUtils.getThemeColor(ctx, android.R.attr.textColorPrimary)
             }
 
             val onBgVariant = if (isBlurredModeCached && useAdaptive && animationHelper.getCurrentAlphaOffset() > 0.5f) {
@@ -1767,6 +1778,16 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
     }
 
     override fun onDestroyView() {
+        try {
+            if (::ivFullAlbumArt.isInitialized) {
+                Glide.with(this).clear(ivFullAlbumArt)
+                ivFullAlbumArt.setImageDrawable(null)
+            }
+            if (::ivBlurredBackground.isInitialized) {
+                Glide.with(this).clear(ivBlurredBackground)
+                ivBlurredBackground.setImageDrawable(null)
+            }
+        } catch (_: Exception) {}
         visualizerComponent.release()
         animationHelper.cancelBackgroundAnimation()
         super.onDestroyView()

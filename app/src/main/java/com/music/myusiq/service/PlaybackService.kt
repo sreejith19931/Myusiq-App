@@ -1,4 +1,4 @@
-@file:Suppress("DEPRECATION")
+@file:Suppress("DEPRECATION", "NewApi")
 
 package com.music.myusiq.service
 
@@ -17,6 +17,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ServiceInfo
+import android.media.AudioDeviceCallback
+import android.media.AudioDeviceInfo
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.PlaybackParams
@@ -37,6 +39,7 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.CommandButton
 import androidx.media3.session.DefaultMediaNotificationProvider
@@ -239,6 +242,33 @@ class PlaybackService : MediaLibraryService() {
         if (player === playerA) volumeAnimatorA = animator else volumeAnimatorB = animator
     }
 
+    private fun getSongDuration(player: ExoPlayer): Long {
+        val d = player.duration
+        if (d > 0 && d != C.TIME_UNSET) return d
+        
+        val cd = player.contentDuration
+        if (cd > 0 && cd != C.TIME_UNSET) return cd
+        
+        val extra = player.currentMediaItem?.mediaMetadata?.extras
+        val extraDur = extra?.getInt("duration", 0)?.toLong() ?: 0L
+        if (extraDur > 0) return extraDur
+        
+        val uri = player.currentMediaItem?.localConfiguration?.uri
+        val path = extra?.getString("path") ?: uri?.path
+        if (!path.isNullOrBlank()) {
+            try {
+                val retriever = android.media.MediaMetadataRetriever()
+                retriever.setDataSource(path)
+                val timeStr = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
+                retriever.release()
+                val dur = timeStr?.toLongOrNull() ?: 0L
+                if (dur > 0) return dur
+            } catch (_: Exception) {}
+        }
+        
+        return 0L
+    }
+
     private var playbackMonitorJob: Job? = null
     private fun startPlaybackMonitoring() {
         playbackMonitorJob?.cancel()
@@ -254,7 +284,15 @@ class PlaybackService : MediaLibraryService() {
             return
         }
         
-        val crossfadeDurationMs = p.getFloat("crossfade_duration", 2.0f).toLong() * 1000L
+        val crossfadeDurationMs = try {
+            p.getFloat("crossfade_duration", 2.0f).toLong() * 1000L
+        } catch (_: Exception) {
+            try {
+                p.getInt("crossfade_duration", 2).toLong() * 1000L
+            } catch (_: Exception) {
+                2000L
+            }
+        }
         
         playbackMonitorJob = serviceScope.launch {
             while (true) {
@@ -262,26 +300,38 @@ class PlaybackService : MediaLibraryService() {
                 // Skip crossfade if Repeat One is enabled, as the song will loop back rather than transitioning to the next item
                 val shouldSkipCrossfade = current.repeatMode == Player.REPEAT_MODE_ONE
                 
-                if ((current.isPlaying) && (current.duration > 0)) {
-                    val remaining = current.duration - current.currentPosition
+                if (current.isPlaying) {
+                    val duration = getSongDuration(current)
                     
-                    if (stopAfterCurrentTrack) {
-                        if ((remaining <= 8000L) && (!isFadingForStopAfterTrack) && (!isFadingForSleep)) {
-                            isFadingForStopAfterTrack = true
-                            fadeOut(current, remaining.coerceAtLeast(1000L))
+                    if (duration > 0) {
+                        val remaining = duration - current.currentPosition
+                        Log.d("PlaybackService", "Crossfade Monitor: pos=${current.currentPosition}, dur=$duration, remaining=$remaining, threshold=$crossfadeDurationMs, hasNext=${current.hasNextMediaItem()}")
+                        
+                        if (stopAfterCurrentTrack) {
+                            if ((remaining <= 8000L) && (!isFadingForStopAfterTrack) && (!isFadingForSleep)) {
+                                isFadingForStopAfterTrack = true
+                                fadeOut(current, remaining.coerceAtLeast(1000L))
+                            }
+                            delay(500.milliseconds)
+                            continue
                         }
-                        delay(500.milliseconds)
-                        continue
-                    }
-                    
-                    if (crossfadeEnabled && !shouldSkipCrossfade) {
-                        if (remaining in (101..crossfadeDurationMs)) {
-                            performCrossfade(crossfadeDurationMs)
-                            break
+                        
+                        if (crossfadeEnabled && !shouldSkipCrossfade) {
+                            if (remaining in (0..crossfadeDurationMs) && current.hasNextMediaItem()) {
+                                Log.i("PlaybackService", "Triggering crossfade at remaining=$remaining ms")
+                                performCrossfade(crossfadeDurationMs)
+                                break
+                            }
+                            // High-precision check: poll every 50ms when within 10 seconds of track end
+                            val nextCheck = if (remaining <= 10000L) {
+                                50L
+                            } else {
+                                (remaining - crossfadeDurationMs).coerceIn(100, 1000)
+                            }
+                            delay(nextCheck)
+                        } else {
+                            delay(500.milliseconds)
                         }
-                        // Adaptive delay
-                        val nextCheck = (remaining - crossfadeDurationMs).coerceIn(50, 500)
-                        delay(nextCheck.milliseconds)
                     } else {
                         delay(500.milliseconds)
                     }
@@ -300,30 +350,30 @@ class PlaybackService : MediaLibraryService() {
         
         Log.d("PlaybackService", "Starting synchronized crossfade sequence")
         
-        // Prepare next player
         val nextIndex = current.nextMediaItemIndex
+        val items = mutableListOf<MediaItem>()
+        for (i in 0 until current.mediaItemCount) {
+            items.add(current.getMediaItemAt(i))
+        }
+        
+        // Immediately make next the active session player so Android routes audio output and focus correctly
+        activePlayerReference = WeakReference(next)
+        mediaSession?.player = next
+        
+        // Prepare next player
         next.stop()
         next.clearMediaItems()
-        next.setMediaItems(getAllMediaItems(), nextIndex, 0L)
+        next.setMediaItems(items, nextIndex, 0L)
         
         // Sync player states for seamless transition
         next.repeatMode = current.repeatMode
         next.shuffleModeEnabled = current.shuffleModeEnabled
         
-        next.prepare()
         next.volume = 0f
-        
-        // Wait for next player to be ready to ensure gapless start
-        val listener = object : Player.Listener {
-            override fun onPlaybackStateChanged(state: Int) {
-                if (state == Player.STATE_READY) {
-                    next.removeListener(this)
-                    startCrossfadeAnimation(current, next, durationMs)
-                }
-            }
-        }
-        next.addListener(listener)
+        next.prepare()
         next.playWhenReady = true
+
+        startCrossfadeAnimation(current, next, durationMs)
     }
 
     private fun startCrossfadeAnimation(current: ExoPlayer, next: ExoPlayer, durationMs: Long) {
@@ -335,10 +385,12 @@ class PlaybackService : MediaLibraryService() {
             duration = durationMs
             addUpdateListener { anim ->
                 val v = anim.animatedValue as Float
-                // Fade out current
-                current.volume = (1f - v) * (1f - v) * duckingFactor
-                // Fade in next
-                next.volume = v * (2f - v) * duckingFactor
+                // Professional Equal-Power Cosine Crossfade Curves
+                val fadeOutVal = kotlin.math.cos(v * kotlin.math.PI / 2.0).toFloat()
+                val fadeInVal = kotlin.math.sin(v * kotlin.math.PI / 2.0).toFloat()
+
+                current.volume = fadeOutVal * duckingFactor
+                next.volume = fadeInVal * duckingFactor
             }
             addListener(
                 object : AnimatorListenerAdapter() {
@@ -360,12 +412,62 @@ class PlaybackService : MediaLibraryService() {
         mediaSession?.player = next
     }
 
-    private fun getAllMediaItems(): List<MediaItem> {
-        val items = mutableListOf<MediaItem>()
-        for (i in 0 until exoPlayer.mediaItemCount) {
-            items.add(exoPlayer.getMediaItemAt(i))
+    private val audioDeviceCallback = object : AudioDeviceCallback() {
+        override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>?) {
+            val p = getSharedPreferences("app_prefs", MODE_PRIVATE)
+            EqualizerManager.handleAudioDeviceRouting(applicationContext, audioManager)
+            
+            val hasBluetooth = addedDevices?.any { d ->
+                d.isSink && (d.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP ||
+                             d.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO ||
+                             d.type == AudioDeviceInfo.TYPE_BLE_HEADSET ||
+                             d.type == AudioDeviceInfo.TYPE_BLE_SPEAKER)
+            } == true
+
+            if (hasBluetooth) {
+                lastBluetoothConnectionTime = System.currentTimeMillis()
+                if (p.getBoolean("bluetooth_resume_on_connect", false)) {
+                    serviceScope.launch(Dispatchers.Main) {
+                        if (requestAudioFocus()) {
+                            if (exoPlayer.mediaItemCount == 0) {
+                                val restoredData = loadSavedQueueData()
+                                if (restoredData != null) {
+                                    playerA.setMediaItems(restoredData.mediaItems, restoredData.startIndex, restoredData.startPositionMs)
+                                    activePlayerReference = WeakReference(playerA)
+                                    mediaSession?.player = playerA
+                                    playerA.prepare()
+                                }
+                            }
+                            if (exoPlayer.mediaItemCount > 0 && !exoPlayer.isPlaying) {
+                                exoPlayer.prepare()
+                                exoPlayer.play()
+                            }
+                        }
+                    }
+                }
+            }
         }
-        return items
+
+        override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>?) {
+            EqualizerManager.handleAudioDeviceRouting(applicationContext, audioManager)
+            val p = getSharedPreferences("app_prefs", MODE_PRIVATE)
+            val hasBluetoothRemoved = removedDevices?.any { d ->
+                d.isSink && (d.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP ||
+                             d.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO ||
+                             d.type == AudioDeviceInfo.TYPE_BLE_HEADSET ||
+                             d.type == AudioDeviceInfo.TYPE_BLE_SPEAKER)
+            } == true
+
+            if (hasBluetoothRemoved) {
+                if (p.getBoolean("bluetooth_stop_on_unplug", true)) {
+                    exoPlayer.pause()
+                } else if (!exoPlayer.isPlaying && exoPlayer.mediaItemCount > 0) {
+                    serviceScope.launch(Dispatchers.Main) {
+                        if (requestAudioFocus()) exoPlayer.play()
+                    }
+                }
+            }
+        }
     }
 
     private val bluetoothReceiver = object : BroadcastReceiver() {
@@ -377,17 +479,53 @@ class PlaybackService : MediaLibraryService() {
                 BluetoothDevice.ACTION_ACL_CONNECTED -> {
                     lastBluetoothConnectionTime = System.currentTimeMillis()
                     if (p.getBoolean("bluetooth_resume_on_connect", false)) {
-                        exoPlayer.play()
+                        serviceScope.launch(Dispatchers.Main) {
+                            if (requestAudioFocus()) {
+                                if (exoPlayer.mediaItemCount == 0) {
+                                    val restoredData = loadSavedQueueData()
+                                    if (restoredData != null) {
+                                        playerA.setMediaItems(restoredData.mediaItems, restoredData.startIndex, restoredData.startPositionMs)
+                                        activePlayerReference = WeakReference(playerA)
+                                        mediaSession?.player = playerA
+                                        playerA.prepare()
+                                    }
+                                }
+                                if (exoPlayer.mediaItemCount > 0 && !exoPlayer.isPlaying) {
+                                    exoPlayer.prepare()
+                                    exoPlayer.play()
+                                }
+                            }
+                        }
                     }
                 }
                 BluetoothDevice.ACTION_ACL_DISCONNECTED -> {
                     if (p.getBoolean("bluetooth_stop_on_unplug", true)) {
                         exoPlayer.pause()
+                    } else if (!exoPlayer.isPlaying && exoPlayer.mediaItemCount > 0) {
+                        serviceScope.launch(Dispatchers.Main) {
+                            if (requestAudioFocus()) exoPlayer.play()
+                        }
                     }
                 }
                 AudioManager.ACTION_AUDIO_BECOMING_NOISY -> {
                     if (p.getBoolean("bluetooth_stop_on_unplug", true)) {
                         exoPlayer.pause()
+                    } else if (!exoPlayer.isPlaying && exoPlayer.mediaItemCount > 0) {
+                        serviceScope.launch(Dispatchers.Main) {
+                            if (requestAudioFocus()) exoPlayer.play()
+                        }
+                    }
+                }
+                Intent.ACTION_HEADSET_PLUG -> {
+                    val state = intent.getIntExtra("state", -1)
+                    if (state == 0) { // Unplugged
+                        if (p.getBoolean("bluetooth_stop_on_unplug", true)) {
+                            exoPlayer.pause()
+                        } else if (!exoPlayer.isPlaying && exoPlayer.mediaItemCount > 0) {
+                            serviceScope.launch(Dispatchers.Main) {
+                                if (requestAudioFocus()) exoPlayer.play()
+                            }
+                        }
                     }
                 }
             }
@@ -413,6 +551,7 @@ class PlaybackService : MediaLibraryService() {
 
         persistence = (applicationContext as MainApplication).playbackPersistence
         audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
+        audioManager.registerAudioDeviceCallback(audioDeviceCallback, android.os.Handler(android.os.Looper.getMainLooper()))
         EqualizerManager.handleAudioDeviceRouting(applicationContext, audioManager)
         val db = (applicationContext as MainApplication).database
         songHistoryDao = db.songHistoryDao()
@@ -429,18 +568,38 @@ class PlaybackService : MediaLibraryService() {
                     .build()
             }
         }
+
+        val loadControl = DefaultLoadControl.Builder()
+            .setBufferDurationsMs(
+                1500,  // minBufferMs
+                15000, // maxBufferMs
+                500,   // bufferForPlaybackMs
+                1000   // bufferForPlaybackAfterRebufferMs
+            )
+            .build()
         
         playerA = ExoPlayer.Builder(this, renderersFactory)
+            .setLoadControl(loadControl)
             .setAudioAttributes(AudioAttributes.Builder().setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).setUsage(C.USAGE_MEDIA).build(), false) // handleAudioFocus = false
-            .setHandleAudioBecomingNoisy(true)
+            .setHandleAudioBecomingNoisy(false)
             .setSeekBackIncrementMs(5000)
             .setSeekForwardIncrementMs(5000)
             .setPauseAtEndOfMediaItems(false)
             .build()
 
+        val loadControlB = DefaultLoadControl.Builder()
+            .setBufferDurationsMs(
+                1500,  // minBufferMs
+                15000, // maxBufferMs
+                500,   // bufferForPlaybackMs
+                1000   // bufferForPlaybackAfterRebufferMs
+            )
+            .build()
+
         playerB = ExoPlayer.Builder(this, renderersFactory)
+            .setLoadControl(loadControlB)
             .setAudioAttributes(AudioAttributes.Builder().setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).setUsage(C.USAGE_MEDIA).build(), false) // handleAudioFocus = false
-            .setHandleAudioBecomingNoisy(true)
+            .setHandleAudioBecomingNoisy(false)
             .setSeekBackIncrementMs(5000)
             .setSeekForwardIncrementMs(5000)
             .setPauseAtEndOfMediaItems(false)
@@ -1209,7 +1368,19 @@ class PlaybackService : MediaLibraryService() {
                 val isReplayGainEnabled = p.getBoolean("replaygain_enabled", false)
                 
                 val currentPath = mediaItem?.mediaMetadata?.extras?.getString("path") ?: ""
-                currentReplayGainFactor = ReplayGainUtil.getVolumeFactorForFile(currentPath, isReplayGainEnabled)
+                if (isReplayGainEnabled && currentPath.isNotBlank()) {
+                    serviceScope.launch(Dispatchers.IO) {
+                        val factor = ReplayGainUtil.getVolumeFactorForFile(currentPath, true)
+                        withContext(Dispatchers.Main) {
+                            currentReplayGainFactor = factor
+                            if (exoPlayer === player && crossfadeAnimator?.isRunning != true) {
+                                player.volume = 1.0f * duckingFactor * currentReplayGainFactor
+                            }
+                        }
+                    }
+                } else {
+                    currentReplayGainFactor = 1.0f
+                }
                 EqualizerManager.initEqualizer(applicationContext, player.audioSessionId)
 
                 if (crossfadeAnimator?.isRunning != true) {
@@ -1245,6 +1416,9 @@ class PlaybackService : MediaLibraryService() {
                 if (exoPlayer !== player) return
                 if (playbackState == Player.STATE_READY) {
                     consecutiveErrorCount = 0
+                    if (exoPlayer.isPlaying) {
+                        startPlaybackMonitoring()
+                    }
                 }
                 Log.d("PlaybackService", "onPlaybackStateChanged: $playbackState")
                 updateWidgets()
@@ -1254,11 +1428,13 @@ class PlaybackService : MediaLibraryService() {
                 if (exoPlayer !== player) return
                 if (isPlaying) {
                     consecutiveErrorCount = 0
+                    startPlaybackMonitoring()
                 }
                 Log.d("PlaybackService", "onIsPlayingChanged: $isPlaying")
                 updateWidgets() 
                 if (!isPlaying) {
                     savePlaybackState()
+                    playbackMonitorJob?.cancel()
                 }
             }
             
@@ -1704,6 +1880,11 @@ class PlaybackService : MediaLibraryService() {
         playerA.release()
         playerB.release()
         mediaSession?.release()
+        try {
+            audioManager.unregisterAudioDeviceCallback(audioDeviceCallback)
+        } catch (e: Exception) {
+            Log.w("PlaybackService", "AudioDeviceCallback not registered or already unregistered", e)
+        }
         try {
             unregisterReceiver(bluetoothReceiver)
         } catch (e: Exception) {

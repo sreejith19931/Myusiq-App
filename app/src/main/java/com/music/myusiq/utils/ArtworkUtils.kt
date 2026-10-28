@@ -15,7 +15,29 @@ object ArtworkUtils {
 
     fun isGenericAlbum(albumName: String): Boolean {
         val lower = albumName.trim().lowercase()
-        return lower.isBlank() || lower == "<unknown>" || lower == "unknown album" || lower == "unknown" || lower == "null" || lower == "singles"
+        return lower.isBlank() || 
+               lower == "<unknown>" || 
+               lower == "unknown album" || 
+               lower == "unknown" || 
+               lower == "null" || 
+               lower == "singles" ||
+               lower == "download" ||
+               lower == "downloads" ||
+               lower == "music" ||
+               lower == "audio" ||
+               lower == "media" ||
+               lower == "storage" ||
+               lower == "sdcard" ||
+               lower == "0" ||
+               lower == "emulated" ||
+               lower == "documents" ||
+               lower == "whatsapp" ||
+               lower == "telegram" ||
+               lower == "ringtones" ||
+               lower == "notifications" ||
+               lower == "alarms" ||
+               lower == "voice notes" ||
+               lower == "recordings"
     }
 
     private fun getPublicBackupDir(): File? {
@@ -139,13 +161,15 @@ object ArtworkUtils {
             if (albumFile.exists() && albumFile.length() > 0) return albumFile
         }
 
-        // 1. Check persistent external/public artwork backup directories
+        // 1. Check persistent external/public artwork backup directories (including album-level backups)
         val extBackupDir = File(context.getExternalFilesDir(null), "artwork_backup")
         val publicBackupDir = getPublicBackupDir()
 
         val backupFiles = listOf(
             File(extBackupDir, "${normPath.hashCode()}.jpg"),
-            if (publicBackupDir != null) File(publicBackupDir, "${normPath.hashCode()}.jpg") else null
+            if (!isGenericAlbum(albumName)) File(extBackupDir, "album_${albumName.trim().lowercase().hashCode()}.jpg") else null,
+            if (publicBackupDir != null) File(publicBackupDir, "${normPath.hashCode()}.jpg") else null,
+            if (publicBackupDir != null && !isGenericAlbum(albumName)) File(publicBackupDir, "album_${albumName.trim().lowercase().hashCode()}.jpg") else null
         )
 
         for (backupFile in backupFiles) {
@@ -155,6 +179,10 @@ object ArtworkUtils {
                     val bytes = backupFile.readBytes()
                     idFile.writeBytes(bytes)
                     hashFile.writeBytes(bytes)
+                    if (!isGenericAlbum(albumName)) {
+                        val albumFile = File(cacheDir, "album_${albumName.trim().lowercase().hashCode()}.jpg")
+                        if (!albumFile.exists()) albumFile.writeBytes(bytes)
+                    }
                     return idFile
                 } catch (_: Exception) {}
             }
@@ -270,40 +298,71 @@ object ArtworkUtils {
 
             val publicBackupDir = getPublicBackupDir()
 
-            val idFile = File(cacheDir, "$songId.jpg")
             val normPath = PlatformUtils.normalizePath(songPath)
-            val hashFile = File(cacheDir, "${normPath.hashCode()}.jpg")
-            val hashLowerFile = File(cacheDir, "${normPath.lowercase().hashCode()}.jpg")
-            val extBackupFile = File(extBackupDir, "${normPath.hashCode()}.jpg")
-            val publicBackupFile = publicBackupDir?.let { File(it, "${normPath.hashCode()}.jpg") }
+            val idFile = if (songId > 0) File(cacheDir, "$songId.jpg") else null
+            val hashFile = if (normPath.isNotBlank()) File(cacheDir, "${normPath.hashCode()}.jpg") else null
+            val hashLowerFile = if (normPath.isNotBlank()) File(cacheDir, "${normPath.lowercase().hashCode()}.jpg") else null
+            val albumFile = if (!isGenericAlbum(albumName)) File(cacheDir, "album_${albumName.trim().lowercase().hashCode()}.jpg") else null
 
             openUriInputStream(context, artUri)?.use { input ->
                 val rawBytes = input.readBytes()
                 if (rawBytes.isNotEmpty()) {
                     val bytes = compressAndOptimizeArtwork(rawBytes)
-                    if (songId > 0) idFile.writeBytes(bytes)
-                    if (normPath.isNotBlank()) {
-                        hashFile.writeBytes(bytes)
-                        hashLowerFile.writeBytes(bytes)
+                    
+                    idFile?.writeBytes(bytes)
+                    hashFile?.writeBytes(bytes)
+                    hashLowerFile?.writeBytes(bytes)
+                    albumFile?.writeBytes(bytes)
+
+                    if (idFile != null) {
+                        try { File(extBackupDir, "$songId.jpg").writeBytes(bytes) } catch (_: Exception) {}
                     }
-                    if (!isGenericAlbum(albumName)) {
-                        try {
-                            val albumFile = File(cacheDir, "album_${albumName.trim().lowercase().hashCode()}.jpg")
-                            albumFile.writeBytes(bytes)
-                        } catch (_: Exception) {}
+                    if (hashFile != null) {
+                        try { File(extBackupDir, "${normPath.hashCode()}.jpg").writeBytes(bytes) } catch (_: Exception) {}
+                        try { publicBackupDir?.let { File(it, "${normPath.hashCode()}.jpg").writeBytes(bytes) } } catch (_: Exception) {}
+                        savePublicMediaStoreImage(context, "${normPath.hashCode()}.jpg", bytes)
                     }
-                    try { extBackupFile.writeBytes(bytes) } catch (_: Exception) {}
-                    try { publicBackupFile?.writeBytes(bytes) } catch (_: Exception) {}
-                    savePublicMediaStoreImage(context, "${normPath.hashCode()}.jpg", bytes)
+                    if (albumFile != null && !isGenericAlbum(albumName)) {
+                        try { File(extBackupDir, "album_${albumName.trim().lowercase().hashCode()}.jpg").writeBytes(bytes) } catch (_: Exception) {}
+                        try { publicBackupDir?.let { File(it, "album_${albumName.trim().lowercase().hashCode()}.jpg").writeBytes(bytes) } } catch (_: Exception) {}
+                    }
                 }
             }
-            Log.d("ArtworkUtils", "Saved artwork cache and persistent backups for song $songId")
+            Log.d("ArtworkUtils", "Saved optimized shared artwork cache for song $songId album $albumName")
         } catch (e: Exception) {
             Log.e("ArtworkUtils", "Error saving artwork cache", e)
         }
     }
 
-    fun copyArtworkCache(context: Context, oldSongId: Long, oldPath: String, newSongId: Long, newPath: String) {
+    fun clearArtworkCache(context: Context, songId: Long, songPath: String, albumName: String = "") {
+        try {
+            val cacheDir = File(context.filesDir, "artwork_cache")
+            val extBackupDir = File(context.getExternalFilesDir(null), "artwork_backup")
+            val publicBackupDir = getPublicBackupDir()
+            val normPath = PlatformUtils.normalizePath(songPath)
+
+            val filesToDelete = listOfNotNull(
+                if (songId > 0) File(cacheDir, "$songId.jpg") else null,
+                if (normPath.isNotBlank()) File(cacheDir, "${normPath.hashCode()}.jpg") else null,
+                if (normPath.isNotBlank()) File(cacheDir, "${normPath.lowercase().hashCode()}.jpg") else null,
+                if (!isGenericAlbum(albumName)) File(cacheDir, "album_${albumName.trim().lowercase().hashCode()}.jpg") else null,
+                if (songId > 0) File(extBackupDir, "$songId.jpg") else null,
+                if (normPath.isNotBlank()) File(extBackupDir, "${normPath.hashCode()}.jpg") else null,
+                if (!isGenericAlbum(albumName)) File(extBackupDir, "album_${albumName.trim().lowercase().hashCode()}.jpg") else null,
+                if (publicBackupDir != null && normPath.isNotBlank()) File(publicBackupDir, "${normPath.hashCode()}.jpg") else null,
+                if (publicBackupDir != null && !isGenericAlbum(albumName)) File(publicBackupDir, "album_${albumName.trim().lowercase().hashCode()}.jpg") else null
+            )
+
+            for (file in filesToDelete) {
+                try { if (file.exists()) file.delete() } catch (_: Exception) {}
+            }
+            Log.d("ArtworkUtils", "Cleared artwork cache for song $songId path $songPath")
+        } catch (e: Exception) {
+            Log.e("ArtworkUtils", "Error clearing artwork cache", e)
+        }
+    }
+
+    fun copyArtworkCache(context: Context, oldSongId: Long, oldPath: String, newPath: String) {
         try {
             val existingArt = getArtworkFile(context, oldSongId, oldPath) ?: return
             if (!existingArt.exists() || existingArt.length() == 0L) return
@@ -319,19 +378,28 @@ object ArtworkUtils {
             val bytes = existingArt.readBytes()
             if (bytes.isEmpty()) return
 
+            val normOldPath = PlatformUtils.normalizePath(oldPath)
             val normNewPath = PlatformUtils.normalizePath(newPath)
-            val newIdFile = File(cacheDir, "$newSongId.jpg")
+
+            if (normOldPath != normNewPath && normOldPath.isNotBlank()) {
+                try { File(cacheDir, "${normOldPath.hashCode()}.jpg").delete() } catch (_: Exception) {}
+                try { File(extBackupDir, "${normOldPath.hashCode()}.jpg").delete() } catch (_: Exception) {}
+            }
+
+            if (oldSongId > 0) {
+                try { File(cacheDir, "$oldSongId.jpg").writeBytes(bytes) } catch (_: Exception) {}
+            }
+
             val newHashFile = File(cacheDir, "${normNewPath.hashCode()}.jpg")
             val newExtBackupFile = File(extBackupDir, "${normNewPath.hashCode()}.jpg")
             val newPublicBackupFile = publicBackupDir?.let { File(it, "${normNewPath.hashCode()}.jpg") }
 
-            newIdFile.writeBytes(bytes)
             newHashFile.writeBytes(bytes)
             try { newExtBackupFile.writeBytes(bytes) } catch (_: Exception) {}
             try { newPublicBackupFile?.writeBytes(bytes) } catch (_: Exception) {}
             savePublicMediaStoreImage(context, "${normNewPath.hashCode()}.jpg", bytes)
 
-            Log.d("ArtworkUtils", "Copied artwork cache from $oldPath to $newPath")
+            Log.d("ArtworkUtils", "Copied artwork cache from $oldPath to $newPath and cleaned up old path")
         } catch (e: Exception) {
             Log.e("ArtworkUtils", "Error copying artwork cache", e)
         }

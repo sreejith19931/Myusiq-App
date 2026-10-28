@@ -221,8 +221,18 @@ class TrackInfoBottomSheet : BottomSheetDialogFragment() {
                     if (artUri != null) {
                         selectedArtworkUri = artUri
                         ivEditAlbumArt.setImageURI(artUri)
-                    } else if (candidate.artworkUrl != null) {
-                        com.bumptech.glide.Glide.with(requireContext()).load(candidate.artworkUrl).into(ivEditAlbumArt)
+                    } else if (!candidate.artworkUrl.isNullOrBlank()) {
+                        lifecycleScope.launch(Dispatchers.IO) {
+                            val downloadedUri = viewModel.downloadImageToCache(requireContext(), candidate.artworkUrl)
+                            withContext(Dispatchers.Main) {
+                                if (downloadedUri != null) {
+                                    selectedArtworkUri = downloadedUri
+                                    ivEditAlbumArt.setImageURI(downloadedUri)
+                                } else {
+                                    com.bumptech.glide.Glide.with(requireContext()).load(candidate.artworkUrl).into(ivEditAlbumArt)
+                                }
+                            }
+                        }
                     }
                 }
             }

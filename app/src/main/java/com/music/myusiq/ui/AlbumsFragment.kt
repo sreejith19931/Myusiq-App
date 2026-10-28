@@ -47,7 +47,17 @@ data class AlbumUIModel(
     val dateAdded: Long = 0L,
 )
 
-class AlbumsFragment : Fragment() {
+class AlbumsFragment : Fragment(), BackPressHandler {
+    override fun onBackPressed(): Boolean {
+        if (searchView?.isShowing == true || !searchBar?.text.isNullOrEmpty() || !searchView?.editText?.text.isNullOrEmpty() || viewModel.lastSearchQuery.isNotBlank()) {
+            searchView?.hide()
+            searchBar?.setText("")
+            searchView?.setText("")
+            viewModel.applyFilterAndSearch("")
+            return true
+        }
+        return false
+    }
     private lateinit var recyclerView: RecyclerView
     private lateinit var albumsAdapter: AlbumsAdapter
     private lateinit var searchAlbumsAdapter: AlbumsAdapter

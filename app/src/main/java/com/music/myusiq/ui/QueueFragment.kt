@@ -130,7 +130,7 @@ class QueueFragment : Fragment(R.layout.fragment_queue) {
                     isPast = index < currentIndex,
                     isPlaying = (isActive && isPlaying),
                     progress = if (isActive && (song.duration > 0)) position.toFloat() / song.duration.toFloat() else 0f,
-                    artworkSignature = signatures[normPath] ?: 0L
+                    artworkSignature = signatures[normPath] ?: signatures[song.id.toString()] ?: 0L
                 )
             }
             

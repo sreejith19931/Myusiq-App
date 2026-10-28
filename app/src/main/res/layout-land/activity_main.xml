@@ -119,6 +119,8 @@
         android:layout_height="0dp"
         android:visibility="gone"
         app:menu="@menu/bottom_nav_menu"
+        app:itemIconTint="@color/selector_nav_item_tint"
+        app:itemTextColor="@color/selector_nav_item_tint"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 

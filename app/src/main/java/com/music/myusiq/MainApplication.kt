@@ -3,7 +3,6 @@ package com.music.myusiq
 import android.app.Application
 import android.content.Context
 import android.util.Log
-import com.google.android.material.color.DynamicColors
 import com.music.myusiq.data.AppDatabase
 import com.music.myusiq.service.PlaybackPersistence
 import com.music.myusiq.ui.ThemeSettingsManager
@@ -22,9 +21,6 @@ class MainApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         appContext = applicationContext
-
-        // Apply Dynamic Colors globally (Material You support)
-        DynamicColors.applyToActivitiesIfAvailable(this)
 
         val themeSettingsManager = ThemeSettingsManager(this)
 

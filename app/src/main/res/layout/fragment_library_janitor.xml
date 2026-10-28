@@ -135,6 +135,15 @@
                         android:text="Auto-Fix Metadata &amp; Artwork"
                         android:visibility="gone"
                         tools:visibility="visible" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnRescanAllTracks"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/rescan_and_fix_all"
+                        app:icon="@drawable/ic_refresh" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

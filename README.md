@@ -90,8 +90,10 @@
 
 ---
 
-## 🚀 Key Capabilities (`v1.4.1`)
+## 🚀 Key Capabilities (`v1.5.0`)
 
+* 🧠 **Smart Library 2.0 & Batch Tag Organization**: Acoustic fingerprinting, duplicate detection, and bulk tag/storage reorganization templates (`{Artist}/{Album}/{Track} - {Title}.ext`).
+* 🎵 **BPM & Harmonic Key Detection**: Automated tempo and musical key analysis in `MusicEnergyAnalyzer` for harmonic DJ-style mixes.
 * 📲 **Streamlined Permissions & Directory Discovery**: Refined verification wizard, default-deselected folder scanning, native directory browser, and zero-delay folder toggling.
 * 🎨 **Material You Expressive Theming**: UI accent colors breathe and extract dynamic swatches live from your active track's album art.
 * 🎤 **Tap-to-Sync Lyric Creator**: Interactive timestamp editor to stamp LRC timestamps `[mm:ss.xx]` line-by-line during track playback and embed directly into ID3 tags.
@@ -132,7 +134,7 @@ Need help, have feature requests, or want to discuss Myusiq? Join our official c
 ### Option 1: Direct APK Download (Recommended)
 Download the latest signed release APK from GitHub Releases:
 
-👉 **[Download Myusiq-v1.4.1.apk](https://github.com/sreejith19931/Myusiq-App/releases/download/v1.4.1/Myusiq-v1.4.1.apk)**
+👉 **[Download Myusiq-v1.5.0.apk](https://github.com/sreejith19931/Myusiq-App/releases/download/v1.5.0/Myusiq-v1.5.0.apk)**
 
 ---
 

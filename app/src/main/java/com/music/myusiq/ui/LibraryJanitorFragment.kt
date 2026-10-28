@@ -47,6 +47,7 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
     private lateinit var cardAutoFix: View
     private lateinit var tvAutoFixStatus: TextView
     private lateinit var btnAutoFixAll: MaterialButton
+    private lateinit var btnRescanAllTracks: MaterialButton
     private lateinit var cardUndoFix: View
     private lateinit var btnUndoLastFix: MaterialButton
 
@@ -67,6 +68,7 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
         cardAutoFix = view.findViewById(R.id.cardAutoFix)
         tvAutoFixStatus = view.findViewById(R.id.tvAutoFixStatus)
         btnAutoFixAll = view.findViewById(R.id.btnAutoFixAll)
+        btnRescanAllTracks = view.findViewById(R.id.btnRescanAllTracks)
         cardUndoFix = view.findViewById(R.id.cardUndoFix)
         btnUndoLastFix = view.findViewById(R.id.btnUndoLastFix)
 
@@ -75,6 +77,7 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
 
         btnCleanDuplicates.setOnClickListener { showCleanDuplicatesDialog() }
         btnAutoFixAll.setOnClickListener { startAutoFix() }
+        btnRescanAllTracks.setOnClickListener { startRescanAllTracks() }
         cardAutoFix.setOnClickListener { startAutoFix() }
         tvAutoFixStatus.setOnClickListener { startAutoFix() }
         btnUndoLastFix.setOnClickListener { performRevertMetadataFix() }
@@ -133,6 +136,7 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
                 launch {
                     viewModel.isJanitorScanning.collectLatest { isScanning ->
                         btnAutoFixAll.isEnabled = !isScanning
+                        btnRescanAllTracks.isEnabled = !isScanning
                     }
                 }
             }
@@ -144,6 +148,20 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
         val artFile = ArtworkUtils.getArtworkFile(context, song.id, song.path, song.album)
         val hasMissingArt = artFile == null || !artFile.exists() || artFile.length() == 0L
         return isMessy || hasMissingArt
+    }
+
+    private fun startRescanAllTracks() {
+        val allSongs = viewModel.songsLibrary.value
+        if (allSongs.isEmpty()) {
+            Toast.makeText(requireContext(), "No tracks found in library", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val appContext = requireContext().applicationContext
+        val prefs = appContext.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
+        prefs.edit().putBoolean("janitor_initial_scan_done", true).apply()
+
+        showUnifiedJanitorDialog(allSongs)
     }
 
     private fun startAutoFix() {
@@ -173,6 +191,8 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
         showUnifiedJanitorDialog(candidates)
     }
 
+    private enum class JanitorLoadingType { PULSE, BARS, WRITING, CIRCULAR }
+
     private fun showUnifiedJanitorDialog(tracksToScan: List<Song>) {
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_janitor_review, null)
         
@@ -180,6 +200,11 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
         val tvSub = dialogView.findViewById<TextView>(R.id.tvJanitorDialogSub)
         val layoutProgress = dialogView.findViewById<View>(R.id.layoutJanitorProgress)
         val tvProgressMsg = dialogView.findViewById<TextView>(R.id.tvJanitorProgressMessage)
+        val pulseLoadingView = dialogView.findViewById<com.music.myusiq.ui.components.PulseLoadingView>(R.id.pulseLoadingView)
+        val animatedLoadingBars = dialogView.findViewById<com.music.myusiq.ui.components.AnimatedLoadingBars>(R.id.animatedLoadingBars)
+        val writingLoadingView = dialogView.findViewById<com.music.myusiq.ui.components.WritingLoadingView>(R.id.writingLoadingView)
+        val progressJanitorCircular = dialogView.findViewById<com.google.android.material.progressindicator.CircularProgressIndicator>(R.id.progressJanitorCircular)
+        val progressJanitor = dialogView.findViewById<com.google.android.material.progressindicator.LinearProgressIndicator>(R.id.progressJanitor)
         val layoutSelectAll = dialogView.findViewById<View>(R.id.layoutSelectAllContainer)
         val frameContainer = dialogView.findViewById<View>(R.id.frameReviewContainer)
         val btnBulkSearch = dialogView.findViewById<MaterialButton>(R.id.btnBulkSearchOnline)
@@ -188,14 +213,39 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
         val btnCancel = dialogView.findViewById<MaterialButton>(R.id.btnCancelReview)
         val btnApply = dialogView.findViewById<MaterialButton>(R.id.btnApplySelected)
 
+        fun showShapeLoading(type: JanitorLoadingType, message: String) {
+            layoutProgress.isVisible = true
+            pulseLoadingView?.isVisible = type == JanitorLoadingType.PULSE
+            animatedLoadingBars?.isVisible = type == JanitorLoadingType.BARS
+            writingLoadingView?.isVisible = type == JanitorLoadingType.WRITING
+            progressJanitorCircular?.isVisible = type == JanitorLoadingType.CIRCULAR
+            progressJanitor?.isVisible = false
+            tvProgressMsg?.text = message
+        }
+
+        fun showLinearLoading(current: Int, total: Int, message: String) {
+            layoutProgress.isVisible = true
+            pulseLoadingView?.isVisible = false
+            animatedLoadingBars?.isVisible = false
+            writingLoadingView?.isVisible = false
+            progressJanitorCircular?.isVisible = false
+            progressJanitor?.isVisible = true
+            progressJanitor?.max = total
+            progressJanitor?.progress = current
+            tvProgressMsg?.text = message
+        }
+
         // Initial state: Scanning & analyzing waveforms
         tvTitle.text = "Scanning & Analyzing Library"
-        tvSub.text = "Analyzing audio waveforms and searching online databases..."
-        layoutProgress.isVisible = true
+        tvSub.text = "Analyzing audio waveforms and searching local/online metadata..."
+        showShapeLoading(JanitorLoadingType.PULSE, "Preparing library scan...")
+
         layoutSelectAll.isVisible = false
         frameContainer.isVisible = false
         btnBulkSearch.isVisible = false
         btnApply.isVisible = false
+        btnCancel.isVisible = true
+        btnCancel.text = getString(R.string.cancel)
 
         var dialog: AlertDialog? = null
         var candidateItems: List<JanitorUpdateItem> = emptyList()
@@ -208,29 +258,91 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
 
         btnCancel.setOnClickListener {
             viewModel.cancelJanitorScan()
+            viewModel.cancelBulkUpdate()
+            viewModel.clearJanitorScanState()
             dialog?.dismiss()
         }
 
         btnApply.setOnClickListener {
             val selectedEdits = candidateItems.filter { it.isSelected }.map { it.proposedEdit }
             if (selectedEdits.isNotEmpty()) {
-                tvTitle.text = "Applying Changes"
+                tvTitle.text = "Applying Metadata Changes"
                 tvSub.text = "Writing ID3/FLAC tags and updating MediaStore..."
-                layoutProgress.isVisible = true
+                showShapeLoading(JanitorLoadingType.WRITING, "Preparing metadata updates...")
+
                 layoutSelectAll.isVisible = false
                 frameContainer.isVisible = false
                 btnBulkSearch.isVisible = false
-                btnCancel.isEnabled = false
-                btnApply.isEnabled = false
+                btnApply.isVisible = false
 
-                viewModel.requestBulkMetadataUpdate(requireContext(), selectedEdits)
-                
-                viewLifecycleOwner.lifecycleScope.launch {
-                    kotlinx.coroutines.delay(2000.milliseconds)
-                    Toast.makeText(requireContext(), "Successfully updated ${selectedEdits.size} tracks!", Toast.LENGTH_LONG).show()
+                btnCancel.isEnabled = true
+                btnCancel.text = "Stop"
+
+                var isCancelledByUser = false
+
+                btnCancel.setOnClickListener {
+                    isCancelledByUser = true
+                    viewModel.cancelBulkUpdate()
+                    Toast.makeText(requireContext(), "Stopped. Updated tracks up to this point.", Toast.LENGTH_LONG).show()
                     viewModel.clearJanitorScanState()
                     dialog?.dismiss()
                     performScan()
+                }
+
+                viewModel.requestBulkMetadataUpdate(requireContext(), selectedEdits)
+
+                val progressJob = viewLifecycleOwner.lifecycleScope.launch {
+                    viewModel.bulkUpdateProgress.collectLatest { (current, total) ->
+                        if (total > 0 && current <= total && !isCancelledByUser) {
+                            val title = viewModel.bulkUpdateCurrentTitle.value
+                            if (current == 0) {
+                                showShapeLoading(JanitorLoadingType.WRITING, "Requesting write permissions...")
+                            } else {
+                                showLinearLoading(current, total, "Updating $current of $total: $title")
+                            }
+                        }
+                    }
+                }
+
+                val permissionJob = viewLifecycleOwner.lifecycleScope.launch {
+                    viewModel.pendingWriteIntent.collectLatest { intent ->
+                        if (intent != null && !isCancelledByUser) {
+                            tvTitle.text = "Permission Required"
+                            tvSub.text = "Please grant write permission in the system prompt to save metadata changes..."
+                            showShapeLoading(JanitorLoadingType.WRITING, "Awaiting write permission in system prompt...")
+                        } else if (!isCancelledByUser && viewModel.isBulkUpdating.value) {
+                            tvTitle.text = "Applying Metadata Changes"
+                            tvSub.text = "Writing ID3/FLAC tags and updating MediaStore..."
+                        }
+                    }
+                }
+
+                viewLifecycleOwner.lifecycleScope.launch {
+                    while (!viewModel.isBulkUpdating.value && viewModel.pendingWriteIntent.value == null && !isCancelledByUser) {
+                        kotlinx.coroutines.delay(50.milliseconds)
+                    }
+                    while ((viewModel.isBulkUpdating.value || viewModel.pendingWriteIntent.value != null) && !isCancelledByUser) {
+                        kotlinx.coroutines.delay(100.milliseconds)
+                    }
+                    progressJob.cancel()
+                    permissionJob.cancel()
+
+                    if (!isCancelledByUser) {
+                        val appliedCount = viewModel.bulkUpdateProgress.value.first.let { if (it > 0) it else selectedEdits.size }
+                        tvTitle.text = "Updates Applied Successfully!"
+                        tvSub.text = "Successfully updated $appliedCount tracks in your music library."
+                        layoutProgress.isVisible = false
+                        btnCancel.text = "Done"
+                        btnCancel.setOnClickListener {
+                            viewModel.clearJanitorScanState()
+                            dialog?.dismiss()
+                            performScan()
+                        }
+                    } else {
+                        viewModel.clearJanitorScanState()
+                        dialog?.dismiss()
+                        performScan()
+                    }
                 }
             } else {
                 dialog?.dismiss()
@@ -246,6 +358,7 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
 
             btnBulkSearch.isEnabled = false
             btnBulkSearch.text = "Searching online..."
+            showShapeLoading(JanitorLoadingType.BARS, "Searching online databases for missing artwork & track tags...")
 
             lifecycleScope.launch(Dispatchers.IO) {
                 var foundCount = 0
@@ -274,6 +387,7 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
 
                 withContext(Dispatchers.Main) {
                     if (isAdded) {
+                        layoutProgress.isVisible = false
                         btnBulkSearch.isEnabled = true
                         btnBulkSearch.text = "Search All Messy Tracks Online"
                         rvReview.adapter?.notifyDataSetChanged()
@@ -295,7 +409,7 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
                 viewModel.janitorScanState.collectLatest { state ->
                     when (state) {
                         is com.music.myusiq.domain.usecase.ScanState.Progress -> {
-                            tvProgressMsg.text = state.message
+                            showLinearLoading(state.percentage, 100, state.message)
                         }
                         is com.music.myusiq.domain.usecase.ScanState.ScanCompleted -> {
                             android.util.Log.d("JanitorFragment", "ScanCompleted collected with ${state.results.size} results")
@@ -341,8 +455,17 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
                                 }
                                 updateApplyButtonText()
                             } else {
-                                Toast.makeText(context, "No tracks needing metadata fixes.", Toast.LENGTH_SHORT).show()
-                                dialog.dismiss()
+                                tvTitle.text = "Scan Completed"
+                                tvSub.text = "All tracks in your library are clean and up to date!"
+                                layoutProgress.isVisible = false
+                                layoutSelectAll.isVisible = false
+                                frameContainer.isVisible = false
+                                btnBulkSearch.isVisible = false
+                                btnApply.isVisible = false
+                                btnCancel.text = "Done"
+                                btnCancel.setOnClickListener {
+                                    dialog.dismiss()
+                                }
                             }
                             performScan()
                         }
@@ -416,7 +539,12 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
         val appContext = requireContext().applicationContext
 
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Default) {
-            val groups = allSongs.groupBy { "${it.title.trim().lowercase()}|${it.artist.trim().lowercase()}" }
+            val pathGroups = allSongs.groupBy { PlatformUtils.normalizePath(it.path).lowercase() }
+                .values
+                .filter { it.size > 1 }
+                .map { group -> group.sortedByDescending { calculateSongQualityScore(it) } }
+
+            val titleGroups = allSongs.groupBy { "${it.title.trim().lowercase()}|${it.artist.trim().lowercase()}" }
                 .values
                 .filter { it.size > 1 }
                 .map { group ->
@@ -428,6 +556,8 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
                 .map { group ->
                     group.sortedByDescending { calculateSongQualityScore(it) }
                 }
+
+            val groups = (pathGroups + titleGroups).distinctBy { group -> group.map { it.id }.sorted() }
 
             val prefs = appContext.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
             val initialScanDone = prefs.getBoolean("janitor_initial_scan_done", false)
@@ -471,10 +601,11 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
                     missingArt.isNotEmpty() ->
                         "Found ${missingArt.size} tracks with missing artwork. Tap to review."
                     else ->
-                        "All metadata and artwork look clean."
+                        "All metadata and artwork look clean. Use 'Rescan & Fix All Tracks' to perform a complete reset and scan."
                 }
                 tvAutoFixStatus.text = statusMessage
                 btnAutoFixAll.isVisible = consolidatedCandidates.isNotEmpty()
+                btnRescanAllTracks.isVisible = allSongs.isNotEmpty()
                 updateUndoCardVisibility()
             }
         }

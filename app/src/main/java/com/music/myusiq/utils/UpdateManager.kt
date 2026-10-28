@@ -417,8 +417,7 @@ object UpdateManager {
         kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
             try {
                 val fileName = "Myusiq-Wear-$version.apk"
-                val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                val wearApkFile = File(downloadDir, fileName)
+                val wearApkFile = File(context.cacheDir, fileName)
 
                 if (wearApkFile.exists() && wearApkFile.length() > 0) {
                     pushWearApkToWatch(context, wearApkFile)
@@ -453,6 +452,9 @@ object UpdateManager {
 
                 com.google.android.gms.wearable.Wearable.getDataClient(context).putDataItem(request)
                 Log.d(TAG, "Transferred Wear APK asset to Wearable DataClient (${bytes.size} bytes)")
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Watch update sent to your watch!", Toast.LENGTH_SHORT).show()
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to push Wear APK to watch", e)
             }

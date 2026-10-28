@@ -4,9 +4,9 @@ import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.fragment.app.Fragment
+import com.music.myusiq.R
 import com.music.myusiq.databinding.FragmentSetupPersonalizeBinding
 import com.music.myusiq.databinding.ItemPaletteOptionBinding
-import com.music.myusiq.R
 
 class SetupPersonalizeFragment : Fragment(R.layout.fragment_setup_personalize) {
     private var _binding: FragmentSetupPersonalizeBinding? = null
@@ -19,12 +19,23 @@ class SetupPersonalizeFragment : Fragment(R.layout.fragment_setup_personalize) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentSetupPersonalizeBinding.bind(view)
 
+        (activity as? SetupActivity)?.let { setupAct ->
+            selectedPalette = setupAct.getChosenPalette()
+            selectedTheme = setupAct.getChosenThemeMode()
+        }
+
         initThemeToggle()
         initPaletteOptions()
+        updatePaletteSelection()
     }
 
     private fun initThemeToggle() {
-        binding.toggleGroupTheme.check(R.id.btnSystemTheme)
+        when (selectedTheme) {
+            "light" -> binding.toggleGroupTheme.check(R.id.btnLightTheme)
+            "dark" -> binding.toggleGroupTheme.check(R.id.btnDarkTheme)
+            else -> binding.toggleGroupTheme.check(R.id.btnSystemTheme)
+        }
+
         binding.toggleGroupTheme.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked) {
                 selectedTheme = when (checkedId) {
@@ -61,36 +72,31 @@ class SetupPersonalizeFragment : Fragment(R.layout.fragment_setup_personalize) {
     private fun setupPaletteItem(itemBinding: ItemPaletteOptionBinding, paletteId: String, name: String) {
         itemBinding.tvPaletteName.text = name
         
-        // Customize colors based on palette
+        val ctx = requireContext()
         when (paletteId) {
             "system_colors" -> {
-                itemBinding.viewColorPrimary.setBackgroundColor(requireContext().getColor(R.color.md_theme_default_primary))
-                itemBinding.tvPaletteName.setTextColor(requireContext().getColor(android.R.color.black))
+                itemBinding.viewColorPrimary.setBackgroundColor(ctx.getColor(R.color.md_theme_default_primary))
+                itemBinding.viewColorSurface.setBackgroundColor(ctx.getColor(R.color.surface_blue))
             }
             "palette_midnight" -> {
-                itemBinding.viewColorPrimary.setBackgroundColor(requireContext().getColor(R.color.midnight_accent))
-                itemBinding.viewColorSurface.setBackgroundColor(requireContext().getColor(R.color.midnight_blue))
-                itemBinding.tvPaletteName.setTextColor(requireContext().getColor(R.color.white))
+                itemBinding.viewColorPrimary.setBackgroundColor(ctx.getColor(R.color.midnight_accent))
+                itemBinding.viewColorSurface.setBackgroundColor(ctx.getColor(R.color.midnight_blue))
             }
             "palette_slate" -> {
-                itemBinding.viewColorPrimary.setBackgroundColor(requireContext().getColor(R.color.slate_accent))
-                itemBinding.viewColorSurface.setBackgroundColor(requireContext().getColor(R.color.slate_dark))
-                itemBinding.tvPaletteName.setTextColor(requireContext().getColor(R.color.white))
+                itemBinding.viewColorPrimary.setBackgroundColor(ctx.getColor(R.color.slate_accent))
+                itemBinding.viewColorSurface.setBackgroundColor(ctx.getColor(R.color.slate_dark))
             }
             "palette_forest" -> {
-                itemBinding.viewColorPrimary.setBackgroundColor(requireContext().getColor(R.color.forest_accent))
-                itemBinding.viewColorSurface.setBackgroundColor(requireContext().getColor(R.color.forest_dark))
-                itemBinding.tvPaletteName.setTextColor(requireContext().getColor(R.color.white))
+                itemBinding.viewColorPrimary.setBackgroundColor(ctx.getColor(R.color.forest_accent))
+                itemBinding.viewColorSurface.setBackgroundColor(ctx.getColor(R.color.forest_dark))
             }
             "palette_charcoal" -> {
-                itemBinding.viewColorPrimary.setBackgroundColor(requireContext().getColor(R.color.charcoal_accent))
-                itemBinding.viewColorSurface.setBackgroundColor(requireContext().getColor(R.color.charcoal_dark))
-                itemBinding.tvPaletteName.setTextColor(requireContext().getColor(R.color.white))
+                itemBinding.viewColorPrimary.setBackgroundColor(ctx.getColor(R.color.charcoal_accent))
+                itemBinding.viewColorSurface.setBackgroundColor(ctx.getColor(R.color.charcoal_dark))
             }
             "palette_royal" -> {
-                itemBinding.viewColorPrimary.setBackgroundColor(requireContext().getColor(R.color.royal_accent))
-                itemBinding.viewColorSurface.setBackgroundColor(requireContext().getColor(R.color.royal_dark))
-                itemBinding.tvPaletteName.setTextColor(requireContext().getColor(R.color.white))
+                itemBinding.viewColorPrimary.setBackgroundColor(ctx.getColor(R.color.royal_accent))
+                itemBinding.viewColorSurface.setBackgroundColor(ctx.getColor(R.color.royal_dark))
             }
         }
 
@@ -102,6 +108,7 @@ class SetupPersonalizeFragment : Fragment(R.layout.fragment_setup_personalize) {
     }
 
     private fun updatePaletteSelection() {
+        val ctx = requireContext()
         val palettes = listOf(
             binding.paletteDefault to "system_colors",
             binding.paletteMidnight to "palette_midnight",
@@ -113,9 +120,13 @@ class SetupPersonalizeFragment : Fragment(R.layout.fragment_setup_personalize) {
 
         palettes.forEach { (item, id) ->
             val isSelected = id == selectedPalette
-            item.ivSelected.visibility = if (isSelected) View.VISIBLE else View.GONE
-            item.root.strokeWidth = if (isSelected) 4 else 1
-            item.root.strokeColor = if (isSelected) requireContext().getColor(R.color.md_theme_default_primary) else requireContext().getColor(android.R.color.darker_gray)
+            item.cardCheckBadge.visibility = if (isSelected) View.VISIBLE else View.GONE
+            item.root.strokeWidth = if (isSelected) 6 else 2
+            item.root.strokeColor = if (isSelected) {
+                ctx.getColor(R.color.md_theme_default_primary)
+            } else {
+                ctx.getColor(android.R.color.darker_gray)
+            }
         }
     }
 

@@ -60,6 +60,15 @@ class AnimationHelper(
         isBlurredModeCached: Boolean,
         onSyncControlTints: () -> Unit
     ) {
+        if (!root.isLaidOut || (root.width <= 0) || (root.height <= 0) || (tvFullTrackTitle.top <= 0)) {
+            root.post {
+                if (root.isLaidOut && (root.width > 0) && (root.height > 0) && (tvFullTrackTitle.top > 0)) {
+                    setTransitionAlpha(alpha, isLyricsShowing, isBlurredModeCached, onSyncControlTints)
+                }
+            }
+            return
+        }
+
         val oldOffset = currentAlphaOffset
         currentAlphaOffset = alpha
         

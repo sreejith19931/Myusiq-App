@@ -2,6 +2,6 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <corners android:radius="4dp" />
-    <solid android:color="?attr/colorOutlineVariant" />
+    <solid android:color="@color/palette_on_surface_variant_midnight" />
     <size android:width="32dp" android:height="4dp" />
 </shape>

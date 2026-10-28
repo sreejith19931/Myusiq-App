@@ -205,58 +205,13 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Automatically fetch missing album art and track tags"
+                            android:text="Automatically fetch missing album art and track tags on-the-fly and in background (Wi-Fi &amp; Charging)"
                             android:textAppearance="?attr/textAppearanceBodySmall"
                             android:textColor="?attr/colorOnSurfaceVariant"
                             tools:ignore="HardcodedText" />
                     </LinearLayout>
                     <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchAutoImprove"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
-                </LinearLayout>
-
-                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorOutlineVariant" android:layout_marginHorizontal="16dp"/>
-
-                <!-- Background Auto-Scan WorkManager -->
-                <LinearLayout
-                    android:id="@+id/rowBackgroundScan"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="12dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true">
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_search"
-                        android:layout_marginEnd="16dp"
-                        app:tint="?attr/colorOnSurfaceVariant" />
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Background Auto-Scan"
-                            android:textAppearance="?attr/textAppearanceBodyLarge"
-                            android:textStyle="bold"
-                            tools:ignore="HardcodedText" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Periodically scan for metadata and artwork in background (Wi-Fi &amp; Charging)"
-                            android:textAppearance="?attr/textAppearanceBodySmall"
-                            android:textColor="?attr/colorOnSurfaceVariant"
-                            tools:ignore="HardcodedText" />
-                    </LinearLayout>
-                    <com.google.android.material.materialswitch.MaterialSwitch
-                        android:id="@+id/switchBackgroundScan"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content" />
                 </LinearLayout>

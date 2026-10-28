@@ -60,17 +60,28 @@ object MetadataBackupUtils {
                 val projection = arrayOf(MediaStore.MediaColumns._ID)
                 val selection = "${MediaStore.MediaColumns.DISPLAY_NAME} = ? AND ${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ?"
                 val selectionArgs = arrayOf("metadata_overrides_backup.json", "%${Environment.DIRECTORY_DOWNLOADS}/.myusiq_backup%")
-                val queryUri = MediaStore.Downloads.EXTERNAL_CONTENT_URI
+                val queryUris = listOf(
+                    MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                    MediaStore.Files.getContentUri("external")
+                )
 
-                var existingUri: Uri? = null
-                resolver.query(queryUri, projection, selection, selectionArgs, null)?.use { cursor ->
-                    if (cursor.moveToFirst()) {
-                        val id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID))
-                        existingUri = ContentUris.withAppendedId(queryUri, id)
-                    }
+                var targetUri: Uri? = null
+                for (queryUri in queryUris) {
+                    try {
+                        resolver.query(queryUri, projection, selection, selectionArgs, null)?.use { cursor ->
+                            if (cursor.moveToFirst()) {
+                                val id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID))
+                                targetUri = ContentUris.withAppendedId(queryUri, id)
+                            }
+                        }
+                        if (targetUri != null) break
+                    } catch (_: Exception) {}
                 }
 
-                val targetUri = existingUri ?: resolver.insert(queryUri, contentValues)
+                if (targetUri == null) {
+                    targetUri = runCatching { resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues) }.getOrNull()
+                }
+
                 if (targetUri != null) {
                     resolver.openOutputStream(targetUri, "rwt")?.use { output ->
                         output.write(jsonString.toByteArray(Charsets.UTF_8))
@@ -85,24 +96,30 @@ object MetadataBackupUtils {
 
     private fun readFromPublicMediaStore(context: Context): String? {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            try {
-                val resolver = context.contentResolver
-                val projection = arrayOf(MediaStore.MediaColumns._ID)
-                val selection = "${MediaStore.MediaColumns.DISPLAY_NAME} = ?"
-                val selectionArgs = arrayOf("metadata_overrides_backup.json")
-                val queryUri = MediaStore.Downloads.EXTERNAL_CONTENT_URI
+            val queryUris = listOf(
+                MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                MediaStore.Files.getContentUri("external")
+            )
+            for (queryUri in queryUris) {
+                try {
+                    val resolver = context.contentResolver
+                    val projection = arrayOf(MediaStore.MediaColumns._ID)
+                    val selection = "${MediaStore.MediaColumns.DISPLAY_NAME} = ?"
+                    val selectionArgs = arrayOf("metadata_overrides_backup.json")
 
-                resolver.query(queryUri, projection, selection, selectionArgs, null)?.use { cursor ->
-                    if (cursor.moveToFirst()) {
-                        val id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID))
-                        val uri = ContentUris.withAppendedId(queryUri, id)
-                        resolver.openInputStream(uri)?.use { input ->
-                            return input.bufferedReader(Charsets.UTF_8).readText()
+                    resolver.query(queryUri, projection, selection, selectionArgs, null)?.use { cursor ->
+                        if (cursor.moveToFirst()) {
+                            val id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID))
+                            val uri = ContentUris.withAppendedId(queryUri, id)
+                            resolver.openInputStream(uri)?.use { input ->
+                                val text = input.bufferedReader(Charsets.UTF_8).readText()
+                                if (text.isNotBlank()) return text
+                            }
                         }
                     }
+                } catch (e: Exception) {
+                    Log.d("MetadataBackupUtils", "MediaStore public backup read attempt failed: ${e.message}")
                 }
-            } catch (e: Exception) {
-                Log.d("MetadataBackupUtils", "MediaStore public backup read failed: ${e.message}")
             }
         }
         return null

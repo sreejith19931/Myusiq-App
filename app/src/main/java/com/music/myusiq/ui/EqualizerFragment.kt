@@ -378,6 +378,16 @@ class EqualizerFragment : Fragment(R.layout.fragment_equalizer) {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        fftEngineManager?.setPaused(false)
+    }
+
+    override fun onPause() {
+        fftEngineManager?.setPaused(true)
+        super.onPause()
+    }
+
     override fun onDestroyView() {
         fftEngineManager?.release()
         fftEngineManager = null

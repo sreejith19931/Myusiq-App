@@ -272,6 +272,16 @@ class FullscreenLyricsStageDialogFragment : DialogFragment() {
         return "%02d:%02d".format(s / 60, s % 60)
     }
 
+    override fun onResume() {
+        super.onResume()
+        fftEngineManager?.setPaused(false)
+    }
+
+    override fun onPause() {
+        fftEngineManager?.setPaused(true)
+        super.onPause()
+    }
+
     override fun onDestroyView() {
         breathAnimator?.cancel()
         fftEngineManager?.release()

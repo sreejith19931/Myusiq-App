@@ -2,7 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.4.1] - 2026-10-25
+## [1.5.0] - 2026-10-26
+
+### Added & Fixed
+- **Smart Library 2.0 & Batch Tag Organization**: Automated acoustic fingerprinting and duplicate detection, bulk metadata batch editing and file storage restructuring based on customizable templates (`{Artist}/{Album}/{Track} - {Title}.ext`).
+- **BPM & Harmonic Key Detection**: Automated tempo and musical key calculation in `MusicEnergyAnalyzer` for DJ-style harmonic playlist generation.
+- **10-Band Studio Equalizer & AudioFX**: Precision frequency sliders (`31Hz` to `16kHz`), real-time FFT spectrum analyzer, hardware `BassBoost`, `Virtualizer 3D`, `PresetReverb`, and `LoudnessEnhancer`.
+- **60fps Visualizer Studio & Tap-to-Sync Lyrics**: 4 audio-reactive render modes and real-time timestamp editor to stamp LRC lyrics line-by-line and embed into ID3 tags.
+- **Streamlined Setup & Storage Resilience**: Refined permission cards, default-deselected folder discovery, and HyperOS/Android 14+ scoped storage fallback handling.
 
 ### Added & Fixed
 - **Streamlined Setup & Permissions Wizard**: Refined Access permissions page with clean green verification cards, bold typography upon grant, badge-free minimal design, and themed header icons.

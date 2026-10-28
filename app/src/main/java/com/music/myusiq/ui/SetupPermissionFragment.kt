@@ -15,6 +15,7 @@ import androidx.fragment.app.Fragment
 import com.google.android.material.card.MaterialCardView
 import com.music.myusiq.R
 import com.music.myusiq.databinding.FragmentSetupPermissionBinding
+import com.music.myusiq.utils.ThemeUtils
 
 class SetupPermissionFragment : Fragment(R.layout.fragment_setup_permission) {
     private var _binding: FragmentSetupPermissionBinding? = null
@@ -138,17 +139,30 @@ class SetupPermissionFragment : Fragment(R.layout.fragment_setup_permission) {
         updateCardStatus(binding.cardNotif, binding.tvNotifTitle, binding.tvNotifDesc, binding.tvStatusNotif, notifGranted)
         updateCardStatus(binding.cardBluetooth, binding.tvBtTitle, binding.tvBtDesc, binding.tvStatusBt, btGranted)
 
-        val greenColor = Color.parseColor("#4CAF50")
+        val isDark = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+
         if (coreGranted) {
+            val bgGreen = if (isDark) Color.parseColor("#1B3E20") else Color.parseColor("#E8F5E9")
+            val fgGreen = if (isDark) Color.parseColor("#81C784") else Color.parseColor("#2E7D32")
+            val strokeGreen = Color.parseColor("#4CAF50")
+
             binding.btnGrantPermission.text = getString(R.string.permission_verified)
             binding.btnGrantPermission.setIconResource(R.drawable.ic_check)
-            binding.btnGrantPermission.setTextColor(greenColor)
-            binding.btnGrantPermission.iconTint = ColorStateList.valueOf(greenColor)
+            binding.btnGrantPermission.backgroundTintList = ColorStateList.valueOf(bgGreen)
+            binding.btnGrantPermission.setTextColor(fgGreen)
+            binding.btnGrantPermission.iconTint = ColorStateList.valueOf(fgGreen)
+            binding.btnGrantPermission.setStrokeColor(ColorStateList.valueOf(strokeGreen))
+            binding.btnGrantPermission.strokeWidth = 2
         } else {
+            val primaryColor = ThemeUtils.getThemeColor(requireContext(), androidx.appcompat.R.attr.colorPrimary)
+            val onPrimaryColor = ThemeUtils.getThemeColor(requireContext(), com.google.android.material.R.attr.colorOnPrimary)
+
             binding.btnGrantPermission.text = getString(R.string.grant_access)
             binding.btnGrantPermission.setIconResource(0)
-            binding.btnGrantPermission.setTextColor(ContextCompat.getColor(requireContext(), R.color.md_theme_default_primary))
+            binding.btnGrantPermission.backgroundTintList = ColorStateList.valueOf(primaryColor)
+            binding.btnGrantPermission.setTextColor(if (onPrimaryColor != 0) onPrimaryColor else Color.WHITE)
             binding.btnGrantPermission.iconTint = null
+            binding.btnGrantPermission.strokeWidth = 0
         }
 
         (activity as? SetupActivity)?.onPermissionChanged(coreGranted)

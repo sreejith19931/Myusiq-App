@@ -5,6 +5,9 @@ import android.content.SharedPreferences
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.LayerDrawable
+import android.graphics.drawable.StateListDrawable
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -33,6 +36,8 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
+import com.google.android.material.color.DynamicColors
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.edit
 import androidx.core.graphics.ColorUtils
@@ -100,10 +105,20 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private val backPressedCallback = object : OnBackPressedCallback(true) {
         override fun handleOnBackPressed() {
             val overlay = findViewById<View>(R.id.fullScreenOverlayContainer)
+            val currentFragment = supportFragmentManager.findFragmentById(R.id.navHostFragment)
+            val topFragment = supportFragmentManager.fragments.lastOrNull { it.isVisible }
+
             if (overlay.isVisible) {
                 hideFullScreenOverlay()
             } else if (bottomSheetBehavior.state == BottomSheetBehavior.STATE_EXPANDED) {
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+            } else if (topFragment is BackPressHandler && topFragment.onBackPressed()) {
+                return
+            } else if (currentFragment is BackPressHandler && currentFragment.onBackPressed()) {
+                return
+            } else if (viewModel.lastSearchQuery.isNotBlank()) {
+                viewModel.applyFilterAndSearch("")
+                return
             } else if (supportFragmentManager.backStackEntryCount > 0) {
                 supportFragmentManager.popBackStack()
             } else if (layoutExitConfirm.isVisible) {
@@ -157,17 +172,28 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        themeSettingsManager = ThemeSettingsManager(this)
-        themeManager = ThemeManager(this)
-        permissionManager = PermissionManager(this)
         sharedPreferences = getSharedPreferences("app_prefs", MODE_PRIVATE)
 
-        // Apply cached theme settings synchronously from SharedPreferences without blocking UI thread
+        // Apply cached theme settings synchronously from SharedPreferences before super.onCreate()
         val cachedMode = sharedPreferences.getString("cached_theme_mode", "system") ?: "system"
         val cachedStyle = sharedPreferences.getString("cached_color_style", "system_colors") ?: "system_colors"
         val cachedFont = sharedPreferences.getBoolean("cached_use_custom_font", true)
-        themeSettingsManager.applyThemeMode(cachedMode)
-        themeSettingsManager.applyColorStyle(this, cachedStyle, cachedFont)
+        
+        when (cachedMode) {
+            "light" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+            "dark" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+            else -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        }
+
+        themeSettingsManager = ThemeSettingsManager(this)
+        themeSettingsManager.applyColorStyle(this, cachedStyle)
+        themeSettingsManager.applyTypography(this, cachedFont)
+
+        super.onCreate(savedInstanceState)
+
+        themeSettingsManager = ThemeSettingsManager(this)
+        themeManager = ThemeManager(this)
+        permissionManager = PermissionManager(this)
 
         lifecycleScope.launch {
             combine(
@@ -182,8 +208,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     .apply()
             }
         }
-
-        super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         setContentView(R.layout.activity_main)
@@ -501,6 +525,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     navigationRail?.backgroundTintList = ColorStateList.valueOf(themeSurface)
                     navigationRail?.itemIconTintList = iconColorStateList
                     navigationRail?.itemTextColor = iconColorStateList
+
+                    val activeIndicatorDrawable = createNavItemLineIndicator(themePrimary)
+                    bottomNavigationView.itemBackground = activeIndicatorDrawable
+                    navigationRail?.itemBackground = activeIndicatorDrawable
                 } }
                 launch { viewModel.navigateToTab.collect { tabId ->
                     tabId?.let { targetTab ->
@@ -516,6 +544,31 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     }
                 } }
             }
+        }
+    }
+
+    private fun createNavItemLineIndicator(primaryColor: Int): StateListDrawable {
+        val density = resources.displayMetrics.density
+        val heightPx = (3 * density).toInt()
+
+        val checkedShape = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            setColor(primaryColor)
+        }
+
+        val checkedLayer = LayerDrawable(arrayOf(checkedShape)).apply {
+            setLayerGravity(0, android.view.Gravity.TOP)
+            setLayerHeight(0, heightPx)
+        }
+
+        val uncheckedShape = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            setColor(Color.TRANSPARENT)
+        }
+
+        return StateListDrawable().apply {
+            addState(intArrayOf(android.R.attr.state_checked), checkedLayer)
+            addState(intArrayOf(), uncheckedShape)
         }
     }
 
@@ -735,7 +788,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.isBulkUpdating.collect { isUpdating ->
-                        if (isUpdating) {
+                        val isJanitorActive = supportFragmentManager.fragments.any {
+                            it is LibraryJanitorFragment && it.isVisible
+                        }
+                        if (isUpdating && !isJanitorActive) {
                             if (bulkUpdateDialog == null || bulkUpdateDialog?.isShowing == false) {
                                 showBulkUpdateProgressDialog()
                             }

@@ -19,7 +19,8 @@
         android:insetBottom="0dp"
         android:insetLeft="0dp"
         android:insetRight="0dp"
-        app:iconGravity="start"
+        app:iconGravity="textStart"
+        app:iconPadding="0dp"
         app:icon="@drawable/ic_back"
         android:contentDescription="@string/cancel"
         app:layout_constraintStart_toStartOf="parent"
@@ -79,64 +80,67 @@
         android:gravity="center"
         android:textColor="#B3FFFFFF"
         android:textSize="20sp"
-        app:layout_constraintBottom_toTopOf="@+id/layoutDrivingControls"
+        app:layout_constraintBottom_toTopOf="@+id/btnDrivingPlayPause"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         tools:text="Artist Name" />
 
-    <LinearLayout
-        android:id="@+id/layoutDrivingControls"
-        android:layout_width="match_parent"
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnDrivingPrev"
+        style="@style/Widget.Material3.Button.IconButton"
+        android:layout_width="88dp"
+        android:layout_height="88dp"
+        android:padding="0dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:insetLeft="0dp"
+        android:insetRight="0dp"
+        app:iconGravity="textStart"
+        app:iconPadding="0dp"
+        app:icon="@drawable/ic_prev"
+        app:iconSize="48dp"
+        app:iconTint="@android:color/white"
+        app:layout_constraintBottom_toBottomOf="@+id/btnDrivingPlayPause"
+        app:layout_constraintEnd_toStartOf="@+id/btnDrivingPlayPause"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/btnDrivingPlayPause" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btnDrivingPlayPause"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginHorizontal="32dp"
         android:layout_marginBottom="64dp"
-        android:gravity="center"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="parent">
+        android:clickable="true"
+        android:focusable="true"
+        app:backgroundTint="?attr/colorPrimary"
+        app:fabCustomSize="112dp"
+        app:maxImageSize="56dp"
+        app:srcCompat="@drawable/ic_play"
+        app:tint="@android:color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/btnDrivingNext"
+        app:layout_constraintStart_toEndOf="@+id/btnDrivingPrev" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnDrivingPrev"
-            style="@style/Widget.Material3.Button.IconButton"
-            android:layout_width="88dp"
-            android:layout_height="88dp"
-            android:layout_marginEnd="24dp"
-            android:padding="0dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:insetLeft="0dp"
-            android:insetRight="0dp"
-            app:iconGravity="start"
-            app:icon="@drawable/ic_prev"
-            app:iconSize="48dp"
-            app:iconTint="@android:color/white" />
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/btnDrivingPlayPause"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:clickable="true"
-            android:focusable="true"
-            app:backgroundTint="?attr/colorPrimary"
-            app:fabCustomSize="112dp"
-            app:maxImageSize="56dp"
-            app:srcCompat="@drawable/ic_play"
-            app:tint="@android:color/white" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnDrivingNext"
-            style="@style/Widget.Material3.Button.IconButton"
-            android:layout_width="88dp"
-            android:layout_height="88dp"
-            android:layout_marginStart="24dp"
-            android:padding="0dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:insetLeft="0dp"
-            android:insetRight="0dp"
-            app:iconGravity="start"
-            app:icon="@drawable/ic_next"
-            app:iconSize="48dp"
-            app:iconTint="@android:color/white" />
-
-    </LinearLayout>
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnDrivingNext"
+        style="@style/Widget.Material3.Button.IconButton"
+        android:layout_width="88dp"
+        android:layout_height="88dp"
+        android:padding="0dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:insetLeft="0dp"
+        android:insetRight="0dp"
+        app:iconGravity="textStart"
+        app:iconPadding="0dp"
+        app:icon="@drawable/ic_next"
+        app:iconSize="48dp"
+        app:iconTint="@android:color/white"
+        app:layout_constraintBottom_toBottomOf="@+id/btnDrivingPlayPause"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/btnDrivingPlayPause"
+        app:layout_constraintTop_toTopOf="@+id/btnDrivingPlayPause" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
