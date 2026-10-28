@@ -267,7 +267,7 @@ object EqualizerManager {
                 Log.e("EqualizerManager", "Error setting BassBoost strength", e)
             }
             try {
-                it.enabled = isEnabled && savedBass > 0
+                it.enabled = isEnabled
             } catch (e: Exception) {
                 Log.e("EqualizerManager", "Error enabling BassBoost", e)
             }
@@ -287,7 +287,7 @@ object EqualizerManager {
                 Log.e("EqualizerManager", "Error setting Virtualizer strength", e)
             }
             try {
-                it.enabled = isEnabled && savedVirt > 0
+                it.enabled = isEnabled
             } catch (e: Exception) {
                 Log.e("EqualizerManager", "Error enabling Virtualizer", e)
             }
@@ -336,7 +336,7 @@ object EqualizerManager {
             saveEqualizerEnabledState(context, true)
         }
 
-        val isEnabled = _isEqualizerEnabled.value && strength > 0
+        val isEnabled = _isEqualizerEnabled.value
 
         fun applyTo(bb: BassBoost?) {
             bb?.let {
@@ -373,7 +373,7 @@ object EqualizerManager {
             saveEqualizerEnabledState(context, true)
         }
 
-        val isEnabled = _isEqualizerEnabled.value && strength > 0
+        val isEnabled = _isEqualizerEnabled.value
 
         fun applyTo(v: Virtualizer?) {
             v?.let {
@@ -607,16 +607,31 @@ object EqualizerManager {
     fun toggleEqualizer(context: Context, isEnabled: Boolean) {
         _isEqualizerEnabled.value = isEnabled
         try {
+            if (!isEnabled) {
+                // Zero out parameters before unhooking DSP nodes to avoid AudioFlinger transient volume spikes
+                try { bassBoost?.setStrength(0) } catch (_: Exception) {}
+                try { bassBoostSecondary?.setStrength(0) } catch (_: Exception) {}
+                try { virtualizer?.setStrength(0) } catch (_: Exception) {}
+                try { virtualizerSecondary?.setStrength(0) } catch (_: Exception) {}
+                apply10BandLevelsToEqualizer(equalizer, ShortArray(10))
+                apply10BandLevelsToEqualizer(equalizerSecondary, ShortArray(10))
+            } else {
+                apply10BandLevelsToEqualizer(equalizer, currentLoaded10BandGains)
+                apply10BandLevelsToEqualizer(equalizerSecondary, currentLoaded10BandGains)
+                try { bassBoost?.setStrength(_bassBoostStrength.value) } catch (_: Exception) {}
+                try { bassBoostSecondary?.setStrength(_bassBoostStrength.value) } catch (_: Exception) {}
+                try { virtualizer?.setStrength(_virtualizerStrength.value) } catch (_: Exception) {}
+                try { virtualizerSecondary?.setStrength(_virtualizerStrength.value) } catch (_: Exception) {}
+            }
+
             equalizer?.enabled = isEnabled
             equalizerSecondary?.enabled = isEnabled
 
-            val savedBass = _bassBoostStrength.value
-            bassBoost?.enabled = isEnabled && savedBass > 0
-            bassBoostSecondary?.enabled = isEnabled && savedBass > 0
+            bassBoost?.enabled = isEnabled
+            bassBoostSecondary?.enabled = isEnabled
 
-            val savedVirt = _virtualizerStrength.value
-            virtualizer?.enabled = isEnabled && savedVirt > 0
-            virtualizerSecondary?.enabled = isEnabled && savedVirt > 0
+            virtualizer?.enabled = isEnabled
+            virtualizerSecondary?.enabled = isEnabled
 
             val savedRev = _presetReverbPreset.value
             presetReverb?.enabled = isEnabled && savedRev > 0

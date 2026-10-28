@@ -94,10 +94,10 @@
     </style>
 
     <!-- Theme Overlay to apply the Pro Pairing -->
-    <!-- We use parent="" to avoid overriding the color palette from the base theme -->
-    <style name="ThemeOverlay.App.CustomFonts" parent="">
+    <style name="ThemeOverlay.App.CustomFonts" parent="ThemeOverlay.Material3">
         <item name="android:fontFamily">@font/space_grotesk</item>
         <item name="fontFamily">@font/space_grotesk</item>
+        <item name="android:textViewStyle">@style/Widget.Myusiq.DefaultTextView</item>
 
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.Myusiq.DisplayLarge</item>
         <item name="textAppearanceDisplayMedium">@style/TextAppearance.Myusiq.DisplayMedium</item>
@@ -121,6 +121,11 @@
 
         <!-- Ensure Material3 buttons/chips and legacy buttons get the font -->
         <item name="textAppearanceButton">@style/TextAppearance.Myusiq.Button</item>
+    </style>
+
+    <style name="Widget.Myusiq.DefaultTextView" parent="android:Widget.TextView">
+        <item name="android:fontFamily">@font/space_grotesk</item>
+        <item name="fontFamily">@font/space_grotesk</item>
     </style>
 
     <style name="Widget.Myusiq.TextView.Title" parent="android:Widget.TextView">

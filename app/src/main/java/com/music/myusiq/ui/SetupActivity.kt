@@ -11,6 +11,7 @@ import android.view.View
 import android.view.animation.AnticipateInterpolator
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.Fragment
@@ -18,9 +19,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.music.myusiq.databinding.ActivitySetupBinding
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import com.music.myusiq.R
 import com.music.myusiq.utils.*
 
@@ -32,30 +31,16 @@ class SetupActivity : AppCompatActivity() {
     private var selectedFolders = listOf<Uri>()
     private var chosenThemeMode = "system"
     private var chosenPalette = "system_colors"
+    private var currentFoldersFragment: SetupFoldersFragment? = null
+
+    fun registerFoldersFragment(fragment: SetupFoldersFragment?) {
+        currentFoldersFragment = fragment
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
-        super.onCreate(savedInstanceState)
 
-        val prefs = getSharedPreferences("app_setup_prefs", MODE_PRIVATE)
-        if (prefs.getBoolean("is_setup_complete", false)) {
-            launchMainActivityAndFinish()
-            return
-        }
-        
-        runBlocking {
-            try {
-                val mode = themeSettingsManager.themeModeFlow.first()
-                val style = themeSettingsManager.colorStyleFlow.first()
-                val useCustomFont = themeSettingsManager.useCustomFontFlow.first()
-                
-                themeSettingsManager.applyThemeMode(mode)
-                themeSettingsManager.applyColorStyle(this@SetupActivity, style, useCustomFont)
-            } catch (_: Exception) {
-                // Ignore
-            }
-        }
-        
+        val sharedPreferences = getSharedPreferences("app_prefs", MODE_PRIVATE)
         if (savedInstanceState != null) {
             hasPermission = savedInstanceState.getBoolean("hasPermission")
             selectedFolders = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -64,8 +49,25 @@ class SetupActivity : AppCompatActivity() {
                 @Suppress("DEPRECATION")
                 savedInstanceState.getParcelableArrayList("selectedFolders") ?: listOf()
             }
-            chosenThemeMode = savedInstanceState.getString("chosenThemeMode", "system")
-            chosenPalette = savedInstanceState.getString("chosenPalette", "system_colors")
+            chosenThemeMode = savedInstanceState.getString("chosenThemeMode", "system") ?: "system"
+            chosenPalette = savedInstanceState.getString("chosenPalette", "system_colors") ?: "system_colors"
+        } else {
+            chosenThemeMode = sharedPreferences.getString("cached_theme_mode", "system") ?: "system"
+            chosenPalette = sharedPreferences.getString("cached_color_style", "system_colors") ?: "system_colors"
+        }
+
+        val cachedFont = sharedPreferences.getBoolean("cached_use_custom_font", true)
+
+        themeSettingsManager.applyThemeMode(chosenThemeMode)
+        themeSettingsManager.applyColorStyle(this, chosenPalette)
+        themeSettingsManager.applyTypography(this, cachedFont)
+
+        super.onCreate(savedInstanceState)
+
+        val prefs = getSharedPreferences("app_setup_prefs", MODE_PRIVATE)
+        if (prefs.getBoolean("is_setup_complete", false)) {
+            launchMainActivityAndFinish()
+            return
         }
 
         // Custom exit animation for the splash screen
@@ -94,6 +96,11 @@ class SetupActivity : AppCompatActivity() {
 
         setupViewPager()
         setupNavigation()
+
+        val savedPage = savedInstanceState?.getInt("currentPage", 0) ?: 0
+        if (savedPage > 0) {
+            binding.viewPagerSetup.setCurrentItem(savedPage, false)
+        }
     }
 
     private fun checkPermissionGranted(): Boolean {
@@ -155,6 +162,9 @@ class SetupActivity : AppCompatActivity() {
         outState.putParcelableArrayList("selectedFolders", ArrayList(selectedFolders))
         outState.putString("chosenThemeMode", chosenThemeMode)
         outState.putString("chosenPalette", chosenPalette)
+        if (::binding.isInitialized) {
+            outState.putInt("currentPage", binding.viewPagerSetup.currentItem)
+        }
     }
 
     private fun updateProgressBar(position: Int) {
@@ -177,27 +187,35 @@ class SetupActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupNavigation() {
-        binding.btnNext.setOnClickListener {
-            when (binding.viewPagerSetup.currentItem) {
-                0 -> {
-                    binding.viewPagerSetup.currentItem = 1
-                }
-                1 -> {
-                    if (hasPermission) {
-                        binding.viewPagerSetup.currentItem = 2
-                    } else {
-                        Toast.makeText(this, R.string.authorize_permissions_toast, Toast.LENGTH_SHORT).show()
-                    }
-                }
-                2 -> {
-                    // Folder selection is optional - proceed to step 3 (personalize) automatically scanning all device music if none selected
-                    binding.viewPagerSetup.currentItem = 3
-                }
-                3 -> {
-                    finishSetup()
+    fun navigateToNextPage() {
+        when (binding.viewPagerSetup.currentItem) {
+            0 -> {
+                binding.viewPagerSetup.currentItem = 1
+            }
+            1 -> {
+                if (hasPermission) {
+                    binding.viewPagerSetup.currentItem = 2
+                } else {
+                    Toast.makeText(this, R.string.authorize_permissions_toast, Toast.LENGTH_SHORT).show()
                 }
             }
+            2 -> {
+                val hasFolders = currentFoldersFragment?.hasSelectedFolders() ?: true
+                if (hasFolders) {
+                    binding.viewPagerSetup.currentItem = 3
+                } else {
+                    Toast.makeText(this, "Please select at least one folder to continue", Toast.LENGTH_SHORT).show()
+                }
+            }
+            3 -> {
+                finishSetup()
+            }
+        }
+    }
+
+    private fun setupNavigation() {
+        binding.btnNext.setOnClickListener {
+            navigateToNextPage()
         }
 
         binding.btnBack.setOnClickListener {
@@ -209,8 +227,15 @@ class SetupActivity : AppCompatActivity() {
     }
 
     private fun updateNavigationButtons(position: Int) {
-        binding.btnBack.visibility = if (position == 0) View.INVISIBLE else View.VISIBLE
-        binding.btnNext.text = if (position == 3) getString(R.string.launch_application) else getString(R.string.next_step)
+        if (position == 0) {
+            binding.layoutNavigation.visibility = View.GONE
+            binding.divider.visibility = View.GONE
+        } else {
+            binding.layoutNavigation.visibility = View.VISIBLE
+            binding.divider.visibility = View.VISIBLE
+            binding.btnBack.visibility = View.VISIBLE
+            binding.btnNext.text = if (position == 3) getString(R.string.launch_application) else getString(R.string.next_step)
+        }
     }
 
     fun onPermissionChanged(granted: Boolean) {
@@ -222,13 +247,31 @@ class SetupActivity : AppCompatActivity() {
     }
 
     fun getSelectedFolders(): List<Uri> = selectedFolders
+    fun getChosenPalette(): String = chosenPalette
+    fun getChosenThemeMode(): String = chosenThemeMode
 
     fun onThemeChanged(theme: String) {
+        if (chosenThemeMode == theme) return
         chosenThemeMode = theme
+        getSharedPreferences("app_prefs", MODE_PRIVATE).edit()
+            .putString("cached_theme_mode", theme)
+            .commit()
+        lifecycleScope.launch {
+            themeSettingsManager.saveThemeMode(theme)
+            themeSettingsManager.applyThemeMode(theme)
+        }
     }
 
     fun onPaletteChanged(palette: String) {
+        if (chosenPalette == palette) return
         chosenPalette = palette
+        getSharedPreferences("app_prefs", MODE_PRIVATE).edit()
+            .putString("cached_color_style", palette)
+            .commit()
+        lifecycleScope.launch {
+            themeSettingsManager.saveColorStyle(palette)
+        }
+        recreate()
     }
 
     private fun finishSetup() {
@@ -245,6 +288,15 @@ class SetupActivity : AppCompatActivity() {
             val folderPreferences = FolderPreferences(applicationContext)
             selectedFolders.forEach { uri ->
                 folderPreferences.addAllowedFolderUri(uri.toString())
+            }
+
+            val cachedFont = getSharedPreferences("app_prefs", MODE_PRIVATE).getBoolean("cached_use_custom_font", true)
+
+            getSharedPreferences("app_prefs", MODE_PRIVATE).edit().apply {
+                putString("cached_theme_mode", chosenThemeMode)
+                putString("cached_color_style", chosenPalette)
+                putBoolean("cached_use_custom_font", cachedFont)
+                apply()
             }
             
             getSharedPreferences("app_setup_prefs", MODE_PRIVATE).edit().apply {

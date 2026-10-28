@@ -107,8 +107,8 @@ class AppearanceSettingsFragment : Fragment(R.layout.fragment_settings_appearanc
             
             swatches.forEach { (id, v) ->
                 val isSelected = id == currentStyle
-                v.findViewById<View>(R.id.ivSelected).isVisible = isSelected
-                (v as? MaterialCardView)?.strokeWidth = if (isSelected) 4 else 1
+                v.findViewById<View>(R.id.cardCheckBadge)?.visibility = if (isSelected) View.VISIBLE else View.GONE
+                (v as? MaterialCardView)?.strokeWidth = if (isSelected) 6 else 2
                 (v as? MaterialCardView)?.strokeColor = if (isSelected) 
                     ContextCompat.getColor(requireContext(), R.color.md_theme_default_primary) 
                 else ContextCompat.getColor(requireContext(), android.R.color.darker_gray)
@@ -165,15 +165,18 @@ class AppearanceSettingsFragment : Fragment(R.layout.fragment_settings_appearanc
 
         switchColorPalette.setOnCheckedChangeListener { _, isChecked ->
             if (isInitialSetup) return@setOnCheckedChangeListener
+            val newStyle = if (isChecked) "palette_midnight" else "system_colors"
+            requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE).edit()
+                .putString("cached_color_style", newStyle)
+                .commit()
             viewLifecycleOwner.lifecycleScope.launch {
                 if (isChecked) {
                     themeManager.saveColorStyle("palette_midnight")
                     themeManager.saveUseAlbumArtTheming(false)
-                    activity?.recreate()
                 } else {
                     themeManager.saveColorStyle("system_colors")
-                    activity?.recreate()
                 }
+                activity?.recreate()
             }
         }
 
@@ -182,6 +185,9 @@ class AppearanceSettingsFragment : Fragment(R.layout.fragment_settings_appearanc
                 viewLifecycleOwner.lifecycleScope.launch {
                     val current = themeManager.colorStyleFlow.first()
                     if (current != styleKey) {
+                        requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE).edit()
+                            .putString("cached_color_style", styleKey)
+                            .commit()
                         themeManager.saveColorStyle(styleKey)
                         themeManager.saveUseAlbumArtTheming(false)
                         activity?.recreate()
@@ -194,6 +200,9 @@ class AppearanceSettingsFragment : Fragment(R.layout.fragment_settings_appearanc
             if (isInitialSetup) return@setOnCheckedChangeListener
             viewLifecycleOwner.lifecycleScope.launch {
                 if (isChecked) {
+                    requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE).edit()
+                        .putString("cached_color_style", "system_colors")
+                        .commit()
                     themeManager.saveColorStyle("system_colors")
                     themeManager.saveUseAlbumArtTheming(true)
                     activity?.recreate()
@@ -230,6 +239,9 @@ class AppearanceSettingsFragment : Fragment(R.layout.fragment_settings_appearanc
 
         switchAppTypography.setOnCheckedChangeListener { _, isChecked ->
             if (isInitialSetup) return@setOnCheckedChangeListener
+            requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE).edit()
+                .putBoolean("cached_use_custom_font", isChecked)
+                .commit()
             viewLifecycleOwner.lifecycleScope.launch {
                 themeManager.saveUseCustomFont(isChecked)
                 activity?.recreate()
@@ -254,7 +266,7 @@ class AppearanceSettingsFragment : Fragment(R.layout.fragment_settings_appearanc
         when (paletteId) {
             "system_colors" -> {
                 viewColorPrimary.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.md_theme_default_primary))
-                tvPaletteName.setTextColor(Color.BLACK)
+                tvPaletteName.setTextColor(Color.WHITE)
             }
             "palette_midnight" -> {
                 viewColorPrimary.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.midnight_accent))

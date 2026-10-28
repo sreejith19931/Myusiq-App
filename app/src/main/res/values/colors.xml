@@ -77,4 +77,24 @@
     <color name="palette_bg_dark_blue">#08121A</color>
     <color name="palette_bg_dark_indigo">#0B0D1A</color>
     <color name="palette_bg_dark_violet">#150A1A</color>
+
+    <!-- Palette Containers & Outlines -->
+    <color name="palette_container_midnight">#1E293B</color>
+    <color name="palette_container_high_midnight">#334155</color>
+    <color name="palette_container_highest_midnight">#475569</color>
+    <color name="palette_container_slate">#334155</color>
+    <color name="palette_container_high_slate">#475569</color>
+    <color name="palette_container_highest_slate">#64748B</color>
+    <color name="palette_container_forest">#065F46</color>
+    <color name="palette_container_high_forest">#047857</color>
+    <color name="palette_container_highest_forest">#059669</color>
+    <color name="palette_container_charcoal">#27272A</color>
+    <color name="palette_container_high_charcoal">#3F3F46</color>
+    <color name="palette_container_highest_charcoal">#52525B</color>
+    <color name="palette_container_royal">#3B0764</color>
+    <color name="palette_container_high_royal">#581C87</color>
+    <color name="palette_container_highest_royal">#6B21A8</color>
+    <color name="palette_error">#F87171</color>
+    <color name="palette_error_container">#7F1D1D</color>
+    <color name="palette_on_error_container">#FCA5A5</color>
 </resources>

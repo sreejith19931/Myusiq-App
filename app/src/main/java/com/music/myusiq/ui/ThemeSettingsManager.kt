@@ -66,10 +66,16 @@ class ThemeSettingsManager(private val context: Context) {
 
     suspend fun saveThemeMode(mode: String) {
         context.dataStore.edit { prefs -> prefs[THEME_MODE_KEY] = mode }
+        context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE).edit()
+            .putString("cached_theme_mode", mode)
+            .commit()
     }
 
     suspend fun saveColorStyle(style: String) {
         context.dataStore.edit { prefs -> prefs[COLOR_STYLE_KEY] = style }
+        context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE).edit()
+            .putString("cached_color_style", style)
+            .commit()
     }
 
     suspend fun saveUseAlbumArtTheming(enabled: Boolean) {
@@ -107,7 +113,7 @@ class ThemeSettingsManager(private val context: Context) {
             else -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
         }
     }
-    fun applyColorStyle(activity: Activity, style: String, useCustomFont: Boolean = false) {
+    fun applyColorStyle(activity: Activity, style: String) {
         if (activity.isFinishing || activity.isDestroyed) return
 
         when (style) {
@@ -123,18 +129,23 @@ class ThemeSettingsManager(private val context: Context) {
             "palette_forest"   -> activity.setTheme(R.style.Theme_Palette_Forest)
             "palette_charcoal" -> activity.setTheme(R.style.Theme_Palette_Charcoal)
             "palette_royal"    -> activity.setTheme(R.style.Theme_Palette_Royal)
+            "system_colors"  -> {
+                activity.setTheme(R.style.Theme_Myusiq)
+                DynamicColors.applyToActivityIfAvailable(activity)
+            }
             else             -> activity.setTheme(R.style.Theme_Myusiq)
         }
-        
-        if (style == "system_colors") {
-            // Apply Dynamic Colors independently
-            DynamicColors.applyToActivityIfAvailable(activity)
-        }
-        
+    }
+
+    fun applyTypography(activity: Activity, useCustomFont: Boolean) {
+        if (activity.isFinishing || activity.isDestroyed) return
         if (useCustomFont) {
-            // Manually apply the font overlay on top of the current theme (Dynamic or Custom Palette)
-            // Using true to ensure it overrides existing attributes
             activity.theme.applyStyle(R.style.ThemeOverlay_App_CustomFonts, true)
         }
+    }
+
+    fun applyColorStyle(activity: Activity, style: String, useCustomFont: Boolean = false) {
+        applyColorStyle(activity, style)
+        applyTypography(activity, useCustomFont)
     }
 }

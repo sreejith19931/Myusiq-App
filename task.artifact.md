@@ -1,0 +1,6 @@
+- [ ] Phase 1: v1.4.1 Memory Leak Audits & FftEngineManager Battery Optimization
+- [ ] Phase 2: v1.4.1 Scoped Storage Scanners & Backup Resilience
+- [ ] Phase 3: v1.5.0 Enhanced Audio Fingerprinting & Duplicate Detection
+- [ ] Phase 4: v1.5.0 Batch Tag Editor & Template File Organizer
+- [ ] Phase 5: v1.5.0 BPM & Harmonic Key Detection in MusicEnergyAnalyzer
+- [ ] Phase 6: Local Build Verification & APK Smoke Test

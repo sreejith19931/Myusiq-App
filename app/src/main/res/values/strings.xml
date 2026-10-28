@@ -88,6 +88,7 @@
 
     <!-- Setup Screen -->
     <string name="welcome_to_myusiq">Welcome to Myusiq</string>
+    <string name="get_started">Get Started</string>
     <string name="setup_desc">Complete these quick steps to get started.</string>
     <string name="grant_media_access">1. Grant Media Access</string>
     <string name="media_access_desc">Required to discover and read local soundtracks on this device.</string>
@@ -312,6 +313,7 @@
     <string name="missing_messy_tags">Missing or Messy Tags</string>
     <string name="checking_tag_health">Checking tag health&#8230;</string>
     <string name="identify_unknown">Identify Unknown Tracks</string>
+    <string name="rescan_and_fix_all">Rescan &amp; Fix All Tracks</string>
     <string name="about_myusiq">About Myusiq</string>
     <string name="version_format">Version %s</string>
     <string name="check_for_updates">Check for Updates</string>
@@ -363,4 +365,5 @@
     <string name="player_guide_dismiss">Swipe Down to Minimize</string>
     <string name="player_guide_dismiss_desc">Drag down on the top handle or player card to minimize to the mini-player bar.</string>
     <string name="got_it">Got it!</string>
+    <string name="telegram_support_chat">Telegram Support Chat</string>
 </resources>

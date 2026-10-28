@@ -29,8 +29,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.net.HttpURLConnection
-import java.net.URL
 import kotlin.time.Duration.Companion.milliseconds
 
 class MetadataUpdateUseCase(
@@ -190,22 +188,17 @@ class MetadataUpdateUseCase(
                         }
                     }
 
-                    com.music.myusiq.utils.ArtworkUtils.copyArtworkCache(context, data.songId, data.path, data.songId, newFilePath)
+                    com.music.myusiq.utils.ArtworkUtils.copyArtworkCache(context, data.songId, data.path, newFilePath)
 
-                    data.artworkUri?.let { artUri ->
-                        com.music.myusiq.utils.ArtworkUtils.saveArtworkCache(context, data.songId, data.path, artUri, data.album)
-                        com.music.myusiq.utils.ArtworkUtils.saveArtworkCache(context, data.songId, newFilePath, artUri, data.album)
-
-                        // Propagate album artwork cache to all other tracks in the same album that lack artwork
-                        if (!com.music.myusiq.utils.ArtworkUtils.isGenericAlbum(data.album)) {
-                            try {
-                                val sameAlbumSongs = listener.getOriginalTrackList().filter {
-                                    it.album.equals(data.album, ignoreCase = true) && it.id != data.songId
-                                }
-                                sameAlbumSongs.forEach { otherSong ->
-                                    com.music.myusiq.utils.ArtworkUtils.saveArtworkCache(context, otherSong.id, otherSong.path, artUri, data.album)
-                                }
-                            } catch (_: Exception) {}
+                    if (data.artworkUri != null) {
+                        com.music.myusiq.utils.ArtworkUtils.saveArtworkCache(context, data.songId, newFilePath, data.artworkUri, data.album)
+                        if (data.path != newFilePath) {
+                            com.music.myusiq.utils.ArtworkUtils.saveArtworkCache(context, data.songId, data.path, data.artworkUri, data.album)
+                        }
+                    } else {
+                        com.music.myusiq.utils.ArtworkUtils.clearArtworkCache(context, data.songId, data.path, data.album)
+                        if (data.path != newFilePath) {
+                            com.music.myusiq.utils.ArtworkUtils.clearArtworkCache(context, data.songId, newFilePath, data.album)
                         }
                     }
 
@@ -277,7 +270,7 @@ class MetadataUpdateUseCase(
                     Log.d("MetadataUpdateUseCase", "MediaStore renamed file on storage to: $newFilePath")
 
                     // Re-sync artwork cache and overrides with true path
-                    com.music.myusiq.utils.ArtworkUtils.copyArtworkCache(context, data.songId, oldPathBeforeRename, data.songId, newFilePath)
+                    com.music.myusiq.utils.ArtworkUtils.copyArtworkCache(context, data.songId, oldPathBeforeRename, newFilePath)
                     val normOldPath = PlatformUtils.normalizePath(oldPathBeforeRename)
                     val normNewPath = PlatformUtils.normalizePath(newFilePath)
 
@@ -459,23 +452,34 @@ class MetadataUpdateUseCase(
 
     suspend fun downloadImageToCache(context: Context, imageUrl: String): Uri? {
         return withContext(Dispatchers.IO) {
-            var connection: HttpURLConnection? = null
             try {
-                val url = URL(imageUrl)
-                connection = url.openConnection() as HttpURLConnection
-                connection.connectTimeout = 5000
-                connection.readTimeout = 5000
-                val tempFile = File(context.cacheDir, "temp_art_${System.currentTimeMillis()}.jpg")
-                connection.inputStream.use { input ->
-                    tempFile.outputStream().use { output ->
-                        input.copyTo(output)
+                val client = okhttp3.OkHttpClient.Builder()
+                    .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+                    .readTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+                    .followRedirects(true)
+                    .followSslRedirects(true)
+                    .build()
+                val request = okhttp3.Request.Builder()
+                    .url(imageUrl)
+                    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                    .build()
+                val response = client.newCall(request).execute()
+                if (response.isSuccessful) {
+                    val body = response.body
+                    if (body != null) {
+                        val tempFile = File(context.cacheDir, "temp_art_${System.currentTimeMillis()}.jpg")
+                        tempFile.outputStream().use { output ->
+                            body.byteStream().copyTo(output)
+                        }
+                        if (tempFile.exists() && tempFile.length() > 0) {
+                            return@withContext Uri.fromFile(tempFile)
+                        }
                     }
                 }
-                Uri.fromFile(tempFile)
-            } catch (_: Exception) { null }
-            finally {
-                connection?.disconnect()
+            } catch (e: Exception) {
+                Log.e("MetadataUpdateUseCase", "Error downloading image: $imageUrl", e)
             }
+            null
         }
     }
 
@@ -509,9 +513,22 @@ class MetadataUpdateUseCase(
         }
     }
 
+    private var isBulkCancelled = false
+    private var activeBulkJob: kotlinx.coroutines.Job? = null
+
+    fun cancelBulkUpdate() {
+        isBulkCancelled = true
+        activeBulkJob?.cancel()
+        activeBulkJob = null
+    }
+
     fun requestBulkMetadataUpdate(context: Context, updates: List<PendingTrackEdit>, listener: MetadataUpdateListener, onIntent: (IntentSenderRequest) -> Unit) {
         if (updates.isEmpty()) return
-        scope.launch(Dispatchers.IO) {
+        isBulkCancelled = false
+        activeBulkJob = scope.launch(Dispatchers.IO) {
+            withContext(Dispatchers.Main) {
+                listener.onBulkProgress(0, updates.size, "Preparing updates...")
+            }
             savePreEditSnapshotsIfAvailable(context, updates, listener)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 try {
@@ -523,6 +540,7 @@ class MetadataUpdateUseCase(
                 } catch (e: Exception) {
                     Log.e("MetadataUpdateUseCase", "Failed to create write request for bulk updates", e)
                     updates.forEachIndexed { index, edit ->
+                        if (isBulkCancelled) return@forEachIndexed
                         withContext(Dispatchers.Main) {
                             listener.onBulkProgress(index + 1, updates.size, edit.title)
                         }
@@ -534,6 +552,7 @@ class MetadataUpdateUseCase(
                 }
             } else {
                 updates.forEachIndexed { index, edit ->
+                    if (isBulkCancelled) return@forEachIndexed
                     withContext(Dispatchers.Main) {
                         listener.onBulkProgress(index + 1, updates.size, edit.title)
                     }
@@ -547,7 +566,8 @@ class MetadataUpdateUseCase(
     }
 
     fun executePendingWrite(context: Context, pendingTrackEditData: PendingTrackEdit?, pendingBulkTrackEditData: List<PendingTrackEdit>?, listener: MetadataUpdateListener, onConsume: () -> Unit) {
-        scope.launch(Dispatchers.IO) {
+        isBulkCancelled = false
+        activeBulkJob = scope.launch(Dispatchers.IO) {
             try {
                 Log.d("MetadataUpdateUseCase", "Executing pending write. data=$pendingTrackEditData, bulk=$pendingBulkTrackEditData")
                 
@@ -557,6 +577,7 @@ class MetadataUpdateUseCase(
                 savePreEditSnapshotsIfAvailable(context, bulkList, listener)
 
                 bulkList.forEachIndexed { index, edit ->
+                    if (isBulkCancelled) return@forEachIndexed
                     withContext(Dispatchers.Main) {
                         listener.onBulkProgress(index + 1, bulkList.size, edit.title)
                     }

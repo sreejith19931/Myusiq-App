@@ -8,8 +8,47 @@
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
 
-    <style name="Theme_Myusiq" parent="Base.Theme_Myusiq">
-        <item name="colorPrimary">@color/md_theme_default_primary</item>
+    <style name="Theme.Myusiq.System" parent="Theme.Material3.DynamicColors.DayNight.NoActionBar">
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowTranslucentNavigation">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
+
+    <style name="Theme_Myusiq" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowTranslucentNavigation">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">#E8DEF8</item>
+        <item name="colorOnPrimaryContainer">#21005D</item>
+        <item name="colorSecondary">#625B71</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSecondaryContainer">#E8DEF8</item>
+        <item name="colorOnSecondaryContainer">#1D192B</item>
+        <item name="colorTertiary">#7D5260</item>
+        <item name="colorOnTertiary">@color/white</item>
+        <item name="colorTertiaryContainer">#FFD8E4</item>
+        <item name="colorOnTertiaryContainer">#31111D</item>
+        <item name="colorError">#B3261E</item>
+        <item name="colorOnError">@color/white</item>
+        <item name="colorErrorContainer">#F9DEDC</item>
+        <item name="colorOnErrorContainer">#410E0B</item>
+        <item name="colorSurface">#FEF7FF</item>
+        <item name="colorOnSurface">#1D1B20</item>
+        <item name="colorSurfaceVariant">#E7E0EC</item>
+        <item name="colorOnSurfaceVariant">#49454F</item>
+        <item name="colorSurfaceContainer">#F3EDF7</item>
+        <item name="colorSurfaceContainerLow">#F7F2FA</item>
+        <item name="colorSurfaceContainerHigh">#ECE6F0</item>
+        <item name="colorSurfaceContainerHighest">#E6E0E9</item>
+        <item name="android:colorBackground">#FEF7FF</item>
+        <item name="colorOnBackground">#1D1B20</item>
+        <item name="colorOutline">#79747E</item>
+        <item name="colorOutlineVariant">#CAC4D0</item>
     </style>
 
     <style name="Theme.App.Starting" parent="Theme.SplashScreen">
@@ -18,198 +57,371 @@
         <item name="postSplashScreenTheme">@style/Theme_Myusiq</item>
     </style>
 
-    <style name="Theme.Palette.Red" parent="Theme_Myusiq">
-        <item name="colorPrimary">@color/rainbow_red</item>
-        <item name="colorSecondary">@color/rainbow_red</item>
-        <item name="colorSurface">@color/surface_red</item>
-        <item name="colorPrimaryContainer">@color/surface_red</item>
-        <item name="colorOnPrimaryContainer">@color/rainbow_red</item>
-        <item name="colorSecondaryContainer">@color/surface_red</item>
-        <item name="colorOnSecondaryContainer">@color/rainbow_red</item>
-        <item name="colorTertiary">@color/rainbow_red</item>
-        <item name="colorSurfaceVariant">@color/surface_red</item>
-        <item name="android:colorBackground">@color/surface_red</item>
-        <item name="colorOnSurface">@color/palette_on_surface_light</item>
-        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_light</item>
-        <item name="colorOnBackground">@color/palette_on_surface_light</item>
-        <item name="android:textColorPrimary">@color/palette_on_surface_light</item>
-        <item name="android:textColorSecondary">@color/palette_on_surface_variant_light</item>
-        <item name="colorOnPrimary">@color/white</item>
-    </style>
-
-    <style name="Theme.Palette.Orange" parent="Theme_Myusiq">
-        <item name="colorPrimary">@color/rainbow_orange</item>
-        <item name="colorSecondary">@color/rainbow_orange</item>
-        <item name="colorSurface">@color/surface_orange</item>
-        <item name="colorPrimaryContainer">@color/surface_orange</item>
-        <item name="colorOnPrimaryContainer">@color/rainbow_orange</item>
-        <item name="colorSecondaryContainer">@color/surface_orange</item>
-        <item name="colorOnSecondaryContainer">@color/rainbow_orange</item>
-        <item name="colorTertiary">@color/rainbow_orange</item>
-        <item name="colorSurfaceVariant">@color/surface_orange</item>
-        <item name="android:colorBackground">@color/surface_orange</item>
-        <item name="colorOnSurface">@color/palette_on_surface_light</item>
-        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_light</item>
-        <item name="colorOnBackground">@color/palette_on_surface_light</item>
-        <item name="android:textColorPrimary">@color/palette_on_surface_light</item>
-        <item name="android:textColorSecondary">@color/palette_on_surface_variant_light</item>
-        <item name="colorOnPrimary">@color/white</item>
-    </style>
-
-    <style name="Theme.Palette.Yellow" parent="Theme_Myusiq">
-        <item name="colorPrimary">@color/rainbow_yellow</item>
-        <item name="colorSecondary">@color/rainbow_yellow</item>
-        <item name="colorSurface">@color/surface_yellow</item>
-        <item name="colorPrimaryContainer">@color/surface_yellow</item>
-        <item name="colorOnPrimaryContainer">@color/rainbow_yellow</item>
-        <item name="colorSecondaryContainer">@color/surface_yellow</item>
-        <item name="colorOnSecondaryContainer">@color/rainbow_yellow</item>
-        <item name="colorTertiary">@color/rainbow_yellow</item>
-        <item name="colorSurfaceVariant">@color/surface_yellow</item>
-        <item name="android:colorBackground">@color/surface_yellow</item>
-        <item name="colorOnSurface">@color/palette_on_surface_light</item>
-        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_light</item>
-        <item name="colorOnBackground">@color/palette_on_surface_light</item>
-        <item name="android:textColorPrimary">@color/palette_on_surface_light</item>
-        <item name="android:textColorSecondary">@color/palette_on_surface_variant_light</item>
-        <item name="colorOnPrimary">@color/palette_on_surface_light</item>
-    </style>
-
-    <style name="Theme.Palette.Green" parent="Theme_Myusiq">
-        <item name="colorPrimary">@color/rainbow_green</item>
-        <item name="colorSecondary">@color/rainbow_green</item>
-        <item name="colorSurface">@color/surface_green</item>
-        <item name="colorPrimaryContainer">@color/surface_green</item>
-        <item name="colorOnPrimaryContainer">@color/rainbow_green</item>
-        <item name="colorSecondaryContainer">@color/surface_green</item>
-        <item name="colorOnSecondaryContainer">@color/rainbow_green</item>
-        <item name="colorTertiary">@color/rainbow_green</item>
-        <item name="colorSurfaceVariant">@color/surface_green</item>
-        <item name="android:colorBackground">@color/surface_green</item>
-        <item name="colorOnSurface">@color/palette_on_surface_light</item>
-        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_light</item>
-        <item name="colorOnBackground">@color/palette_on_surface_light</item>
-        <item name="android:textColorPrimary">@color/palette_on_surface_light</item>
-        <item name="android:textColorSecondary">@color/palette_on_surface_variant_light</item>
-        <item name="colorOnPrimary">@color/white</item>
-    </style>
-
-    <style name="Theme.Palette.Blue" parent="Theme_Myusiq">
-        <item name="colorPrimary">@color/rainbow_blue</item>
-        <item name="colorSecondary">@color/rainbow_blue</item>
-        <item name="colorSurface">@color/surface_blue</item>
-        <item name="colorPrimaryContainer">@color/surface_blue</item>
-        <item name="colorOnPrimaryContainer">@color/rainbow_blue</item>
-        <item name="colorSecondaryContainer">@color/surface_blue</item>
-        <item name="colorOnSecondaryContainer">@color/rainbow_blue</item>
-        <item name="colorTertiary">@color/rainbow_blue</item>
-        <item name="colorSurfaceVariant">@color/surface_blue</item>
-        <item name="android:colorBackground">@color/surface_blue</item>
-        <item name="colorOnSurface">@color/palette_on_surface_light</item>
-        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_light</item>
-        <item name="colorOnBackground">@color/palette_on_surface_light</item>
-        <item name="android:textColorPrimary">@color/palette_on_surface_light</item>
-        <item name="android:textColorSecondary">@color/palette_on_surface_variant_light</item>
-        <item name="colorOnPrimary">@color/white</item>
-    </style>
-
-    <style name="Theme.Palette.Indigo" parent="Theme_Myusiq">
-        <item name="colorPrimary">@color/rainbow_indigo</item>
-        <item name="colorSecondary">@color/rainbow_indigo</item>
-        <item name="colorSurface">@color/surface_indigo</item>
-        <item name="colorPrimaryContainer">@color/surface_indigo</item>
-        <item name="colorOnPrimaryContainer">@color/rainbow_indigo</item>
-        <item name="colorSecondaryContainer">@color/surface_indigo</item>
-        <item name="colorOnSecondaryContainer">@color/rainbow_indigo</item>
-        <item name="colorTertiary">@color/rainbow_indigo</item>
-        <item name="colorSurfaceVariant">@color/surface_indigo</item>
-        <item name="android:colorBackground">@color/surface_indigo</item>
-        <item name="colorOnSurface">@color/palette_on_surface_light</item>
-        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_light</item>
-        <item name="colorOnBackground">@color/palette_on_surface_light</item>
-        <item name="android:textColorPrimary">@color/palette_on_surface_light</item>
-        <item name="android:textColorSecondary">@color/palette_on_surface_variant_light</item>
-        <item name="colorOnPrimary">@color/white</item>
-    </style>
-
-    <style name="Theme.Palette.Violet" parent="Theme_Myusiq">
-        <item name="colorPrimary">@color/rainbow_violet</item>
-        <item name="colorSecondary">@color/rainbow_violet</item>
-        <item name="colorSurface">@color/surface_violet</item>
-        <item name="colorPrimaryContainer">@color/surface_violet</item>
-        <item name="colorOnPrimaryContainer">@color/rainbow_violet</item>
-        <item name="colorSecondaryContainer">@color/surface_violet</item>
-        <item name="colorOnSecondaryContainer">@color/rainbow_violet</item>
-        <item name="colorTertiary">@color/rainbow_violet</item>
-        <item name="colorSurfaceVariant">@color/surface_violet</item>
-        <item name="android:colorBackground">@color/surface_violet</item>
-        <item name="colorOnSurface">@color/palette_on_surface_light</item>
-        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_light</item>
-        <item name="colorOnBackground">@color/palette_on_surface_light</item>
-        <item name="android:textColorPrimary">@color/palette_on_surface_light</item>
-        <item name="android:textColorSecondary">@color/palette_on_surface_variant_light</item>
-        <item name="colorOnPrimary">@color/white</item>
-    </style>
-
     <!-- Professional Palettes -->
     <style name="Theme.Palette.Midnight" parent="Theme_Myusiq">
         <item name="colorPrimary">@color/midnight_accent</item>
+        <item name="colorOnPrimary">@color/midnight_blue</item>
+        <item name="colorPrimaryContainer">@color/palette_container_midnight</item>
+        <item name="colorOnPrimaryContainer">@color/midnight_accent</item>
         <item name="colorSecondary">@color/midnight_accent</item>
+        <item name="colorOnSecondary">@color/midnight_blue</item>
+        <item name="colorSecondaryContainer">@color/palette_container_midnight</item>
+        <item name="colorOnSecondaryContainer">@color/midnight_accent</item>
+        <item name="colorTertiary">@color/midnight_accent</item>
+        <item name="colorOnTertiary">@color/midnight_blue</item>
+        <item name="colorTertiaryContainer">@color/palette_container_midnight</item>
+        <item name="colorOnTertiaryContainer">@color/midnight_accent</item>
+        <item name="colorError">@color/palette_error</item>
+        <item name="colorOnError">@color/midnight_blue</item>
+        <item name="colorErrorContainer">@color/palette_error_container</item>
+        <item name="colorOnErrorContainer">@color/palette_on_error_container</item>
         <item name="colorSurface">@color/midnight_blue</item>
-        <item name="android:colorBackground">@color/midnight_blue</item>
         <item name="colorOnSurface">@color/palette_on_surface_midnight</item>
+        <item name="colorSurfaceVariant">@color/palette_container_midnight</item>
         <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_midnight</item>
+        <item name="colorSurfaceContainer">@color/palette_container_midnight</item>
+        <item name="colorSurfaceContainerLow">@color/palette_container_midnight</item>
+        <item name="colorSurfaceContainerHigh">@color/palette_container_high_midnight</item>
+        <item name="colorSurfaceContainerHighest">@color/palette_container_highest_midnight</item>
+        <item name="android:colorBackground">@color/midnight_blue</item>
         <item name="colorOnBackground">@color/palette_on_surface_midnight</item>
+        <item name="colorOutline">@color/palette_container_high_midnight</item>
+        <item name="colorOutlineVariant">@color/palette_container_midnight</item>
+        <item name="android:textColor">@color/palette_on_surface_midnight</item>
         <item name="android:textColorPrimary">@color/palette_on_surface_midnight</item>
         <item name="android:textColorSecondary">@color/palette_on_surface_variant_midnight</item>
+        <item name="android:textColorHint">@color/palette_on_surface_variant_midnight</item>
+        <item name="android:editTextColor">@color/palette_on_surface_midnight</item>
+        <item name="android:textColorAlertDialogListItem">@color/palette_on_surface_midnight</item>
     </style>
 
     <style name="Theme.Palette.Slate" parent="Theme_Myusiq">
         <item name="colorPrimary">@color/slate_accent</item>
+        <item name="colorOnPrimary">@color/slate_dark</item>
+        <item name="colorPrimaryContainer">@color/palette_container_slate</item>
+        <item name="colorOnPrimaryContainer">@color/slate_accent</item>
         <item name="colorSecondary">@color/slate_accent</item>
+        <item name="colorOnSecondary">@color/slate_dark</item>
+        <item name="colorSecondaryContainer">@color/palette_container_slate</item>
+        <item name="colorOnSecondaryContainer">@color/slate_accent</item>
+        <item name="colorTertiary">@color/slate_accent</item>
+        <item name="colorOnTertiary">@color/slate_dark</item>
+        <item name="colorTertiaryContainer">@color/palette_container_slate</item>
+        <item name="colorOnTertiaryContainer">@color/slate_accent</item>
+        <item name="colorError">@color/palette_error</item>
+        <item name="colorOnError">@color/slate_dark</item>
+        <item name="colorErrorContainer">@color/palette_error_container</item>
+        <item name="colorOnErrorContainer">@color/palette_on_error_container</item>
         <item name="colorSurface">@color/slate_dark</item>
-        <item name="android:colorBackground">@color/slate_dark</item>
         <item name="colorOnSurface">@color/palette_on_surface_slate</item>
+        <item name="colorSurfaceVariant">@color/palette_container_slate</item>
         <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_slate</item>
+        <item name="colorSurfaceContainer">@color/palette_container_slate</item>
+        <item name="colorSurfaceContainerLow">@color/palette_container_slate</item>
+        <item name="colorSurfaceContainerHigh">@color/palette_container_high_slate</item>
+        <item name="colorSurfaceContainerHighest">@color/palette_container_highest_slate</item>
+        <item name="android:colorBackground">@color/slate_dark</item>
         <item name="colorOnBackground">@color/palette_on_surface_slate</item>
+        <item name="colorOutline">@color/palette_container_high_slate</item>
+        <item name="colorOutlineVariant">@color/palette_container_slate</item>
+        <item name="android:textColor">@color/palette_on_surface_slate</item>
         <item name="android:textColorPrimary">@color/palette_on_surface_slate</item>
         <item name="android:textColorSecondary">@color/palette_on_surface_variant_slate</item>
+        <item name="android:textColorHint">@color/palette_on_surface_variant_slate</item>
+        <item name="android:editTextColor">@color/palette_on_surface_slate</item>
+        <item name="android:textColorAlertDialogListItem">@color/palette_on_surface_slate</item>
     </style>
 
     <style name="Theme.Palette.Forest" parent="Theme_Myusiq">
         <item name="colorPrimary">@color/forest_accent</item>
+        <item name="colorOnPrimary">@color/forest_dark</item>
+        <item name="colorPrimaryContainer">@color/palette_container_forest</item>
+        <item name="colorOnPrimaryContainer">@color/forest_accent</item>
         <item name="colorSecondary">@color/forest_accent</item>
+        <item name="colorOnSecondary">@color/forest_dark</item>
+        <item name="colorSecondaryContainer">@color/palette_container_forest</item>
+        <item name="colorOnSecondaryContainer">@color/forest_accent</item>
+        <item name="colorTertiary">@color/forest_accent</item>
+        <item name="colorOnTertiary">@color/forest_dark</item>
+        <item name="colorTertiaryContainer">@color/palette_container_forest</item>
+        <item name="colorOnTertiaryContainer">@color/forest_accent</item>
+        <item name="colorError">@color/palette_error</item>
+        <item name="colorOnError">@color/forest_dark</item>
+        <item name="colorErrorContainer">@color/palette_error_container</item>
+        <item name="colorOnErrorContainer">@color/palette_on_error_container</item>
         <item name="colorSurface">@color/forest_dark</item>
-        <item name="android:colorBackground">@color/forest_dark</item>
         <item name="colorOnSurface">@color/palette_on_surface_forest</item>
+        <item name="colorSurfaceVariant">@color/palette_container_forest</item>
         <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_forest</item>
+        <item name="colorSurfaceContainer">@color/palette_container_forest</item>
+        <item name="colorSurfaceContainerLow">@color/palette_container_forest</item>
+        <item name="colorSurfaceContainerHigh">@color/palette_container_high_forest</item>
+        <item name="colorSurfaceContainerHighest">@color/palette_container_highest_forest</item>
+        <item name="android:colorBackground">@color/forest_dark</item>
         <item name="colorOnBackground">@color/palette_on_surface_forest</item>
+        <item name="colorOutline">@color/palette_container_high_forest</item>
+        <item name="colorOutlineVariant">@color/palette_container_forest</item>
+        <item name="android:textColor">@color/palette_on_surface_forest</item>
         <item name="android:textColorPrimary">@color/palette_on_surface_forest</item>
         <item name="android:textColorSecondary">@color/palette_on_surface_variant_forest</item>
+        <item name="android:textColorHint">@color/palette_on_surface_variant_forest</item>
+        <item name="android:editTextColor">@color/palette_on_surface_forest</item>
+        <item name="android:textColorAlertDialogListItem">@color/palette_on_surface_forest</item>
     </style>
 
     <style name="Theme.Palette.Charcoal" parent="Theme_Myusiq">
         <item name="colorPrimary">@color/charcoal_accent</item>
+        <item name="colorOnPrimary">@color/charcoal_dark</item>
+        <item name="colorPrimaryContainer">@color/palette_container_charcoal</item>
+        <item name="colorOnPrimaryContainer">@color/charcoal_accent</item>
         <item name="colorSecondary">@color/charcoal_accent</item>
+        <item name="colorOnSecondary">@color/charcoal_dark</item>
+        <item name="colorSecondaryContainer">@color/palette_container_charcoal</item>
+        <item name="colorOnSecondaryContainer">@color/charcoal_accent</item>
+        <item name="colorTertiary">@color/charcoal_accent</item>
+        <item name="colorOnTertiary">@color/charcoal_dark</item>
+        <item name="colorTertiaryContainer">@color/palette_container_charcoal</item>
+        <item name="colorOnTertiaryContainer">@color/charcoal_accent</item>
+        <item name="colorError">@color/palette_error</item>
+        <item name="colorOnError">@color/charcoal_dark</item>
+        <item name="colorErrorContainer">@color/palette_error_container</item>
+        <item name="colorOnErrorContainer">@color/palette_on_error_container</item>
         <item name="colorSurface">@color/charcoal_dark</item>
-        <item name="android:colorBackground">@color/charcoal_dark</item>
         <item name="colorOnSurface">@color/palette_on_surface_charcoal</item>
+        <item name="colorSurfaceVariant">@color/palette_container_charcoal</item>
         <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_charcoal</item>
+        <item name="colorSurfaceContainer">@color/palette_container_charcoal</item>
+        <item name="colorSurfaceContainerLow">@color/palette_container_charcoal</item>
+        <item name="colorSurfaceContainerHigh">@color/palette_container_high_charcoal</item>
+        <item name="colorSurfaceContainerHighest">@color/palette_container_highest_charcoal</item>
+        <item name="android:colorBackground">@color/charcoal_dark</item>
         <item name="colorOnBackground">@color/palette_on_surface_charcoal</item>
+        <item name="colorOutline">@color/palette_container_high_charcoal</item>
+        <item name="colorOutlineVariant">@color/palette_container_charcoal</item>
+        <item name="android:textColor">@color/palette_on_surface_charcoal</item>
         <item name="android:textColorPrimary">@color/palette_on_surface_charcoal</item>
         <item name="android:textColorSecondary">@color/palette_on_surface_variant_charcoal</item>
+        <item name="android:textColorHint">@color/palette_on_surface_variant_charcoal</item>
+        <item name="android:editTextColor">@color/palette_on_surface_charcoal</item>
+        <item name="android:textColorAlertDialogListItem">@color/palette_on_surface_charcoal</item>
     </style>
 
     <style name="Theme.Palette.Royal" parent="Theme_Myusiq">
         <item name="colorPrimary">@color/royal_accent</item>
+        <item name="colorOnPrimary">@color/royal_dark</item>
+        <item name="colorPrimaryContainer">@color/palette_container_royal</item>
+        <item name="colorOnPrimaryContainer">@color/royal_accent</item>
         <item name="colorSecondary">@color/royal_accent</item>
+        <item name="colorOnSecondary">@color/royal_dark</item>
+        <item name="colorSecondaryContainer">@color/palette_container_royal</item>
+        <item name="colorOnSecondaryContainer">@color/royal_accent</item>
+        <item name="colorTertiary">@color/royal_accent</item>
+        <item name="colorOnTertiary">@color/royal_dark</item>
+        <item name="colorTertiaryContainer">@color/palette_container_royal</item>
+        <item name="colorOnTertiaryContainer">@color/royal_accent</item>
+        <item name="colorError">@color/palette_error</item>
+        <item name="colorOnError">@color/royal_dark</item>
+        <item name="colorErrorContainer">@color/palette_error_container</item>
+        <item name="colorOnErrorContainer">@color/palette_on_error_container</item>
         <item name="colorSurface">@color/royal_dark</item>
-        <item name="android:colorBackground">@color/royal_dark</item>
         <item name="colorOnSurface">@color/palette_on_surface_royal</item>
+        <item name="colorSurfaceVariant">@color/palette_container_royal</item>
         <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_royal</item>
+        <item name="colorSurfaceContainer">@color/palette_container_royal</item>
+        <item name="colorSurfaceContainerLow">@color/palette_container_royal</item>
+        <item name="colorSurfaceContainerHigh">@color/palette_container_high_royal</item>
+        <item name="colorSurfaceContainerHighest">@color/palette_container_highest_royal</item>
+        <item name="android:colorBackground">@color/royal_dark</item>
         <item name="colorOnBackground">@color/palette_on_surface_royal</item>
+        <item name="colorOutline">@color/palette_container_high_royal</item>
+        <item name="colorOutlineVariant">@color/palette_container_royal</item>
+        <item name="android:textColor">@color/palette_on_surface_royal</item>
         <item name="android:textColorPrimary">@color/palette_on_surface_royal</item>
         <item name="android:textColorSecondary">@color/palette_on_surface_variant_royal</item>
+        <item name="android:textColorHint">@color/palette_on_surface_variant_royal</item>
+        <item name="android:editTextColor">@color/palette_on_surface_royal</item>
+        <item name="android:textColorAlertDialogListItem">@color/palette_on_surface_royal</item>
     </style>
 
+    <style name="Theme.Palette.Red" parent="Theme_Myusiq">
+        <item name="colorPrimary">@color/rainbow_red</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">#2D1515</item>
+        <item name="colorOnPrimaryContainer">@color/rainbow_red</item>
+        <item name="colorSecondary">@color/rainbow_red</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSecondaryContainer">#2D1515</item>
+        <item name="colorOnSecondaryContainer">@color/rainbow_red</item>
+        <item name="colorSurface">@color/palette_bg_dark_red</item>
+        <item name="colorOnSurface">@color/palette_on_surface_dark_red</item>
+        <item name="colorSurfaceVariant">#2D1515</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_dark_red</item>
+        <item name="colorSurfaceContainer">#2D1515</item>
+        <item name="colorSurfaceContainerLow">#2D1515</item>
+        <item name="colorSurfaceContainerHigh">#3D1F1F</item>
+        <item name="android:colorBackground">@color/palette_bg_dark_red</item>
+        <item name="colorOnBackground">@color/palette_on_surface_dark_red</item>
+        <item name="android:textColor">@color/palette_on_surface_dark_red</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_dark_red</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_dark_red</item>
+        <item name="android:textColorHint">@color/palette_on_surface_variant_dark_red</item>
+        <item name="android:editTextColor">@color/palette_on_surface_dark_red</item>
+        <item name="android:textColorAlertDialogListItem">@color/palette_on_surface_dark_red</item>
+    </style>
+
+    <style name="Theme.Palette.Orange" parent="Theme_Myusiq">
+        <item name="colorPrimary">@color/rainbow_orange</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">#2D1F10</item>
+        <item name="colorOnPrimaryContainer">@color/rainbow_orange</item>
+        <item name="colorSecondary">@color/rainbow_orange</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSecondaryContainer">#2D1F10</item>
+        <item name="colorOnSecondaryContainer">@color/rainbow_orange</item>
+        <item name="colorSurface">@color/palette_bg_dark_orange</item>
+        <item name="colorOnSurface">@color/palette_on_surface_dark_orange</item>
+        <item name="colorSurfaceVariant">#2D1F10</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_dark_orange</item>
+        <item name="colorSurfaceContainer">#2D1F10</item>
+        <item name="colorSurfaceContainerLow">#2D1F10</item>
+        <item name="colorSurfaceContainerHigh">#3D2B17</item>
+        <item name="android:colorBackground">@color/palette_bg_dark_orange</item>
+        <item name="colorOnBackground">@color/palette_on_surface_dark_orange</item>
+        <item name="android:textColor">@color/palette_on_surface_dark_orange</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_dark_orange</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_dark_orange</item>
+        <item name="android:textColorHint">@color/palette_on_surface_variant_dark_orange</item>
+        <item name="android:editTextColor">@color/palette_on_surface_dark_orange</item>
+        <item name="android:textColorAlertDialogListItem">@color/palette_on_surface_dark_orange</item>
+    </style>
+
+    <style name="Theme.Palette.Yellow" parent="Theme_Myusiq">
+        <item name="colorPrimary">@color/rainbow_yellow</item>
+        <item name="colorOnPrimary">#1A1A1A</item>
+        <item name="colorPrimaryContainer">#2D2B0F</item>
+        <item name="colorOnPrimaryContainer">@color/rainbow_yellow</item>
+        <item name="colorSecondary">@color/rainbow_yellow</item>
+        <item name="colorOnSecondary">#1A1A1A</item>
+        <item name="colorSecondaryContainer">#2D2B0F</item>
+        <item name="colorOnSecondaryContainer">@color/rainbow_yellow</item>
+        <item name="colorSurface">@color/palette_bg_dark_yellow</item>
+        <item name="colorOnSurface">@color/palette_on_surface_dark_yellow</item>
+        <item name="colorSurfaceVariant">#2D2B0F</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_dark_yellow</item>
+        <item name="colorSurfaceContainer">#2D2B0F</item>
+        <item name="colorSurfaceContainerLow">#2D2B0F</item>
+        <item name="colorSurfaceContainerHigh">#3D3A15</item>
+        <item name="android:colorBackground">@color/palette_bg_dark_yellow</item>
+        <item name="colorOnBackground">@color/palette_on_surface_dark_yellow</item>
+        <item name="android:textColor">@color/palette_on_surface_dark_yellow</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_dark_yellow</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_dark_yellow</item>
+        <item name="android:textColorHint">@color/palette_on_surface_variant_dark_yellow</item>
+        <item name="android:editTextColor">@color/palette_on_surface_dark_yellow</item>
+        <item name="android:textColorAlertDialogListItem">@color/palette_on_surface_dark_yellow</item>
+    </style>
+
+    <style name="Theme.Palette.Green" parent="Theme_Myusiq">
+        <item name="colorPrimary">@color/rainbow_green</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">#0F2D14</item>
+        <item name="colorOnPrimaryContainer">@color/rainbow_green</item>
+        <item name="colorSecondary">@color/rainbow_green</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSecondaryContainer">#0F2D14</item>
+        <item name="colorOnSecondaryContainer">@color/rainbow_green</item>
+        <item name="colorSurface">@color/palette_bg_dark_green</item>
+        <item name="colorOnSurface">@color/palette_on_surface_dark_green</item>
+        <item name="colorSurfaceVariant">#0F2D14</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_dark_green</item>
+        <item name="colorSurfaceContainer">#0F2D14</item>
+        <item name="colorSurfaceContainerLow">#0F2D14</item>
+        <item name="colorSurfaceContainerHigh">#163D1D</item>
+        <item name="android:colorBackground">@color/palette_bg_dark_green</item>
+        <item name="colorOnBackground">@color/palette_on_surface_dark_green</item>
+        <item name="android:textColor">@color/palette_on_surface_dark_green</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_dark_green</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_dark_green</item>
+        <item name="android:textColorHint">@color/palette_on_surface_variant_dark_green</item>
+        <item name="android:editTextColor">@color/palette_on_surface_dark_green</item>
+        <item name="android:textColorAlertDialogListItem">@color/palette_on_surface_dark_green</item>
+    </style>
+
+    <style name="Theme.Palette.Blue" parent="Theme_Myusiq">
+        <item name="colorPrimary">@color/rainbow_blue</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">#0F1F2D</item>
+        <item name="colorOnPrimaryContainer">@color/rainbow_blue</item>
+        <item name="colorSecondary">@color/rainbow_blue</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSecondaryContainer">#0F1F2D</item>
+        <item name="colorOnSecondaryContainer">@color/rainbow_blue</item>
+        <item name="colorSurface">@color/palette_bg_dark_blue</item>
+        <item name="colorOnSurface">@color/palette_on_surface_dark_blue</item>
+        <item name="colorSurfaceVariant">#0F1F2D</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_dark_blue</item>
+        <item name="colorSurfaceContainer">#0F1F2D</item>
+        <item name="colorSurfaceContainerLow">#0F1F2D</item>
+        <item name="colorSurfaceContainerHigh">#162B3D</item>
+        <item name="android:colorBackground">@color/palette_bg_dark_blue</item>
+        <item name="colorOnBackground">@color/palette_on_surface_dark_blue</item>
+        <item name="android:textColor">@color/palette_on_surface_dark_blue</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_dark_blue</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_dark_blue</item>
+        <item name="android:textColorHint">@color/palette_on_surface_variant_dark_blue</item>
+        <item name="android:editTextColor">@color/palette_on_surface_dark_blue</item>
+        <item name="android:textColorAlertDialogListItem">@color/palette_on_surface_dark_blue</item>
+    </style>
+
+    <style name="Theme.Palette.Indigo" parent="Theme_Myusiq">
+        <item name="colorPrimary">@color/rainbow_indigo</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">#12162D</item>
+        <item name="colorOnPrimaryContainer">@color/rainbow_indigo</item>
+        <item name="colorSecondary">@color/rainbow_indigo</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSecondaryContainer">#12162D</item>
+        <item name="colorOnSecondaryContainer">@color/rainbow_indigo</item>
+        <item name="colorSurface">@color/palette_bg_dark_indigo</item>
+        <item name="colorOnSurface">@color/palette_on_surface_dark_indigo</item>
+        <item name="colorSurfaceVariant">#12162D</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_dark_indigo</item>
+        <item name="colorSurfaceContainer">#12162D</item>
+        <item name="colorSurfaceContainerLow">#12162D</item>
+        <item name="colorSurfaceContainerHigh">#19203D</item>
+        <item name="android:colorBackground">@color/palette_bg_dark_indigo</item>
+        <item name="colorOnBackground">@color/palette_on_surface_dark_indigo</item>
+        <item name="android:textColor">@color/palette_on_surface_dark_indigo</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_dark_indigo</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_dark_indigo</item>
+        <item name="android:textColorHint">@color/palette_on_surface_variant_dark_indigo</item>
+        <item name="android:editTextColor">@color/palette_on_surface_dark_indigo</item>
+        <item name="android:textColorAlertDialogListItem">@color/palette_on_surface_dark_indigo</item>
+    </style>
+
+    <style name="Theme.Palette.Violet" parent="Theme_Myusiq">
+        <item name="colorPrimary">@color/rainbow_violet</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">#200F2D</item>
+        <item name="colorOnPrimaryContainer">@color/rainbow_violet</item>
+        <item name="colorSecondary">@color/rainbow_violet</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSecondaryContainer">#200F2D</item>
+        <item name="colorOnSecondaryContainer">@color/rainbow_violet</item>
+        <item name="colorSurface">@color/palette_bg_dark_violet</item>
+        <item name="colorOnSurface">@color/palette_on_surface_dark_violet</item>
+        <item name="colorSurfaceVariant">#200F2D</item>
+        <item name="colorOnSurfaceVariant">@color/palette_on_surface_variant_dark_violet</item>
+        <item name="colorSurfaceContainer">#200F2D</item>
+        <item name="colorSurfaceContainerLow">#200F2D</item>
+        <item name="colorSurfaceContainerHigh">#2E163D</item>
+        <item name="android:colorBackground">@color/palette_bg_dark_violet</item>
+        <item name="colorOnBackground">@color/palette_on_surface_dark_violet</item>
+        <item name="android:textColor">@color/palette_on_surface_dark_violet</item>
+        <item name="android:textColorPrimary">@color/palette_on_surface_dark_violet</item>
+        <item name="android:textColorSecondary">@color/palette_on_surface_variant_dark_violet</item>
+        <item name="android:textColorHint">@color/palette_on_surface_variant_dark_violet</item>
+        <item name="android:editTextColor">@color/palette_on_surface_dark_violet</item>
+        <item name="android:textColorAlertDialogListItem">@color/palette_on_surface_dark_violet</item>
+    </style>
 </resources>

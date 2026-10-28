@@ -17,7 +17,23 @@ import kotlinx.coroutines.withContext
 class AndroidMusicScanner(private val context: Context) : MusicScanner {
     private val folderPreferences = FolderPreferences(context)
 
+    companion object {
+        private var cachedSongs: List<RawSong>? = null
+        private var lastScanTimestamp = 0L
+        private const val CACHE_TTL_MS = 10_000L // 10 seconds cache to prevent duplicate scans
+
+        fun invalidateCache() {
+            cachedSongs = null
+            lastScanTimestamp = 0L
+        }
+    }
+
     override suspend fun scanAllSongs(): List<RawSong> = withContext(Dispatchers.IO) {
+        val now = System.currentTimeMillis()
+        if (cachedSongs != null && (now - lastScanTimestamp < CACHE_TTL_MS)) {
+            return@withContext cachedSongs!!
+        }
+
         val songs = mutableListOf<RawSong>()
         val contentUris = mutableListOf(
             MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
@@ -70,11 +86,7 @@ class AndroidMusicScanner(private val context: Context) : MusicScanner {
                         val dateAdded = cursor.getLong(dateAddedColumn)
                         val size = cursor.getLong(sizeColumn)
 
-                        // Avoid duplicate entries
-                        if (songs.any { PlatformUtils.normalizePath(it.path).equals(PlatformUtils.normalizePath(path), ignoreCase = true) }) {
-                            continue
-                        }
-
+                        // Do not silently skip path duplicates; let them be handled by Duplicate Cleaner
                         // Fallback to filename if title is blank or track default
                         if (title.isBlank() || title.equals("track", ignoreCase = true)) {
                             try {
@@ -103,7 +115,14 @@ class AndroidMusicScanner(private val context: Context) : MusicScanner {
             }
         }
 
-        // Always perform targeted direct file system scan on standard music & download directories to catch un-indexed files reliably and quickly
+        // Fast path: If MediaStore successfully indexed the device tracks, return immediately for instant cold-start launch
+        if (songs.isNotEmpty()) {
+            cachedSongs = songs
+            lastScanTimestamp = System.currentTimeMillis()
+            return@withContext songs
+        }
+
+        // Fallback: Perform targeted direct file system scan on standard music & download directories if MediaStore is empty
         try {
             val scannedPaths = songs.asSequence().map { PlatformUtils.normalizePath(it.path).lowercase() }.toMutableSet()
             val storageRoots = mutableListOf<java.io.File>()
@@ -134,9 +153,6 @@ class AndroidMusicScanner(private val context: Context) : MusicScanner {
                         if (dir.exists() && dir.isDirectory) storageRoots.add(dir)
                     } catch (_: Exception) {}
                 }
-                if (storageRoots.isEmpty()) {
-                    storageRoots.add(extDir)
-                }
             }
 
             val audioExtensions = setOf("mp3", "m4a", "flac", "wav", "aac", "ogg", "opus", "wma")
@@ -147,7 +163,7 @@ class AndroidMusicScanner(private val context: Context) : MusicScanner {
                         val name = dir.name
                         !name.startsWith(".") && !name.equals("Android", ignoreCase = true)
                     }
-                    .maxDepth(6)
+                    .maxDepth(3)
                     .forEach { file ->
                         try {
                             if (file.isFile && file.length() > 0 && file.extension.lowercase() in audioExtensions) {
@@ -201,6 +217,8 @@ class AndroidMusicScanner(private val context: Context) : MusicScanner {
             Log.w("AndroidMusicScanner", "Error during content URI scan: ${e.message}")
         }
 
+        cachedSongs = songs
+        lastScanTimestamp = System.currentTimeMillis()
         songs
     }
 

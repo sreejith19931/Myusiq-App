@@ -29,13 +29,13 @@ class LibrarySettingsFragment : Fragment(R.layout.fragment_settings_library) {
         val sharedPreferences = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
 
         view.findViewById<View>(R.id.rowRescanLibrary).setOnClickListener {
-            viewModel.forceScanMediaLibrary()
-            Toast.makeText(requireContext(), "Scanning music library...", Toast.LENGTH_SHORT).show()
+            viewModel.forceScanMediaLibrary(requireContext())
+            Toast.makeText(requireContext(), "Indexing storage & scanning music library...", Toast.LENGTH_SHORT).show()
         }
 
         view.findViewById<View>(R.id.rowResetFolderRestrictions)?.setOnClickListener {
             com.music.myusiq.utils.FolderPreferences(requireContext()).clearAllowedFolderUris()
-            viewModel.forceScanMediaLibrary()
+            viewModel.forceScanMediaLibrary(requireContext())
             Toast.makeText(requireContext(), "Cleared folder restrictions. Scanning all device music...", Toast.LENGTH_SHORT).show()
         }
 
@@ -47,7 +47,9 @@ class LibrarySettingsFragment : Fragment(R.layout.fragment_settings_library) {
         }
 
         val switchAutoImprove = view.findViewById<MaterialSwitch>(R.id.switchAutoImprove)
-        switchAutoImprove.isChecked = sharedPreferences.getBoolean("auto_improve_metadata", false)
+        val isAutoImproveEnabled = sharedPreferences.getBoolean("auto_improve_metadata", false) ||
+                sharedPreferences.getBoolean("background_auto_scan", false)
+        switchAutoImprove.isChecked = isAutoImproveEnabled
 
         fun launchJanitorAutoFixIfUnfixedExist() {
             val songs = viewModel.songsLibrary.value
@@ -74,35 +76,14 @@ class LibrarySettingsFragment : Fragment(R.layout.fragment_settings_library) {
                     .hide(this)
                     .addToBackStack(null)
                     .commit()
-            } else {
-                Toast.makeText(requireContext(), "Auto-Improve Metadata enabled. All tracks are up to date!", Toast.LENGTH_SHORT).show()
             }
         }
 
         switchAutoImprove.setOnCheckedChangeListener { _, isChecked ->
-            sharedPreferences.edit { putBoolean("auto_improve_metadata", isChecked) }
-            if (isChecked) {
-                launchJanitorAutoFixIfUnfixedExist()
+            sharedPreferences.edit {
+                putBoolean("auto_improve_metadata", isChecked)
+                putBoolean("background_auto_scan", isChecked)
             }
-        }
-
-        view.findViewById<View>(R.id.rowAutoImprove)?.setOnClickListener {
-            switchAutoImprove.isChecked = !switchAutoImprove.isChecked
-        }
-
-        view.findViewById<View>(R.id.rowLibraryJanitor).setOnClickListener {
-            parentFragmentManager.beginTransaction()
-                .setCustomAnimations(R.anim.slide_in_right, R.anim.slide_out_left, R.anim.slide_in_left, R.anim.slide_out_right)
-                .add(R.id.navHostFragment, LibraryJanitorFragment())
-                .hide(this)
-                .addToBackStack(null)
-                .commit()
-        }
-
-        val switchBackgroundScan = view.findViewById<MaterialSwitch>(R.id.switchBackgroundScan)
-        switchBackgroundScan.isChecked = sharedPreferences.getBoolean("background_auto_scan", false)
-        switchBackgroundScan.setOnCheckedChangeListener { _, isChecked ->
-            sharedPreferences.edit { putBoolean("background_auto_scan", isChecked) }
             val ctx = requireContext().applicationContext
             if (isChecked) {
                 val constraints = androidx.work.Constraints.Builder()
@@ -117,15 +98,25 @@ class LibrarySettingsFragment : Fragment(R.layout.fragment_settings_library) {
                     androidx.work.ExistingPeriodicWorkPolicy.KEEP,
                     request
                 )
-                Toast.makeText(ctx, "Background Auto-Scan enabled (runs on Wi-Fi & Charging)", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Auto-Improve Metadata enabled (runs on Wi-Fi & Charging)", Toast.LENGTH_SHORT).show()
+                launchJanitorAutoFixIfUnfixedExist()
             } else {
                 androidx.work.WorkManager.getInstance(ctx).cancelUniqueWork("JanitorBackgroundScan")
-                Toast.makeText(ctx, "Background Auto-Scan disabled", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Auto-Improve Metadata disabled", Toast.LENGTH_SHORT).show()
             }
         }
 
-        view.findViewById<View>(R.id.rowBackgroundScan)?.setOnClickListener {
-            switchBackgroundScan.isChecked = !switchBackgroundScan.isChecked
+        view.findViewById<View>(R.id.rowAutoImprove)?.setOnClickListener {
+            switchAutoImprove.isChecked = !switchAutoImprove.isChecked
+        }
+
+        view.findViewById<View>(R.id.rowLibraryJanitor).setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .setCustomAnimations(R.anim.slide_in_right, R.anim.slide_out_left, R.anim.slide_in_left, R.anim.slide_out_right)
+                .add(R.id.navHostFragment, LibraryJanitorFragment())
+                .hide(this)
+                .addToBackStack(null)
+                .commit()
         }
 
         view.findViewById<View>(R.id.rowMetadataHistory).setOnClickListener {

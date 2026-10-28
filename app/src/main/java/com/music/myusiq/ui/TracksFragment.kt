@@ -51,7 +51,7 @@ import com.music.myusiq.ui.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 
-class TracksFragment : Fragment() {
+class TracksFragment : Fragment(), BackPressHandler {
     private val viewModel: PlaybackViewModel by activityViewModels()
     private var trackAdapter: TrackAdapter? = null
     private var rvTracks: RecyclerView? = null
@@ -73,6 +73,22 @@ class TracksFragment : Fragment() {
 
     private var lastSortOrder: PlaybackViewModel.TrackSortOrder? = null
     private var lastSortDirection: PlaybackViewModel.SortDirection? = null
+
+    override fun onBackPressed(): Boolean {
+        if (isSelectionMode || selectedSongs.value.isNotEmpty()) {
+            isSelectionMode = false
+            selectedSongs.value = emptySet()
+            btnBatchEdit?.visibility = View.GONE
+            return true
+        }
+        if (!etSearch?.text.isNullOrEmpty() || viewModel.lastSearchQuery.isNotBlank()) {
+            etSearch?.setText("")
+            etSearch?.clearFocus()
+            viewModel.applyFilterAndSearch("")
+            return true
+        }
+        return false
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_tracks, container, false)
@@ -495,7 +511,7 @@ class TracksFragment : Fragment() {
                                 isPlaying = isActive && isPlaying,
                                 isSelected = selected.contains(song.id),
                                 progress = if (isActive && (song.duration > 0)) position.toFloat() / song.duration.toFloat() else 0f,
-                                artworkSignature = signatures[normPath] ?: 0L
+                                artworkSignature = signatures[normPath] ?: signatures[song.id.toString()] ?: 0L
                             )
                         }
                     }.collectLatest { uiModels ->

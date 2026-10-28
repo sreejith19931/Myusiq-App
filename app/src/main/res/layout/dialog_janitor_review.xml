@@ -24,29 +24,85 @@
         android:textAppearance="?attr/textAppearanceBodyMedium"
         android:textColor="?attr/colorOnSurfaceVariant" />
 
-    <LinearLayout
+    <!-- Material 3 Expressive Progress & Shape Loading Animation Container -->
+    <com.google.android.material.card.MaterialCardView
         android:id="@+id/layoutJanitorProgress"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp"
         android:visibility="gone"
-        android:layout_marginTop="12dp">
+        app:cardCornerRadius="24dp"
+        app:cardElevation="0dp"
+        app:strokeWidth="0dp"
+        app:cardBackgroundColor="?attr/colorSurfaceContainerHigh">
 
-        <TextView
-            android:id="@+id/tvJanitorProgressMessage"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Scanning tracks &amp; analyzing waveforms..."
-            android:textAppearance="?attr/textAppearanceBodyMedium"
-            android:textColor="?attr/colorSecondary" />
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="24dp">
 
-        <com.google.android.material.progressindicator.LinearProgressIndicator
-            android:id="@+id/progressJanitor"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:indeterminate="true"
-            android:layout_marginTop="8dp" />
-    </LinearLayout>
+            <!-- Material You Expressive Shape Loading Views -->
+            <com.music.myusiq.ui.components.PulseLoadingView
+                android:id="@+id/pulseLoadingView"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:layout_marginBottom="16dp"
+                android:visibility="visible" />
+
+            <com.music.myusiq.ui.components.AnimatedLoadingBars
+                android:id="@+id/animatedLoadingBars"
+                android:layout_width="64dp"
+                android:layout_height="40dp"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone" />
+
+            <com.music.myusiq.ui.components.WritingLoadingView
+                android:id="@+id/writingLoadingView"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone" />
+
+            <!-- Fallback Circular Progress Indicator -->
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/progressJanitorCircular"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:indeterminate="true"
+                android:visibility="gone"
+                app:indicatorSize="52dp"
+                app:trackThickness="5dp"
+                app:indicatorColor="?attr/colorPrimary"
+                app:trackColor="?attr/colorPrimaryContainer" />
+
+            <TextView
+                android:id="@+id/tvJanitorProgressMessage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="Scanning tracks &amp; analyzing waveforms..."
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSurface"
+                android:textStyle="bold" />
+
+            <!-- Material 3 Linear Progress Indicator for track updates -->
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/progressJanitor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:indeterminate="false"
+                android:visibility="gone"
+                app:trackCornerRadius="6dp"
+                app:trackThickness="6dp"
+                app:indicatorColor="?attr/colorPrimary"
+                app:trackColor="?attr/colorPrimaryContainer" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
     <LinearLayout
         android:id="@+id/layoutSelectAllContainer"
