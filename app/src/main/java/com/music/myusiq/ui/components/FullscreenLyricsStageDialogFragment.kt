@@ -48,11 +48,15 @@ class FullscreenLyricsStageDialogFragment : DialogFragment() {
     private lateinit var sbStageProgress: SeekBar
     private lateinit var tvStageProgress: TextView
     private lateinit var btnStageClose: MaterialButton
+    private lateinit var btnStageTransliterate: MaterialButton
 
     private var fftEngineManager: FftEngineManager? = null
     private var breathAnimator: ValueAnimator? = null
     private var stageLyricsAdapter: StageLyricsAdapter? = null
     private var isUserSeeking = false
+    private var originalLyricsText: String? = null
+    private var transliteratedLyricsText: String? = null
+    private var showTransliteratedLyrics: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,6 +81,21 @@ class FullscreenLyricsStageDialogFragment : DialogFragment() {
         btnStageClose = view.findViewById(R.id.btnStageClose)
 
         btnStageClose.setOnClickListener { dismiss() }
+        btnStageTransliterate = view.findViewById(R.id.btnStageTransliterate)
+        btnStageTransliterate.setOnClickListener {
+            if (originalLyricsText.isNullOrBlank()) return@setOnClickListener
+            showTransliteratedLyrics = !showTransliteratedLyrics
+            val toastMsg = if (showTransliteratedLyrics) R.string.showing_transliterated_lyrics else R.string.showing_original_lyrics
+            android.widget.Toast.makeText(requireContext(), toastMsg, android.widget.Toast.LENGTH_SHORT).show()
+            updateStageTransliterateButtonState()
+
+            val textToDisplay = if (showTransliteratedLyrics && !transliteratedLyricsText.isNullOrBlank()) {
+                transliteratedLyricsText!!
+            } else {
+                originalLyricsText!!
+            }
+            stageLyricsAdapter?.setRawLyrics(textToDisplay)
+        }
 
         stageLyricsAdapter = StageLyricsAdapter()
         rvStageLyrics.layoutManager = LinearLayoutManager(requireContext())
@@ -202,6 +221,14 @@ class FullscreenLyricsStageDialogFragment : DialogFragment() {
         }
     }
 
+    private fun updateStageTransliterateButtonState() {
+        val hasTransliteration = !transliteratedLyricsText.isNullOrBlank() &&
+            transliteratedLyricsText != originalLyricsText &&
+            com.music.myusiq.utils.TransliterationUtil.isAvailable()
+        btnStageTransliterate.visibility = if (hasTransliteration) View.VISIBLE else View.GONE
+        btnStageTransliterate.alpha = if (showTransliteratedLyrics) 1.0f else 0.5f
+    }
+
     private fun setupObservers() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -217,8 +244,21 @@ class FullscreenLyricsStageDialogFragment : DialogFragment() {
                                 .into(ivStageArtBackground)
                             ivStageArtBackground.applyBlurEffect(30f)
 
-                            val rawLyrics = viewModel.getLyricsForSong(song.path)
-                            stageLyricsAdapter?.setRawLyrics(rawLyrics ?: "")
+                            originalLyricsText = viewModel.getLyricsForSong(song.path) ?: ""
+                            transliteratedLyricsText = if (!originalLyricsText.isNullOrBlank()) {
+                                com.music.myusiq.utils.TransliterationUtil.transliterateLyrics(originalLyricsText!!)
+                            } else {
+                                null
+                            }
+                            showTransliteratedLyrics = false
+                            updateStageTransliterateButtonState()
+
+                            val textToDisplay = if (showTransliteratedLyrics && !transliteratedLyricsText.isNullOrBlank()) {
+                                transliteratedLyricsText!!
+                            } else {
+                                originalLyricsText!!
+                            }
+                            stageLyricsAdapter?.setRawLyrics(textToDisplay)
                         }
                     }
                 }
