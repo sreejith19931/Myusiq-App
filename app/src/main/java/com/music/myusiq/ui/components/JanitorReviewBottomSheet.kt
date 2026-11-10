@@ -264,23 +264,41 @@ class JanitorReviewBottomSheet : BottomSheetDialogFragment() {
                                 }
 
                                 layoutProgress.isVisible = false
+                                view.findViewById<View>(R.id.scrollFilterChips).isVisible = true
                                 layoutSelectAll.isVisible = true
                                 frameContainer.isVisible = true
                                 btnBulkSearch.isVisible = true
                                 btnApply.isVisible = true
 
-                                val adapter = JanitorReviewAdapter(candidateItems) {
-                                    updateApplyButtonText()
-                                    cbSelectAll.setOnCheckedChangeListener(null)
-                                    cbSelectAll.isChecked = candidateItems.all { it.isSelected }
-                                    cbSelectAll.setOnCheckedChangeListener { _, isChecked ->
-                                        candidateItems.forEach { it.isSelected = isChecked }
-                                        rvReview.adapter?.notifyDataSetChanged()
-                                        updateApplyButtonText()
+                                val chipGroupFilter = view.findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipGroupJanitorFilter)
+
+                                fun updateFilteredList() {
+                                    val filtered = when (chipGroupFilter.checkedChipId) {
+                                        R.id.chipFilterMissingArt -> candidateItems.filter { it.currentArtworkUri == null || it.proposedEdit.artworkUri != null }
+                                        R.id.chipFilterUnknownArtist -> candidateItems.filter { it.song.artist.isBlank() || it.song.artist.equals("<unknown>", true) || it.song.artist.equals("unknown artist", true) }
+                                        R.id.chipFilterMessy -> candidateItems.filter { it.song.title.contains("_") || it.song.title.endsWith(".mp3", true) }
+                                        else -> candidateItems
                                     }
+                                    val adapter = JanitorReviewAdapter(filtered) {
+                                        updateApplyButtonText()
+                                        cbSelectAll.setOnCheckedChangeListener(null)
+                                        cbSelectAll.isChecked = candidateItems.all { it.isSelected }
+                                        cbSelectAll.setOnCheckedChangeListener { _, isChecked ->
+                                            candidateItems.forEach { it.isSelected = isChecked }
+                                            rvReview.adapter?.notifyDataSetChanged()
+                                            updateApplyButtonText()
+                                        }
+                                    }
+                                    rvReview.layoutManager = LinearLayoutManager(requireContext())
+                                    rvReview.adapter = adapter
+                                    updateApplyButtonText()
                                 }
-                                rvReview.layoutManager = LinearLayoutManager(requireContext())
-                                rvReview.adapter = adapter
+
+                                chipGroupFilter.setOnCheckedStateChangeListener { _, _ ->
+                                    updateFilteredList()
+                                }
+
+                                updateFilteredList()
 
                                 cbSelectAll.isChecked = candidateItems.all { it.isSelected }
                                 cbSelectAll.setOnCheckedChangeListener { _, isChecked ->
@@ -288,8 +306,6 @@ class JanitorReviewBottomSheet : BottomSheetDialogFragment() {
                                     rvReview.adapter?.notifyDataSetChanged()
                                     updateApplyButtonText()
                                 }
-
-                                updateApplyButtonText()
                             } else {
                                 tvTitle.text = "No Updates Needed"
                                 tvSub.text = "All analyzed tracks are already pristine."

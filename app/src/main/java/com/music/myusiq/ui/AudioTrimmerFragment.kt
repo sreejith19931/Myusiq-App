@@ -308,7 +308,11 @@ class AudioTrimmerFragment : Fragment(R.layout.fragment_audio_trimmer) {
                         viewModel.loadSongs(force = true)
                     }
                     
-                    requireActivity().onBackPressedDispatcher.onBackPressed()
+                    if (replace) {
+                        requireActivity().onBackPressedDispatcher.onBackPressed()
+                    } else {
+                        showTrimSuccessDialog(outputFile)
+                    }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
@@ -316,6 +320,50 @@ class AudioTrimmerFragment : Fragment(R.layout.fragment_audio_trimmer) {
                 }
             }
         }
+    }
+
+    private fun showTrimSuccessDialog(outputFile: File) {
+        val ctx = context ?: return
+        MaterialAlertDialogBuilder(ctx)
+            .setTitle("Trim Successful!")
+            .setMessage("Your trimmed audio has been successfully saved.")
+            .setPositiveButton("Done") { _, _ ->
+                requireActivity().onBackPressedDispatcher.onBackPressed()
+            }
+            .setNeutralButton("Share") { _, _ ->
+                try {
+                    val uri = androidx.core.content.FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", outputFile)
+                    val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                        type = "audio/*"
+                        putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                        addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    ctx.startActivity(android.content.Intent.createChooser(shareIntent, "Share Trimmed Audio"))
+                } catch (e: Exception) {
+                    Toast.makeText(ctx, "Sharing failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Set as Ringtone") { _, _ ->
+                try {
+                    val values = android.content.ContentValues().apply {
+                        put(MediaStore.Audio.Media.DATA, outputFile.absolutePath)
+                        put(MediaStore.Audio.Media.TITLE, outputFile.nameWithoutExtension)
+                        put(MediaStore.Audio.Media.MIME_TYPE, "audio/*")
+                        put(MediaStore.Audio.Media.IS_RINGTONE, true)
+                        put(MediaStore.Audio.Media.IS_NOTIFICATION, false)
+                        put(MediaStore.Audio.Media.IS_ALARM, false)
+                        put(MediaStore.Audio.Media.IS_MUSIC, false)
+                    }
+                    val uri = ctx.contentResolver.insert(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, values)
+                    if (uri != null) {
+                        android.media.RingtoneManager.setActualDefaultRingtoneUri(ctx, android.media.RingtoneManager.TYPE_RINGTONE, uri)
+                        Toast.makeText(ctx, "Successfully set as default ringtone!", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(ctx, "Failed to set ringtone: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .show()
     }
 
     override fun onDestroyView() {

@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.0] - 2026-11-10
+
+### Added & Fixed
+- **Interactive Touch Waveform Audio Trimmer**: Direct touch waveform dragging for precise start/end trim points, zoom-in/out (`1x` to `16x`) controls, real-time selected clip duration counter, and live playback progress line.
+- **Audio Trimmer Ringtone, Notification & Quick Share**: Immediate 1-tap options after trimming to set audio as default ringtone, notification sound, or share via FileProvider.
+- **Library Janitor Quick Filters & Search**: Horizontal filter chips (*All, Missing Art, Unknown Artist, Messy Titles*) inside the full-page Library Janitor review bottom sheet.
+- **Studio Equalizer Preset Export**: 1-tap export of 10-band frequency gains, bass boost, and virtualizer settings to shareable JSON preset files.
+- **Full-Page Library Janitor Review**: Upgraded metadata fix workflow from a restricted popup dialog to a spacious, scrollable full-page bottom sheet.
+
 ## [1.5.0] - 2026-10-26
 
 ### Added & Fixed
@@ -45,14 +54,14 @@ All notable changes to this project will be documented in this file.
 - **In-Memory LRU Search Query Caching**: Cached online metadata search results with an LRU cache (100-entry capacity) to prevent duplicate API queries and speed up manual searches.
 - **Dialog Overflow & Fixed Button Placement**: Optimized review pop-up dialog height and button anchoring so "Apply Selected" is always visible across all device screen sizes.
 - **Smart First-Time Scan Lifecycle**: Runs a comprehensive artwork & metadata scan once on initial launch, then smartly filters subsequent scans strictly for tracks with missing art or messy metadata.
-- **Metadata Verification Accuracy**: Enhanced clutter detection and path synchronization to eliminate false positives for clean or previously updated tracks.
+- **Metadata Verification Accuracy**: Enhanced clutter detection andpath synchronization to eliminate false positives for clean or previously updated tracks.
 
 ## [1.3.0-beta2] - 2026-10-15
 
 ### Added & Fixed
 - **Smart Janitor Candidate Verification & Similarity Scoring**: Added token Jaccard similarity and duration match bonus to candidate evaluation, eliminating false positives and wrong suggestions.
 - **Interactive Manual Online Search**: Added a "Search Online" button in the Janitor review pop-up with a search picker (`dialog_manual_cloud_search.xml`) displaying iTunes & Deezer candidate results with high-res artwork, album info, and match confidence scores.
-- **One-Tap Metadata Revert / Undo**: Implemented pre-edit JSON snapshots before applying bulk/single metadata updates, with a 1-tap "Undo Last Fix" card in Library Janitor.
+- **One-Token Metadata Revert / Undo**: Implemented pre-edit JSON snapshots before applying bulk/single metadata updates, with a 1-tap "Undo Last Fix" card in Library Janitor.
 - **Offline Title Case Sanitizer**: Converts ALL-CAPS or all-lowercase titles to Title Case and strips website domains (`www.site.com`), stray underscores, and web converter tags offline.
 - **Auto Metadata Fix Optimization**: Prevented infinite re-scanning of clean or already-fixed tracks when toggling the Auto-Improve switch ON/OFF.
 
@@ -84,7 +93,7 @@ All notable changes to this project will be documented in this file.
 ## [1.1.0] - 2026-10-09
 
 ### Added & Fixed
-- **In-App GitHub Update Tracker**: Automatic update check on app launch and manual check in Settings -> About with direct APK download & installation.
+- **In-App GitHub Update Tracker**: Automated update check on app launch and manual check in Settings -> About with direct APK download & installation.
 - **Telegram Announcement Automation**: Integrated automated release publishing & Telegram channel notifications.
 - **UI & Performance Enhancements**: General polish, bug fixes, and stability improvements.
 
@@ -114,8 +123,4 @@ All notable changes to this project will be documented in this file.
 ## [0.9.5] - 2026-09-20
 
 ### Added
-- **Core Playback Engine**: Robust local audio playback powered by Media3 and ExoPlayer.
-- **Material Design 3 UI**: Modern interface with seamless transitions, dynamic color extraction, Light/Dark mode.
-- **Studio Equalizer**: Built-in 5-band equalizer with presets and bass boost.
-- **Audio Trimmer**: Utility to clip and save audio segments.
-- **Driving Mode**: Simplified distraction-free UI for safe use while driving.
+- **Core Playback Engine**: Lookup code/version check in `ChangelogManager.kt`.

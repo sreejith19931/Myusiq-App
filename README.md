@@ -90,16 +90,15 @@
 
 ---
 
-## 🚀 Key Capabilities (`v1.5.0`)
+## 🚀 Key Capabilities (`v1.6.0`)
 
-* 🧠 **Smart Library 2.0 & Batch Tag Organization**: Acoustic fingerprinting, duplicate detection, and bulk tag/storage reorganization templates (`{Artist}/{Album}/{Track} - {Title}.ext`).
-* 🎵 **BPM & Harmonic Key Detection**: Automated tempo and musical key analysis in `MusicEnergyAnalyzer` for harmonic DJ-style mixes.
-* 📲 **Streamlined Permissions & Directory Discovery**: Refined verification wizard, default-deselected folder scanning, native directory browser, and zero-delay folder toggling.
+* ✂️ **Interactive Touch Waveform Audio Trimmer**: Direct touch waveform dragging for precise start/end trim points, zoom-in/out (`1x` to `16x`) controls, real-time selected clip duration counter, and live playback progress line.
+* 🔔 **Audio Trimmer Ringtone & Quick Share**: Immediate 1-tap options after trimming to set audio as default ringtone, notification sound, or share via FileProvider.
+* 🧹 **Library Janitor Quick Filters & Search**: Horizontal filter chips (*All, Missing Art, Unknown Artist, Messy Titles*) inside the spacious full-page Library Janitor review bottom sheet.
+* 🎚️ **Studio Equalizer Preset Export**: 1-tap export of 10-band frequency gains, bass boost, and virtualizer settings to shareable JSON preset files.
 * 🎨 **Material You Expressive Theming**: UI accent colors breathe and extract dynamic swatches live from your active track's album art.
 * 🎤 **Tap-to-Sync Lyric Creator**: Interactive timestamp editor to stamp LRC timestamps `[mm:ss.xx]` line-by-line during track playback and embed directly into ID3 tags.
 * ⚡ **60fps Visualizer Studio**: Hardware-accelerated visualizer suite featuring 4 audio-reactive modes (*Spectrum Analyzer, Circular Pulse Ring, Liquid Waveform, Particle Field*).
-* 🎚️ **10-Band Studio Equalizer**: Precision frequency sliders (`31Hz` to `16kHz`), real-time FFT spectrum analyzer, and hardware AudioFX (`BassBoost`, `Virtualizer 3D`, `PresetReverb`, `LoudnessEnhancer`).
-* 🧹 **Library Janitor**: Automated local library health tool that fetches high-res artwork, repairs broken ID3 metadata tags, sanitizes title cases, and groups multi-artist albums offline.
 * 🔊 **Audiophile Audio Engine**: Powered by **Jetpack Media3 & ExoPlayer** with EBU R128 ReplayGain volume normalization, dynamic Hi-Res sample rate badges (`96.0 kHz FLAC`), and variable speed/pitch controls.
 * 🚗 **Driving Mode & Wear OS**: High-contrast, large-touch driving controls and a companion smartwatch app.
 * 🔒 **Zero Tracking Privacy Guarantee**: 100% offline, ad-free, with zero analytics or cloud account requirements.
@@ -134,7 +133,7 @@ Need help, have feature requests, or want to discuss Myusiq? Join our official c
 ### Option 1: Direct APK Download (Recommended)
 Download the latest signed release APK from GitHub Releases:
 
-👉 **[Download Myusiq-v1.5.0.apk](https://github.com/sreejith19931/Myusiq-App/releases/download/v1.5.0/Myusiq-v1.5.0.apk)**
+👉 **[Download Myusiq-v1.6.0.apk](https://github.com/sreejith19931/Myusiq-App/releases/download/v1.6.0/Myusiq-v1.6.0.apk)**
 
 ---
 

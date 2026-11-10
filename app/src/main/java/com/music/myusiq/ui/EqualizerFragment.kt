@@ -18,12 +18,14 @@ import androidx.gridlayout.widget.GridLayout
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.chip.Chip
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.io.File
 import com.music.myusiq.service.EqualizerManager
 import com.music.myusiq.service.FftEngineManager
 import com.music.myusiq.ui.components.EqualizerSpectrumView
@@ -189,6 +191,37 @@ class EqualizerFragment : Fragment(R.layout.fragment_equalizer) {
             buildPresetInterfaceList()
         }
         buildPresetInterfaceList()
+
+        view.findViewById<MaterialButton>(R.id.btnExportEqPreset)?.setOnClickListener {
+            try {
+                val numBands = EqualizerManager.getNumberOfBands().toInt()
+                val bands = mutableMapOf<Int, Short>()
+                for (i in 0 until numBands) {
+                    bands[i] = EqualizerManager.getBandLevel(i.toShort())
+                }
+                val presetJson = """
+                    {
+                      "profile": "${spinnerDeviceProfile?.text ?: "Custom"}",
+                      "bands": $bands,
+                      "bassBoost": ${EqualizerManager.bassBoostStrength.value},
+                      "virtualizer": ${EqualizerManager.virtualizerStrength.value}
+                    }
+                """.trimIndent()
+
+                val file = File(requireContext().cacheDir, "myusiq_eq_preset_${System.currentTimeMillis()}.json")
+                file.writeText(presetJson)
+
+                val uri = androidx.core.content.FileProvider.getUriForFile(requireContext(), "${requireContext().packageName}.fileprovider", file)
+                val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                    type = "application/json"
+                    putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                startActivity(android.content.Intent.createChooser(shareIntent, "Export Equalizer Preset"))
+            } catch (e: Exception) {
+                android.widget.Toast.makeText(context, "Export failed: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
 
         context?.let { ctx ->
             com.music.myusiq.utils.PageGuideManager.showGuideIfNeeded(
