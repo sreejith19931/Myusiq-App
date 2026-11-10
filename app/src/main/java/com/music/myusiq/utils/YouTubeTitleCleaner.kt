@@ -8,11 +8,11 @@ package com.music.myusiq.utils
 object YouTubeTitleCleaner {
 
     private val bracketClutterRegex = Regex(
-        """(?i)[(\[{]\s*[^)\]}]*?(official|music\s+video|official\s+audio|lyric\s+video|hd\s+1080p|4k|visualizer|mv|topic|full\s+song|y2mate|ytmp3|ezmp3(\.[a-z]{2,4})?|www\.|[a-z0-9\-]+\.[a-z]{2,6})[^)\]}]*?\s*[)\]}]"""
+        """(?i)[(\[{]\s*[^)\]}]*?(official|music\s+video|official\s+audio|lyric\s+video|hd\s+1080p|4k|visualizer|mv|topic|full\s+song|audio|soundtrack|music|v\.a\.|various(\s+artists)?|unknown(\s+(artist|album))?|y2mate|ytmp3|ezmp3(\.[a-z]{2,4})?|www\.|[a-z0-9\-]+\.[a-z]{2,6})[^)\]}]*?\s*[)\]}]"""
     )
 
     private val unbracketedClutterRegex = Regex(
-        """(?i)\b(official\s+(music\s+)?video|official\s+audio|lyric\s+video|4k\s+video|hd\s+1080p|y2mate(\.is|\.com)?|ytmp3|ezmp3(\.[a-z]{2,4})?)\b"""
+        """(?i)\b(official\s+(music\s+)?video|official\s+audio|lyric\s+video|4k\s+video|hd\s+1080p|v\.a\.|various\s+artists|unknown\s+artist|unknown\s+album|y2mate(\.is|\.com)?|ytmp3|ezmp3(\.[a-z]{2,4})?)\b"""
     )
 
     private val extensionRegex = Regex("(?i)(\\.mp3|\\.m4a|\\.wav|\\.flac|\\.aac|\\.ogg|\\.wma)$")
@@ -40,6 +40,129 @@ object YouTubeTitleCleaner {
         val step2 = step1.replace(trackIndexRegex, "").trim()
         val cleaned = step2.replace(Regex("""\s+"""), " ")
         return toTitleCase(cleaned)
+    }
+
+    /**
+     * Cleans raw artist name by removing generic tags, domain URLs, bracketed junk, and track indices.
+     *
+     * @param rawArtist The raw artist string.
+     * @return Cleaned artist name, or "Unknown Artist" if generic/invalid.
+     */
+    fun cleanArtist(rawArtist: String): String {
+        if (isGenericArtistName(rawArtist)) return "Unknown Artist"
+
+        val step1 = rawArtist
+            .replace("_", " ")
+            .replace(extensionRegex, "")
+            .replace(domainRegex, "")
+            .replace(bracketClutterRegex, "")
+            .replace(unbracketedClutterRegex, "")
+            .replace(Regex("""\(\s*\)|\[\s*\]|\{\s*\}"""), "")
+            .trim()
+
+        val step2 = step1.replace(trackIndexRegex, "").trim()
+        val cleaned = toTitleCase(step2.replace(Regex("""\s+"""), " "))
+
+        return if (isGenericArtistName(cleaned) || cleaned.isBlank()) "Unknown Artist" else cleaned
+    }
+
+    /**
+     * Cleans raw album title by removing generic tags, domain URLs, bracketed junk, and file extensions.
+     *
+     * @param rawAlbum The raw album string.
+     * @return Cleaned album name, or "Unknown Album" if generic/invalid.
+     */
+    fun cleanAlbum(rawAlbum: String): String {
+        if (isGenericAlbumName(rawAlbum)) return "Unknown Album"
+
+        val step1 = rawAlbum
+            .replace("_", " ")
+            .replace(extensionRegex, "")
+            .replace(domainRegex, "")
+            .replace(bracketClutterRegex, "")
+            .replace(unbracketedClutterRegex, "")
+            .replace(Regex("""\(\s*\)|\[\s*\]|\{\s*\}"""), "")
+            .trim()
+
+        val cleaned = toTitleCase(step1.replace(Regex("""\s+"""), " "))
+
+        return if (isGenericAlbumName(cleaned) || cleaned.isBlank()) "Unknown Album" else cleaned
+    }
+
+    /**
+     * Checks if artist name is generic or invalid.
+     */
+    fun isGenericArtistName(artist: String?): Boolean {
+        if (artist.isNullOrBlank()) return true
+        val lower = artist.trim().lowercase()
+        return lower == "unknown artist" ||
+               lower == "<unknown>" ||
+               lower == "unknown" ||
+               lower == "null" ||
+               lower == "various artists" ||
+               lower == "various" ||
+               lower == "v.a." ||
+               lower == "va" ||
+               lower == "n/a" ||
+               lower == "none" ||
+               lower == "artist" ||
+               lower.matches(Regex("""^track\s*\d*$"""))
+    }
+
+    /**
+     * Checks if album name is generic, file-sharing folder name, or invalid.
+     */
+    fun isGenericAlbumName(album: String?): Boolean {
+        if (album.isNullOrBlank()) return true
+        val lower = album.trim().lowercase().replace("_", " ").replace("-", " ")
+        return lower == "unknown album" ||
+               lower == "<unknown>" ||
+               lower == "unknown" ||
+               lower == "null" ||
+               lower == "n/a" ||
+               lower == "none" ||
+               lower == "album" ||
+               lower == "audio" ||
+               lower == "soundtrack" ||
+               lower == "music" ||
+               lower == "singles" ||
+               lower == "download" ||
+               lower == "downloads" ||
+               lower == "media" ||
+               lower == "storage" ||
+               lower == "sdcard" ||
+               lower == "sd card" ||
+               lower == "emulated" ||
+               lower == "documents" ||
+               lower == "shareme" ||
+               lower == "share me" ||
+               lower == "mishare" ||
+               lower == "mi share" ||
+               lower == "shareit" ||
+               lower == "share it" ||
+               lower == "xender" ||
+               lower == "bluetooth" ||
+               lower == "snaptube" ||
+               lower == "snap tube" ||
+               lower == "vidmate" ||
+               lower == "vid mate" ||
+               lower == "tubemate" ||
+               lower == "tube mate" ||
+               lower == "y2mate" ||
+               lower == "ytmp3" ||
+               lower == "ezmp3" ||
+               lower == "whatsapp" ||
+               lower == "whatsapp audio" ||
+               lower == "telegram" ||
+               lower == "telegram audio" ||
+               lower == "instagram" ||
+               lower == "facebook" ||
+               lower == "tiktok" ||
+               lower == "ringtones" ||
+               lower == "notifications" ||
+               lower == "alarms" ||
+               lower == "voice notes" ||
+               lower == "recordings"
     }
 
     /**
@@ -82,9 +205,9 @@ object YouTubeTitleCleaner {
 
         return if (cleaned.contains("-")) {
             val parts = cleaned.split("-", limit = 2)
-            val artist = toTitleCase(parts[0].trim())
-            val title = toTitleCase(parts[1].trim())
-            Pair(if (artist.isNotBlank()) artist else "Unknown Artist", if (title.isNotBlank()) title else cleaned)
+            val artist = cleanArtist(parts[0].trim())
+            val title = cleanTitle(parts[1].trim())
+            Pair(artist, if (title.isNotBlank()) title else cleaned)
         } else {
             Pair("Unknown Artist", cleaned)
         }

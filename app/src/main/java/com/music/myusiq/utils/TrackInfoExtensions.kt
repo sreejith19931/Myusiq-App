@@ -11,9 +11,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import java.util.Locale
 import com.music.myusiq.domain.models.Song
-import com.music.myusiq.domain.models.SongOverride
 import com.music.myusiq.DatabaseProvider
-import kotlinx.coroutines.runBlocking
 
 data class TrackDetailedInfo(
     val title: String,
@@ -33,7 +31,7 @@ data class AudioQualityInfo(
     val sampleRateHz: Int,
     val bitrateKbps: Int,
     val isHiRes: Boolean,
-    val badgeText: String
+    val badgeText: String,
 )
 
 fun Song.getAudioQualityInfo(context: Context): AudioQualityInfo {
@@ -83,11 +81,11 @@ fun Song.getAudioQualityInfo(context: Context): AudioQualityInfo {
         sampleRateHz = sampleRate,
         bitrateKbps = bitrate,
         isHiRes = isHiRes,
-        badgeText = badgeText
+        badgeText = badgeText,
     )
 }
 
-fun fetchTrackDetailedInfo(context: Context, song: Song): TrackDetailedInfo {
+suspend fun fetchTrackDetailedInfo(context: Context, song: Song): TrackDetailedInfo {
     val trackUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id)
     val retriever = MediaMetadataRetriever()
     var bitrateStr = "Unknown"
@@ -136,7 +134,7 @@ fun fetchTrackDetailedInfo(context: Context, song: Song): TrackDetailedInfo {
     
     // 3. Apply local overrides if present
     val songDao = DatabaseProvider.getDatabase(context).songDao()
-    val override = runBlocking { songDao.getAllOverrides() }.find { it.path == PlatformUtils.normalizePath(song.path) }
+    val override = songDao.getOverrideForPath(PlatformUtils.normalizePath(song.path))
 
     return TrackDetailedInfo(
         override?.title ?: song.title, 
@@ -144,13 +142,17 @@ fun fetchTrackDetailedInfo(context: Context, song: Song): TrackDetailedInfo {
         override?.album ?: song.album, 
         override?.year?.ifBlank { year } ?: year, 
         override?.genre?.ifBlank { genre } ?: genre, 
-        audioFormat, durationStr, bitrateStr, fileSizeStr, song.path
+        audioFormat, 
+        durationStr, 
+        bitrateStr, 
+        fileSizeStr, 
+        song.path,
     )
 }
 
 private val ALBUM_ART_BASE_URI = "content://media/external/audio/albumart".toUri()
 
-fun Song.toMediaItem(): MediaItem {
+fun Song.toMediaItem(parentId: String? = null): MediaItem {
     val trackUri = ContentUris.withAppendedId(
         MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
         this.id
@@ -165,6 +167,7 @@ fun Song.toMediaItem(): MediaItem {
         putString("path", this@toMediaItem.path)
         putLong("albumId", this@toMediaItem.albumId)
         putInt("duration", this@toMediaItem.duration)
+        parentId?.let { putString("parent_id", it) }
     }
 
     val metadata = MediaMetadata.Builder()
@@ -185,6 +188,7 @@ fun Song.toMediaItem(): MediaItem {
         .build()
 }
 
+@Suppress("unused")
 fun createBrowsableMediaItem(
     mediaId: String,
     title: String,
@@ -204,6 +208,7 @@ fun createBrowsableMediaItem(
         .build()
 }
 
+@Suppress("unused")
 fun formatTime(ms: Int): String {
     val totalSeconds = ms / 1000
     val minutes = totalSeconds / 60

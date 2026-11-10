@@ -101,7 +101,7 @@ class AlbumsAdapter(
                             object : CustomTarget<Bitmap>() {
                                 override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
                                     holder.ivAlbumArt.setImageBitmap(resource)
-                                    applyPaletteToBadge(holder, resource)
+                                    applyPaletteToBadge(holder, album.name, resource)
                                 }
 
                                 override fun onLoadCleared(placeholder: Drawable?) {
@@ -124,7 +124,18 @@ class AlbumsAdapter(
         }
     }
 
-    private fun applyPaletteToBadge(holder: AlbumListViewHolder, bitmap: Bitmap) {
+    private data class PaletteColors(val bgColor: Int, val contentColor: Int)
+    private val paletteColorCache = android.util.LruCache<String, PaletteColors>(200)
+
+    private fun applyPaletteToBadge(holder: AlbumListViewHolder, albumName: String, bitmap: Bitmap) {
+        val cached = paletteColorCache.get(albumName)
+        if (cached != null) {
+            holder.layoutBadge?.backgroundTintList = ColorStateList.valueOf(cached.bgColor)
+            holder.ivBadgeIcon?.imageTintList = ColorStateList.valueOf(cached.contentColor)
+            holder.tvBadgeCount?.setTextColor(cached.contentColor)
+            return
+        }
+
         Palette.from(bitmap).generate { palette ->
             // Use Muted color for the background to keep it subtle but visible
             val bgColor = palette?.getMutedColor(Color.LTGRAY) ?: Color.LTGRAY
@@ -141,6 +152,7 @@ class AlbumsAdapter(
                 contentColor
             }
 
+            paletteColorCache.put(albumName, PaletteColors(bgColor, finalContentColor))
             holder.layoutBadge?.backgroundTintList = ColorStateList.valueOf(bgColor)
             holder.ivBadgeIcon?.imageTintList = ColorStateList.valueOf(finalContentColor)
             holder.tvBadgeCount?.setTextColor(finalContentColor)

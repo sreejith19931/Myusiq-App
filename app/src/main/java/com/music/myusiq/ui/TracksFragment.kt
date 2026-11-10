@@ -73,6 +73,7 @@ class TracksFragment : Fragment(), BackPressHandler {
 
     private var lastSortOrder: PlaybackViewModel.TrackSortOrder? = null
     private var lastSortDirection: PlaybackViewModel.SortDirection? = null
+    private var currentTrackList: List<Song> = emptyList()
 
     override fun onBackPressed(): Boolean {
         if (isSelectionMode || selectedSongs.value.isNotEmpty()) {
@@ -131,7 +132,11 @@ class TracksFragment : Fragment(), BackPressHandler {
 
         swipeRefresh?.setOnRefreshListener { viewModel.forceScanMediaLibrary() }
         btnEmptyAction?.setOnClickListener { viewModel.forceScanMediaLibrary() }
-        fabShuffleAll?.setOnClickListener { viewModel.shuffleAllTracks(viewModel.songsLibrary.value) }
+        fabShuffleAll?.setOnClickListener {
+            if (currentTrackList.isNotEmpty()) {
+                viewModel.shuffleAllTracks(currentTrackList)
+            }
+        }
         
         fabGoToTop?.setOnClickListener {
             rvTracks?.smoothScrollToPosition(0)
@@ -255,7 +260,7 @@ class TracksFragment : Fragment(), BackPressHandler {
 
     private fun setupRecyclerView() {
         trackAdapter = TrackAdapter(
-            onTrackClicked = { song, imageView -> 
+            onTrackClicked = { song, imageView, position -> 
                 if (isSelectionMode) {
                     toggleSongSelection(song.id)
                 } else {
@@ -269,9 +274,8 @@ class TracksFragment : Fragment(), BackPressHandler {
                     } catch (_: Exception) {}
 
                     val list = trackAdapter?.currentList?.map { it.song }.orEmpty()
-                    val index = list.indexOfFirst { it.id == song.id }
-                    if (index != -1) {
-                        (activity as? MainActivity)?.playFromView(list, index, imageView)
+                    if (position in list.indices) {
+                        (activity as? MainActivity)?.playFromView(list, position, imageView)
                     }
                 }
             },
@@ -482,8 +486,7 @@ class TracksFragment : Fragment(), BackPressHandler {
                         viewModel.isPlaying,
                         viewModel.favoriteTrackIds,
                         viewModel.artworkRefreshSignatures,
-                        selectedSongs,
-                        viewModel.currentPositionThrottled
+                        selectedSongs
                     ) { args: Array<Any?> ->
                         @Suppress("UNCHECKED_CAST")
                         val allSongs = args[0] as? List<Song> ?: emptyList()
@@ -492,7 +495,7 @@ class TracksFragment : Fragment(), BackPressHandler {
                         val favorites = args[3] as? Set<String> ?: emptySet()
                         val signatures = args[4] as? Map<String, Long> ?: emptyMap()
                         val selected = args[5] as? Set<Long> ?: emptySet()
-                        val position = args[6] as? Int ?: 0
+                        val position = viewModel.currentPositionThrottled.value
 
                         val folderPath = arguments?.getString("folder_path")
                         val songs = if (folderPath != null) {
@@ -515,6 +518,7 @@ class TracksFragment : Fragment(), BackPressHandler {
                             )
                         }
                     }.collectLatest { uiModels ->
+                        currentTrackList = uiModels.map { it.song }
                         val currentOrder = viewModel.currentSortOrder
                         val currentDir = viewModel.currentSortDirection
                         val hasSortChanged = lastSortOrder != currentOrder || lastSortDirection != currentDir
@@ -533,6 +537,20 @@ class TracksFragment : Fragment(), BackPressHandler {
                         // Update empty state based on filtered list
                         if (!viewModel.isLibraryLoading.value) {
                             layoutEmptyState?.visibility = if (uiModels.isEmpty()) View.VISIBLE else View.GONE
+                        }
+                    }
+                }
+
+                launch {
+                    viewModel.currentPositionThrottled.collectLatest { position ->
+                        val adapter = trackAdapter ?: return@collectLatest
+                        val currentSong = viewModel.currentPlayingSong.value ?: return@collectLatest
+                        if (currentSong.duration <= 0) return@collectLatest
+                        val list = adapter.currentList
+                        val index = list.indexOfFirst { it.song.id == currentSong.id }
+                        if (index in list.indices) {
+                            val progress = position.toFloat() / currentSong.duration.toFloat()
+                            adapter.notifyItemChanged(index, progress)
                         }
                     }
                 }

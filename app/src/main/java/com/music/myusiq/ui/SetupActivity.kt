@@ -255,7 +255,7 @@ class SetupActivity : AppCompatActivity() {
         chosenThemeMode = theme
         getSharedPreferences("app_prefs", MODE_PRIVATE).edit()
             .putString("cached_theme_mode", theme)
-            .commit()
+            .apply()
         lifecycleScope.launch {
             themeSettingsManager.saveThemeMode(theme)
             themeSettingsManager.applyThemeMode(theme)
@@ -267,7 +267,7 @@ class SetupActivity : AppCompatActivity() {
         chosenPalette = palette
         getSharedPreferences("app_prefs", MODE_PRIVATE).edit()
             .putString("cached_color_style", palette)
-            .commit()
+            .apply()
         lifecycleScope.launch {
             themeSettingsManager.saveColorStyle(palette)
         }

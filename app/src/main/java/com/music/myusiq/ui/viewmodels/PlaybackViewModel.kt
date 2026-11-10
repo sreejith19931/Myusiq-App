@@ -212,6 +212,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     private var progressJob: Job? = null
     private var sleepTimerJob: Job? = null
     private var restoreJob: Job? = null
+    private var hasUserStartedPlayback = false
     private var isUserChangingTrack = false
     private var isPerformingManualUpdate = false
     private var mediaStoreObserver: ContentObserver? = null
@@ -381,6 +382,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     var originalTrackList: List<Song> = emptyList()
     private val persistence = (application as MainApplication).playbackPersistence
     private var pendingDeleteSongId: Long? = null
+    private var pendingDeleteSongs: List<Song> = emptyList()
     private val audioManager = application.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private var pendingTrackEditData: PendingTrackEdit? = null
     private var pendingBulkTrackEditData: List<PendingTrackEdit>? = null
@@ -700,18 +702,13 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun deleteTrackFromStorage(context: Context, song: Song) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val uri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id)
-            pendingDeleteSongId = song.id
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                val intent = MediaStore.createDeleteRequest(context.contentResolver, listOf(uri))
-                _pendingDeleteIntent.value = IntentSenderRequest.Builder(intent.intentSender).build()
-            } else { context.contentResolver.delete(uri, null, null); withContext(Dispatchers.Main) { processTrackDeletion() } }
-        }
+        deleteTracksFromStorage(context, listOf(song))
     }
 
     fun deleteTracksFromStorage(context: Context, songs: List<Song>) {
         if (songs.isEmpty()) return
+        isPerformingManualUpdate = true
+        pendingDeleteSongs = songs
         viewModelScope.launch(Dispatchers.IO) {
             val uris = songs.map { ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, it.id) }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -724,7 +721,11 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun requestDelete(intent: PendingIntent) {
+    fun requestDelete(intent: PendingIntent, songs: List<Song> = emptyList()) {
+        isPerformingManualUpdate = true
+        if (songs.isNotEmpty()) {
+            pendingDeleteSongs = songs
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             _pendingDeleteIntent.value = IntentSenderRequest.Builder(intent.intentSender).build()
         }
@@ -736,34 +737,78 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun consumePendingDeleteIntent() { _pendingDeleteIntent.value = null; pendingDeleteSongId = null }
+    fun consumePendingDeleteIntent() { 
+        _pendingDeleteIntent.value = null
+        pendingDeleteSongId = null
+        pendingDeleteSongs = emptyList()
+        isPerformingManualUpdate = false
+    }
 
     fun processTrackDeletion() {
-        val id = pendingDeleteSongId ?: return
-        val controller = mediaController ?: return
+        val songsToDelete = if (pendingDeleteSongs.isNotEmpty()) {
+            pendingDeleteSongs
+        } else {
+            val id = pendingDeleteSongId
+            if (id != null) originalTrackList.filter { it.id == id } else emptyList()
+        }
+        if (songsToDelete.isEmpty()) {
+            isPerformingManualUpdate = false
+            return
+        }
+        val controller = mediaController
         val q = _currentQueue.value
-        val idx = q.indexOfFirst { it.id == id }
-        
-        // Delete associated lyrics first
-        originalTrackList.find { it.id == id }?.let { song ->
-            viewModelScope.launch {
-                deleteLyrics(song.path)
+        val idsToDelete = songsToDelete.map { it.id }.toSet()
+
+        viewModelScope.launch(Dispatchers.IO) {
+            songsToDelete.forEach { song ->
+                try {
+                    deleteLyrics(song.path)
+                    musicRepository.deleteOverride(song.path)
+                    musicRepository.deleteLyrics(song.path)
+                    musicRepository.removeTrackFromAllPlaylists(song.id.toString())
+                    musicRepository.deleteLibraryTrack(song.id.toString())
+                } catch (e: Exception) {
+                    Log.e("PlaybackViewModel", "Error cleaning up deleted track ${song.id}", e)
+                }
+            }
+
+            withContext(Dispatchers.Main) {
+                if (controller != null) {
+                    val indicesToRemove = mutableListOf<Int>()
+                    for (i in 0 until controller.mediaItemCount) {
+                        val mediaItem = controller.getMediaItemAt(i)
+                        val mediaIdLong = mediaItem.mediaId.toLongOrNull()
+                        if (mediaIdLong != null && idsToDelete.contains(mediaIdLong)) {
+                            indicesToRemove.add(i)
+                        }
+                    }
+                    indicesToRemove.sortDescending()
+                    for (idx in indicesToRemove) {
+                        try {
+                            if (idx < controller.mediaItemCount) {
+                                controller.removeMediaItem(idx)
+                            }
+                        } catch (e: Exception) {
+                            Log.e("PlaybackViewModel", "Error removing track from controller at index $idx", e)
+                        }
+                    }
+                }
+                val nq = q.filter { !idsToDelete.contains(it.id) }
+                _currentQueue.value = nq
+                
+                originalTrackList = originalTrackList.filter { !idsToDelete.contains(it.id) }
+                currentSortedList = currentSortedList?.filter { !idsToDelete.contains(it.id) }
+                refreshLibraryDisplay()
+                consumePendingDeleteIntent()
+                syncServiceStateWithLiveData()
+
+                // Keep manual update flag true for 3 seconds to prevent mediaStoreObserver from triggering full rescan/waveform analysis
+                viewModelScope.launch {
+                    delay(3000)
+                    isPerformingManualUpdate = false
+                }
             }
         }
-        
-        if (idx != -1) {
-            try { 
-                if (idx < controller.mediaItemCount) controller.removeMediaItem(idx) 
-            } catch (e: Exception) {
-                Log.e("PlaybackViewModel", "Error removing track from controller", e)
-            }
-            val nq = q.filter { it.id != id }
-            _currentQueue.value = nq
-        }
-        
-        originalTrackList = originalTrackList.filter { it.id != id }
-        currentSortedList = currentSortedList?.filter { it.id != id }
-        refreshLibraryDisplay(); consumePendingDeleteIntent(); syncServiceStateWithLiveData()
     }
 
     private fun startProgressPolling() {
@@ -874,24 +919,44 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         val controller = mediaController ?: return
         if (isUserChangingTrack) return
         
-        // 1. Restore queue if empty (e.g., after app restart with background service running)
-        if (_currentQueue.value.isEmpty() && controller.mediaItemCount > 0) {
-            val restoredQueue = mutableListOf<Song>()
-            for (i in 0 until controller.mediaItemCount) {
-                val item = controller.getMediaItemAt(i)
-                val metadata = item.mediaMetadata
-                val extras = metadata.extras ?: Bundle.EMPTY
-                restoredQueue.add(Song(
-                    id = extras.getLong("id", item.mediaId.toLongOrNull() ?: -1L),
-                    title = metadata.title?.toString() ?: "Unknown",
-                    artist = metadata.artist?.toString() ?: "Unknown",
-                    path = extras.getString("path", ""),
-                    duration = extras.getInt("duration", 0),
-                    albumId = extras.getLong("albumId", -1L),
-                    album = metadata.albumTitle?.toString() ?: "Unknown"
-                ))
+        // 1. Sync queue with controller if items or size differ
+        if (controller.mediaItemCount > 0) {
+            val controllerItemIds = (0 until controller.mediaItemCount).map { i ->
+                controller.getMediaItemAt(i).mediaId
             }
-            _currentQueue.value = restoredQueue
+            val currentQueueIds = _currentQueue.value.map { it.id.toString() }
+
+            if (controllerItemIds != currentQueueIds) {
+                val restoredQueue = mutableListOf<Song>()
+                for (i in 0 until controller.mediaItemCount) {
+                    val item = controller.getMediaItemAt(i)
+                    val metadata = item.mediaMetadata
+                    val extras = metadata.extras ?: Bundle.EMPTY
+                    val songId = extras.getLong("id", item.mediaId.toLongOrNull() ?: -1L)
+                    val path = extras.getString("path")
+                        ?: item.requestMetadata.mediaUri?.path
+                        ?: item.localConfiguration?.uri?.path
+                        ?: ""
+
+                    val matchedSong = originalTrackList.find {
+                        it.id == songId || (path.isNotBlank() && PlatformUtils.normalizePath(it.path) == PlatformUtils.normalizePath(path))
+                    }
+                    if (matchedSong != null) {
+                        restoredQueue.add(matchedSong)
+                    } else {
+                        restoredQueue.add(Song(
+                            id = songId,
+                            title = metadata.title?.toString() ?: "Unknown",
+                            artist = metadata.artist?.toString() ?: "Unknown",
+                            path = path,
+                            duration = extras.getInt("duration", 0),
+                            albumId = extras.getLong("albumId", -1L),
+                            album = metadata.albumTitle?.toString() ?: "Unknown"
+                        ))
+                    }
+                }
+                _currentQueue.value = restoredQueue
+            }
         }
 
         // 2. Ensure player is prepared if it has items but is idle
@@ -961,9 +1026,8 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         if (playImmediately) {
             restoreJob?.cancel()
             restoreJob = null
+            hasUserStartedPlayback = true
         }
-
-        val previousQueue = _currentQueue.value
 
         // 1. Update UI state flows immediately for maximum responsiveness
         _currentQueue.value = list
@@ -979,25 +1043,37 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             return
         }
 
-        // 2. Optimization: Check if the new list matches the existing controller queue or previousQueue
-        val matchesController = controller.mediaItemCount == list.size &&
+        // Window large lists to prevent OutOfMemoryError in ExoPlayer
+        val maxPlayerQueueSize = 1000
+        val effectiveList: List<Song>
+        val effectiveIndex: Int
+
+        if (list.size > maxPlayerQueueSize) {
+            val halfWindow = maxPlayerQueueSize / 2
+            val startIndex = (index - halfWindow).coerceAtLeast(0)
+            val endIndex = (index + halfWindow).coerceAtMost(list.size)
+            effectiveList = list.subList(startIndex, endIndex)
+            effectiveIndex = index - startIndex
+        } else {
+            effectiveList = list
+            effectiveIndex = index
+        }
+
+        // 2. Optimization: Check if the new list matches the existing controller queue
+        val matchesController = controller.mediaItemCount == effectiveList.size &&
             (0 until controller.mediaItemCount).all { i ->
-                controller.getMediaItemAt(i).mediaId == list[i].id.toString()
+                controller.getMediaItemAt(i).mediaId == effectiveList[i].id.toString()
             }
 
-        val isSameQueue = matchesController || (
-            previousQueue.size == list.size &&
-            previousQueue.indices.all { previousQueue[it].id == list[it].id }
-        )
+        val isSameQueue = matchesController
         
         if (isSameQueue) {
-            if (controller.currentMediaItemIndex != index) {
-                controller.seekTo(index, C.TIME_UNSET)
+            if (controller.currentMediaItemIndex != effectiveIndex) {
+                controller.seekTo(effectiveIndex, C.TIME_UNSET)
             }
             if (playImmediately) {
-                if (controller.playbackState == Player.STATE_IDLE) {
-                    controller.prepare()
-                }
+                controller.playWhenReady = true
+                controller.prepare()
                 controller.play()
             }
             return
@@ -1005,18 +1081,16 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
         // 3. Set items asynchronously off the main thread to prevent UI freezes
         viewModelScope.launch(Dispatchers.Default) {
-            val items = list.map { it.toMediaItem() }
+            val items = effectiveList.map { it.toMediaItem() }
             withContext(Dispatchers.Main) {
                 if (!isActive) return@withContext
-                controller.setMediaItems(items, index, C.TIME_UNSET)
+                controller.setMediaItems(items, effectiveIndex, C.TIME_UNSET)
+                controller.playWhenReady = playImmediately
+                controller.prepare()
                 if (playImmediately) {
-                    if (controller.playbackState == Player.STATE_IDLE) {
-                        controller.prepare()
-                    }
                     controller.play()
                 } else {
                     controller.playWhenReady = false
-                    controller.prepare()
                 }
             }
         }
@@ -1118,6 +1192,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     fun shuffleAllTracks(list: List<Song>) {
         if (list.isEmpty()) return
+        setShuffleEnabled(true)
         val rand = list.shuffled()
         playSong(rand, 0, true)
         expandPlayer()
@@ -1125,23 +1200,33 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     private fun restoreLastPlayedTrack() {
         val controller = mediaController ?: return
-        if (controller.mediaItemCount > 0) return
+        if (controller.mediaItemCount > 0 || hasUserStartedPlayback) {
+            syncServiceStateWithLiveData()
+            return
+        }
         restoreJob?.cancel()
-        restoreJob = viewModelScope.launch {
+        restoreJob = viewModelScope.launch(Dispatchers.IO) {
             // Wait for library to be loaded, with short polling delay
             var timeout = 0
             while (!isSongsLoaded && timeout < 20) { 
                 delay(100.milliseconds)
                 timeout++
-                if (controller.mediaItemCount > 0) {
-                    syncServiceStateWithLiveData()
+                val shouldReturn = withContext(Dispatchers.Main) {
+                    controller.mediaItemCount > 0 || hasUserStartedPlayback
+                }
+                if (shouldReturn) {
+                    withContext(Dispatchers.Main) { syncServiceStateWithLiveData() }
                     return@launch
                 }
             }
-            if (!isActive || controller.mediaItemCount > 0) {
-                syncServiceStateWithLiveData()
+            val finalCheck = withContext(Dispatchers.Main) {
+                !isActive || controller.mediaItemCount > 0 || hasUserStartedPlayback
+            }
+            if (finalCheck) {
+                withContext(Dispatchers.Main) { syncServiceStateWithLiveData() }
                 return@launch
             }
+            if (hasUserStartedPlayback) return@launch
             
             val savedQueuePaths = persistence.getSavedQueuePaths()
             val lastPath = persistence.lastSongPath.firstOrNull()
@@ -1164,6 +1249,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                 }
                 
                 if (restoredQueue.isNotEmpty()) {
+                    if (hasUserStartedPlayback) return@launch
                     var restoredIdx = 0
                     if (lastPath != null) {
                         val normLast = PlatformUtils.normalizePath(lastPath)
@@ -1177,27 +1263,43 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                         }
                     }
                     
-                    playSong(restoredQueue, restoredIdx, false)
-                    controller.seekTo(restoredIdx, lastPos)
-                    syncServiceStateWithLiveData()
+                    if (hasUserStartedPlayback) return@launch
+                    withContext(Dispatchers.Main) {
+                        if (!hasUserStartedPlayback) {
+                            playSong(restoredQueue, restoredIdx, false)
+                            controller.seekTo(restoredIdx, lastPos)
+                            syncServiceStateWithLiveData()
+                        }
+                    }
                     return@launch
                 }
             }
 
+            if (hasUserStartedPlayback) return@launch
             // Fallback to library restoration if no saved queue or all paths failed
             if (originalTrackList.isNotEmpty() && lastPath != null) {
                 val normalizedPath = PlatformUtils.normalizePath(lastPath)
                 val idx = originalTrackList.indexOfFirst { PlatformUtils.normalizePath(it.path) == normalizedPath }
                 
-                if (idx != -1) {
-                    playSong(originalTrackList, idx, false)
-                    controller.seekTo(idx, lastPos)
-                    syncServiceStateWithLiveData()
-                } else {
-                    playSong(originalTrackList, 0, false)
+                if (hasUserStartedPlayback) return@launch
+                withContext(Dispatchers.Main) {
+                    if (!hasUserStartedPlayback) {
+                        if (idx != -1) {
+                            playSong(originalTrackList, idx, false)
+                            controller.seekTo(idx, lastPos)
+                            syncServiceStateWithLiveData()
+                        } else {
+                            playSong(originalTrackList, 0, false)
+                        }
+                    }
                 }
             } else if (originalTrackList.isNotEmpty()) {
-                playSong(originalTrackList, 0, false)
+                if (hasUserStartedPlayback) return@launch
+                withContext(Dispatchers.Main) {
+                    if (!hasUserStartedPlayback) {
+                        playSong(originalTrackList, 0, false)
+                    }
+                }
             }
         }
     }
@@ -1207,7 +1309,10 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             if (it.isPlaying) {
                 it.pause()
             } else {
-                if (it.playbackState == Player.STATE_IDLE && it.mediaItemCount > 0) {
+                if ((it.playbackState == Player.STATE_IDLE || it.playbackState == Player.STATE_ENDED) && it.mediaItemCount > 0) {
+                    if (it.playbackState == Player.STATE_ENDED) {
+                        it.seekTo(it.currentMediaItemIndex, C.TIME_UNSET)
+                    }
                     it.prepare()
                 }
                 it.play()

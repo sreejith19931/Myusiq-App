@@ -14,30 +14,7 @@ import java.io.File
 object ArtworkUtils {
 
     fun isGenericAlbum(albumName: String): Boolean {
-        val lower = albumName.trim().lowercase()
-        return lower.isBlank() || 
-               lower == "<unknown>" || 
-               lower == "unknown album" || 
-               lower == "unknown" || 
-               lower == "null" || 
-               lower == "singles" ||
-               lower == "download" ||
-               lower == "downloads" ||
-               lower == "music" ||
-               lower == "audio" ||
-               lower == "media" ||
-               lower == "storage" ||
-               lower == "sdcard" ||
-               lower == "0" ||
-               lower == "emulated" ||
-               lower == "documents" ||
-               lower == "whatsapp" ||
-               lower == "telegram" ||
-               lower == "ringtones" ||
-               lower == "notifications" ||
-               lower == "alarms" ||
-               lower == "voice notes" ||
-               lower == "recordings"
+        return YouTubeTitleCleaner.isGenericAlbumName(albumName)
     }
 
     private fun getPublicBackupDir(): File? {
@@ -122,25 +99,51 @@ object ArtworkUtils {
         return null
     }
 
+    private val memoryArtworkFileCache = java.util.concurrent.ConcurrentHashMap<String, File>()
+    private val NULL_FILE_SENTINEL = File("")
+
+    fun invalidateMemoryArtworkCache() {
+        memoryArtworkFileCache.clear()
+    }
+
     fun getQuickArtworkFile(context: Context, songId: Long, songPath: String, albumName: String = ""): File? {
+        val cacheKey = "$songId|${songPath.hashCode()}|$albumName"
+        val cached = memoryArtworkFileCache[cacheKey]
+        if (cached != null) {
+            return if (cached === NULL_FILE_SENTINEL) null else cached
+        }
+
         val cacheDir = File(context.filesDir, "artwork_cache")
         val idFile = File(cacheDir, "$songId.jpg")
-        if (idFile.exists() && idFile.length() > 0) return idFile
+        if (idFile.exists() && idFile.length() > 0) {
+            memoryArtworkFileCache[cacheKey] = idFile
+            return idFile
+        }
 
         val normPath = PlatformUtils.normalizePath(songPath)
         if (normPath.isNotBlank()) {
             val hashFile = File(cacheDir, "${normPath.hashCode()}.jpg")
-            if (hashFile.exists() && hashFile.length() > 0) return hashFile
+            if (hashFile.exists() && hashFile.length() > 0) {
+                memoryArtworkFileCache[cacheKey] = hashFile
+                return hashFile
+            }
 
             val hashLowerFile = File(cacheDir, "${normPath.lowercase().hashCode()}.jpg")
-            if (hashLowerFile.exists() && hashLowerFile.length() > 0) return hashLowerFile
+            if (hashLowerFile.exists() && hashLowerFile.length() > 0) {
+                memoryArtworkFileCache[cacheKey] = hashLowerFile
+                return hashLowerFile
+            }
         }
 
         if (!isGenericAlbum(albumName)) {
             val albumFile = File(cacheDir, "album_${albumName.trim().lowercase().hashCode()}.jpg")
-            if (albumFile.exists() && albumFile.length() > 0) return albumFile
+            if (albumFile.exists() && albumFile.length() > 0) {
+                memoryArtworkFileCache[cacheKey] = albumFile
+                return albumFile
+            }
         }
 
+        memoryArtworkFileCache[cacheKey] = NULL_FILE_SENTINEL
         return null
     }
 
@@ -328,6 +331,7 @@ object ArtworkUtils {
                     }
                 }
             }
+            invalidateMemoryArtworkCache()
             Log.d("ArtworkUtils", "Saved optimized shared artwork cache for song $songId album $albumName")
         } catch (e: Exception) {
             Log.e("ArtworkUtils", "Error saving artwork cache", e)
@@ -356,6 +360,7 @@ object ArtworkUtils {
             for (file in filesToDelete) {
                 try { if (file.exists()) file.delete() } catch (_: Exception) {}
             }
+            invalidateMemoryArtworkCache()
             Log.d("ArtworkUtils", "Cleared artwork cache for song $songId path $songPath")
         } catch (e: Exception) {
             Log.e("ArtworkUtils", "Error clearing artwork cache", e)
@@ -398,7 +403,7 @@ object ArtworkUtils {
             try { newExtBackupFile.writeBytes(bytes) } catch (_: Exception) {}
             try { newPublicBackupFile?.writeBytes(bytes) } catch (_: Exception) {}
             savePublicMediaStoreImage(context, "${normNewPath.hashCode()}.jpg", bytes)
-
+            invalidateMemoryArtworkCache()
             Log.d("ArtworkUtils", "Copied artwork cache from $oldPath to $newPath and cleaned up old path")
         } catch (e: Exception) {
             Log.e("ArtworkUtils", "Error copying artwork cache", e)

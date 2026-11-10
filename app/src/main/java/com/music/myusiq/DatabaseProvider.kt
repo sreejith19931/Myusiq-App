@@ -54,38 +54,27 @@ object DatabaseProvider {
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_song_history_songId` ON `song_history` (`songId`)")
         db.execSQL("CREATE TABLE IF NOT EXISTS `library_tracks` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `artist` TEXT NOT NULL, `isFavorite` INTEGER NOT NULL, `waveformAmplitudes` TEXT, `energyScore` INTEGER NOT NULL, PRIMARY KEY(`id`))")
         db.execSQL("CREATE TABLE IF NOT EXISTS `playlist_track_cross_ref` (`playlistId` INTEGER NOT NULL, `trackId` TEXT NOT NULL, PRIMARY KEY(`playlistId`, `trackId`))")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_playlist_track_cross_ref_trackId` ON `playlist_track_cross_ref` (`trackId`)")
         db.execSQL("CREATE TABLE IF NOT EXISTS `song_overrides` (`path` TEXT NOT NULL, `title` TEXT NOT NULL, `artist` TEXT NOT NULL, `album` TEXT NOT NULL, `year` TEXT NOT NULL, `genre` TEXT NOT NULL, `hasManualArtwork` INTEGER NOT NULL, PRIMARY KEY(`path`))")
         db.execSQL("CREATE TABLE IF NOT EXISTS `lyrics_overrides` (`songPath` TEXT NOT NULL, `rawLyrics` TEXT NOT NULL, PRIMARY KEY(`songPath`))")
         db.execSQL("CREATE TABLE IF NOT EXISTS `search_history` (`query` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, PRIMARY KEY(`query`))")
     }
 
-    val MIGRATION_11_12 = object : Migration(11, 12) {
-        override fun migrate(db: SupportSQLiteDatabase) {
-            ensureSchemaIntegrity(db)
-        }
-    }
-
-    val MIGRATION_12_13 = object : Migration(12, 13) {
-        override fun migrate(db: SupportSQLiteDatabase) {
-            ensureSchemaIntegrity(db)
-        }
-    }
-
-    val MIGRATION_11_13 = object : Migration(11, 13) {
+    val MIGRATION_13_14 = object : Migration(13, 14) {
         override fun migrate(db: SupportSQLiteDatabase) {
             ensureSchemaIntegrity(db)
         }
     }
 
     private val ALL_MIGRATIONS: Array<Migration> by lazy {
-        val olderMigrations = (1..10).map { startVersion ->
-            object : Migration(startVersion, 13) {
+        val olderMigrations = (1..12).map { startVersion ->
+            object : Migration(startVersion, 14) {
                 override fun migrate(db: SupportSQLiteDatabase) {
                     ensureSchemaIntegrity(db)
                 }
             }
         }
-        (olderMigrations + MIGRATION_11_12 + MIGRATION_12_13 + MIGRATION_11_13).toTypedArray()
+        (olderMigrations + MIGRATION_13_14).toTypedArray()
     }
 
     fun getDatabase(context: Context): AppDatabase {

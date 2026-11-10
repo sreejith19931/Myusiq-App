@@ -56,8 +56,8 @@ object CloudMetadataResolver {
         }
 
         val cleanedTitle = YouTubeTitleCleaner.cleanTitle(fallbackTitle).ifBlank { fileNameWithoutExt }
-        val cleanedArtist = if (fallbackArtist.isNotBlank()) cleanArtist(fallbackArtist) else "Unknown Artist"
-        val cleanedAlbum = if (fallbackAlbum.isNotBlank()) fallbackAlbum else "Unknown Album"
+        val cleanedArtist = YouTubeTitleCleaner.cleanArtist(fallbackArtist)
+        val cleanedAlbum = YouTubeTitleCleaner.cleanAlbum(fallbackAlbum)
 
         return CloudMetadata(
             album = cleanedAlbum,
@@ -71,24 +71,12 @@ object CloudMetadataResolver {
     }
 
     fun cleanArtist(artist: String): String {
-        return if (!isGenericArtist(artist)) artist.trim() else ""
+        val cleaned = YouTubeTitleCleaner.cleanArtist(artist)
+        return if (cleaned == "Unknown Artist") "" else cleaned
     }
 
     fun isGenericArtist(artist: String): Boolean {
-        val lower = artist.trim().lowercase()
-        return lower.isBlank() ||
-               lower == "unknown artist" ||
-               lower == "<unknown>" ||
-               lower == "unknown" ||
-               lower == "null" ||
-               lower == "various artists" ||
-               lower == "various" ||
-               lower == "v.a." ||
-               lower == "va" ||
-               lower == "n/a" ||
-               lower == "none" ||
-               lower == "artist" ||
-               lower.matches(Regex("""^track\s*\d*$"""))
+        return YouTubeTitleCleaner.isGenericArtistName(artist)
     }
 
     private val rateLimiterLock = Any()

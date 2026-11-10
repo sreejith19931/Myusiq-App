@@ -47,7 +47,7 @@ data class TrackUiModel(
 
 class TrackAdapter(
     private val isQueueMode: Boolean = false,
-    private val onTrackClicked: (Song, ImageView) -> Unit,
+    private val onTrackClicked: (Song, ImageView, Int) -> Unit,
     private val onTrackLongClicked: ((Song) -> Unit)? = null,
     private val onOptionSelected: ((Song, itemId: Int) -> Unit)? = null,
     private val menuCustomizer: ((Song, Menu) -> Unit)? = null,
@@ -107,13 +107,23 @@ class TrackAdapter(
     override fun onBindViewHolder(holder: TrackViewHolder, position: Int, payloads: MutableList<Any>) {
         if (payloads.isNotEmpty()) {
             val model = getItem(position)
-            val p = (payloads.first() as? Set<*>) ?: return
-            
-            if (p.contains("PAYLOAD_SELECTED")) holder.updateSelectionState(model)
-            if (p.contains("PAYLOAD_FAVORITE")) holder.updateFavoriteState(model)
-            if (p.contains("PAYLOAD_ACTIVE") || p.contains("PAYLOAD_PLAYING") || p.contains("PAYLOAD_PROGRESS")) holder.updatePlaybackState(model, isQueueMode)
+            var handled = false
+            for (payload in payloads) {
+                if (payload is Float) {
+                    holder.updateProgress(payload)
+                    handled = true
+                } else if (payload is Set<*>) {
+                    if (payload.contains("PAYLOAD_SELECTED")) holder.updateSelectionState(model)
+                    if (payload.contains("PAYLOAD_FAVORITE")) holder.updateFavoriteState(model)
+                    if (payload.contains("PAYLOAD_ACTIVE") || payload.contains("PAYLOAD_PLAYING") || payload.contains("PAYLOAD_PROGRESS")) holder.updatePlaybackState(model, isQueueMode)
+                    handled = true
+                }
+            }
+            if (!handled) {
+                onBindViewHolder(holder, position)
+            }
         } else {
-            super.onBindViewHolder(holder, position, payloads)
+            onBindViewHolder(holder, position)
         }
     }
 
@@ -154,6 +164,11 @@ class TrackAdapter(
         private val colorOnSecondaryContainer = ThemeUtils.getThemeColor(view.context, com.google.android.material.R.attr.colorOnSecondaryContainer)
 
         private val animators = mutableListOf<ObjectAnimator>()
+
+        fun updateProgress(progress: Float) {
+            viewProgressShade.isVisible = true
+            guidelineProgress.setGuidelinePercent(progress.coerceIn(0f, 1f))
+        }
 
         fun updateSelectionState(model: TrackUiModel) {
             if (model.isSelected) {
@@ -222,7 +237,7 @@ class TrackAdapter(
             model: TrackUiModel,
             isQueueMode: Boolean,
             artworkSignature: Long?,
-            onTrackClicked: (Song, ImageView) -> Unit,
+            onTrackClicked: (Song, ImageView, Int) -> Unit,
             onTrackLongClicked: ((Song) -> Unit)?,
             onOptionSelected: ((Song, itemId: Int) -> Unit)?,
             menuCustomizer: ((Song, Menu) -> Unit)?,
@@ -365,16 +380,19 @@ class TrackAdapter(
             }
 
             itemView.setOnClickListener {
-                itemView.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
-                itemView.animate()
-                    .scaleX(0.97f)
-                    .scaleY(0.97f)
-                    .setDuration(70)
-                    .withEndAction {
-                        itemView.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
-                        onTrackClicked(song, ivTrackArt)
-                    }
-                    .start()
+                val position = bindingAdapterPosition
+                if (position != RecyclerView.NO_POSITION) {
+                    itemView.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+                    itemView.animate()
+                        .scaleX(0.97f)
+                        .scaleY(0.97f)
+                        .setDuration(70)
+                        .withEndAction {
+                            itemView.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+                            onTrackClicked(song, ivTrackArt, position)
+                        }
+                        .start()
+                }
             }
 
             itemView.setOnLongClickListener {

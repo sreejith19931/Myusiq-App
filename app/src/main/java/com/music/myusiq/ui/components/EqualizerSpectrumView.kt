@@ -52,6 +52,7 @@ class EqualizerSpectrumView @JvmOverloads constructor(
 
     private val curvePath = Path()
     private val fillPath = Path()
+    private val barRect = RectF()
 
     private var primaryColor: Int = Color.CYAN
     private var primaryContainerColor: Int = Color.BLUE
@@ -178,8 +179,8 @@ class EqualizerSpectrumView @JvmOverloads constructor(
             val left = bandX[i] - barWidth / 2f
             val right = bandX[i] + barWidth / 2f
 
-            val rect = RectF(left, barTop, right, barBottom)
-            canvas.drawRoundRect(rect, 6f, 6f, barPaint)
+            barRect.set(left, barTop, right, barBottom)
+            canvas.drawRoundRect(barRect, 6f, 6f, barPaint)
 
             fftAmplitudes[i] *= 0.92f
         }

@@ -2,14 +2,14 @@ package com.music.myusiq
 
 import android.app.Application
 import android.content.Context
-import android.util.Log
 import com.music.myusiq.data.AppDatabase
 import com.music.myusiq.service.PlaybackPersistence
 import com.music.myusiq.ui.ThemeSettingsManager
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.first
 
 class MainApplication : Application() {
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+
     val database: AppDatabase by lazy { DatabaseProvider.getDatabase(this) }
     companion object {
         lateinit var appContext: Context
@@ -18,28 +18,28 @@ class MainApplication : Application() {
     val playbackPersistence: PlaybackPersistence by lazy {
         PlaybackPersistence(this)
     }
+
     override fun onCreate() {
         super.onCreate()
         appContext = applicationContext
 
         val themeSettingsManager = ThemeSettingsManager(this)
 
-        // Use runBlocking for the initial theme load to prevent flickering on startup.
-        // This ensures the correct night mode is set before the first Activity is created.
-        runBlocking {
-            try {
-                val mode = themeSettingsManager.themeModeFlow.first()
-                themeSettingsManager.applyThemeMode(mode)
-            } catch (e: Exception) {
-                Log.e("MainApplication", "Error setting initial theme", e)
-            }
-        }
+        // Apply cached theme mode immediately from SharedPreferences without blocking main thread on DataStore
+        val cachedMode = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+            .getString("cached_theme_mode", "system") ?: "system"
+        themeSettingsManager.applyThemeMode(cachedMode)
 
-        // Still listen for future changes asynchronously
-        MainScope().launch {
+        // Asynchronously observe future theme preference updates
+        applicationScope.launch {
             themeSettingsManager.themeModeFlow.collect { mode ->
                 themeSettingsManager.applyThemeMode(mode)
             }
         }
+    }
+
+    override fun onTerminate() {
+        super.onTerminate()
+        applicationScope.cancel()
     }
 }

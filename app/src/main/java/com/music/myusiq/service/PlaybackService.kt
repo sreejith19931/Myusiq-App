@@ -716,7 +716,7 @@ class PlaybackService : MediaLibraryService() {
                                     subtitle = "Tap to play all ${allSongs.size} tracks randomly",
                                     artworkUri = shuffleIconUri
                                 )
-                                listOf(shuffleItem) + allSongs.map { it.toMediaItem() }
+                                listOf(shuffleItem) + allSongs.map { it.toMediaItem(parentId = "TRACKS") }
                             }
                             "ARTISTS" -> {
                                 val gridExtras = Bundle().apply {
@@ -778,7 +778,7 @@ class PlaybackService : MediaLibraryService() {
                                 val recentSongs = recentInfo.mapNotNull { info ->
                                     allSongs.find { it.id.toString() == info.songId }
                                 }
-                                recentSongs.map { it.toMediaItem() }
+                                recentSongs.map { it.toMediaItem(parentId = "RECENTLY_PLAYED") }
                             }
                             "FOLDERS" -> {
                                 allSongs.groupBy { song ->
@@ -797,17 +797,17 @@ class PlaybackService : MediaLibraryService() {
                                 when {
                                     parentId.startsWith("ARTIST_", ignoreCase = true) -> {
                                         val artistName = parentId.substring("ARTIST_".length)
-                                        allSongs.filter { it.artist.equals(artistName, ignoreCase = true) }.map { it.toMediaItem() }
+                                        allSongs.filter { it.artist.equals(artistName, ignoreCase = true) }.map { it.toMediaItem(parentId = parentId) }
                                     }
                                     parentId.startsWith("ALBUM_", ignoreCase = true) -> {
                                         val id = parentId.substring("ALBUM_".length).toLongOrNull() ?: -1L
-                                        allSongs.filter { it.albumId == id }.map { it.toMediaItem() }
+                                        allSongs.filter { it.albumId == id }.map { it.toMediaItem(parentId = parentId) }
                                     }
                                     parentId.startsWith("PLAYLIST_", ignoreCase = true) -> {
                                         val id = parentId.substring("PLAYLIST_".length).toLongOrNull() ?: -1L
                                         val playlistWithTracks = musicRepository.getPlaylistWithTracks(id).firstOrNull()
                                         playlistWithTracks?.tracks?.mapNotNull { track ->
-                                            allSongs.find { it.id.toString() == track.id }?.toMediaItem()
+                                            allSongs.find { it.id.toString() == track.id }?.toMediaItem(parentId = parentId)
                                         } ?: emptyList()
                                     }
                                     parentId.startsWith("FOLDER_", ignoreCase = true) -> {
@@ -815,7 +815,7 @@ class PlaybackService : MediaLibraryService() {
                                         allSongs.filter { song ->
                                             val songParent = File(song.path).parentFile?.absolutePath
                                             songParent.equals(folderPath, ignoreCase = true) || song.path.startsWith(folderPath, ignoreCase = true)
-                                        }.map { it.toMediaItem() }
+                                        }.map { it.toMediaItem(parentId = parentId) }
                                     }
                                     else -> emptyList()
                                 }
@@ -919,8 +919,25 @@ class PlaybackService : MediaLibraryService() {
 
                         for (item in mediaItems) {
                             val id = item.mediaId
+                            if (item.localConfiguration != null && 
+                                !id.startsWith("ALBUM_", ignoreCase = true) && 
+                                !id.startsWith("ARTIST_", ignoreCase = true) && 
+                                !id.startsWith("PLAYLIST_", ignoreCase = true) && 
+                                !id.startsWith("FOLDER_", ignoreCase = true) && 
+                                !id.startsWith("EQ_", ignoreCase = true) && 
+                                !id.equals("SHUFFLE_ALL", ignoreCase = true) && 
+                                !id.equals("ROOT", ignoreCase = true) && 
+                                !id.equals("TRACKS", ignoreCase = true) && 
+                                !id.equals("RECENTLY_PLAYED", ignoreCase = true)
+                            ) {
+                                resolvedItems.add(item)
+                                continue
+                            }
+
                             val reqMeta = item.requestMetadata
                             val searchQuery = reqMeta.searchQuery
+                            val parentId = item.mediaMetadata.extras?.getString("parent_id")
+                                ?: reqMeta.extras?.getString("parent_id")
                             val mediaFocus = reqMeta.extras?.getString(MediaStore.EXTRA_MEDIA_FOCUS)
                             val reqArtist = reqMeta.extras?.getString(MediaStore.EXTRA_MEDIA_ARTIST)
                                 ?: reqMeta.extras?.getString("android.intent.extra.artist")
@@ -960,62 +977,95 @@ class PlaybackService : MediaLibraryService() {
                                         resolvedItems.addAll(allSongs.map { it.toMediaItem() })
                                     }
                                 }
-                                id.equals("RECENTLY_PLAYED", ignoreCase = true) -> {
+                                id.equals("RECENTLY_PLAYED", ignoreCase = true) || parentId.equals("RECENTLY_PLAYED", ignoreCase = true) -> {
                                     val recentInfo = songHistoryDao.getLastPlayedTimestamps().sortedByDescending { it.lastPlayed }
                                     val recentSongs = recentInfo.mapNotNull { info ->
                                         allSongs.find { it.id.toString() == info.songId }
                                     }
-                                    resolvedItems.addAll(recentSongs.map { it.toMediaItem() })
+                                    resolvedItems.addAll(recentSongs.map { it.toMediaItem(parentId = "RECENTLY_PLAYED") })
                                 }
-                                id.startsWith("ARTIST_", ignoreCase = true) -> {
-                                    val artistName = id.substring("ARTIST_".length)
+                                id.startsWith("ARTIST_", ignoreCase = true) || parentId?.startsWith("ARTIST_", ignoreCase = true) == true -> {
+                                    val pId = if (id.startsWith("ARTIST_", ignoreCase = true)) id else parentId!!
+                                    val artistName = pId.substring("ARTIST_".length)
                                     val artistSongs = allSongs.filter { it.artist.equals(artistName, ignoreCase = true) }
-                                    resolvedItems.addAll(artistSongs.map { it.toMediaItem() })
+                                    resolvedItems.addAll(artistSongs.map { it.toMediaItem(parentId = pId) })
                                 }
-                                id.startsWith("ALBUM_", ignoreCase = true) -> {
-                                    val albumId = id.substring("ALBUM_".length).toLongOrNull() ?: -1L
+                                id.startsWith("ALBUM_", ignoreCase = true) || parentId?.startsWith("ALBUM_", ignoreCase = true) == true -> {
+                                    val pId = if (id.startsWith("ALBUM_", ignoreCase = true)) id else parentId!!
+                                    val albumId = pId.substring("ALBUM_".length).toLongOrNull() ?: -1L
                                     val albumSongs = allSongs.filter { it.albumId == albumId }
-                                    resolvedItems.addAll(albumSongs.map { it.toMediaItem() })
+                                    resolvedItems.addAll(albumSongs.map { it.toMediaItem(parentId = pId) })
                                 }
-                                id.startsWith("PLAYLIST_", ignoreCase = true) -> {
-                                    val playlistId = id.substring("PLAYLIST_".length).toLongOrNull() ?: -1L
+                                id.startsWith("PLAYLIST_", ignoreCase = true) || parentId?.startsWith("PLAYLIST_", ignoreCase = true) == true -> {
+                                    val pId = if (id.startsWith("PLAYLIST_", ignoreCase = true)) id else parentId!!
+                                    val playlistId = pId.substring("PLAYLIST_".length).toLongOrNull() ?: -1L
                                     val playlistWithTracks = musicRepository.getPlaylistWithTracks(playlistId).firstOrNull()
                                     playlistWithTracks?.tracks?.forEach { track ->
                                         allSongs.find { it.id.toString() == track.id }?.let {
-                                            resolvedItems.add(it.toMediaItem())
+                                            resolvedItems.add(it.toMediaItem(parentId = pId))
                                         }
                                     }
                                 }
-                                id.startsWith("FOLDER_", ignoreCase = true) -> {
-                                    val folderPath = id.substring("FOLDER_".length)
+                                id.startsWith("FOLDER_", ignoreCase = true) || parentId?.startsWith("FOLDER_", ignoreCase = true) == true -> {
+                                    val pId = if (id.startsWith("FOLDER_", ignoreCase = true)) id else parentId!!
+                                    val folderPath = pId.substring("FOLDER_".length)
                                     val folderSongs = allSongs.filter { song ->
                                         val songParent = File(song.path).parentFile?.absolutePath
                                         songParent.equals(folderPath, ignoreCase = true) || song.path.startsWith(folderPath, ignoreCase = true)
                                     }
-                                    resolvedItems.addAll(folderSongs.map { it.toMediaItem() })
+                                    resolvedItems.addAll(folderSongs.map { it.toMediaItem(parentId = pId) })
+                                }
+                                parentId.equals("TRACKS", ignoreCase = true) -> {
+                                    resolvedItems.addAll(allSongs.map { it.toMediaItem(parentId = "TRACKS") })
                                 }
                                 else -> {
-                                    val foundSong = allSongs.find { it.id.toString() == id }
-                                    if (foundSong != null) {
-                                        resolvedItems.add(foundSong.toMediaItem())
+                                    val currentQueueCount = withContext(Dispatchers.Main) { exoPlayer.mediaItemCount }
+                                    val currentQueueIds = withContext(Dispatchers.Main) {
+                                        (0 until currentQueueCount).map { exoPlayer.getMediaItemAt(it).mediaId }
+                                    }
+                                    if (currentQueueIds.contains(id)) {
+                                        val existingQueue = withContext(Dispatchers.Main) {
+                                            (0 until currentQueueCount).map { exoPlayer.getMediaItemAt(it) }
+                                        }
+                                        resolvedItems.addAll(existingQueue)
                                     } else {
-                                        val voiceResults = performSmartVoiceSearch(id, allSongs = allSongs)
-                                        if (voiceResults.isNotEmpty()) {
-                                            resolvedItems.addAll(voiceResults.map { it.toMediaItem() })
-                                        } else if (item.localConfiguration != null) {
-                                            resolvedItems.add(item)
+                                        val foundSong = allSongs.find { it.id.toString() == id }
+                                        if (foundSong != null) {
+                                            resolvedItems.add(foundSong.toMediaItem())
+                                        } else {
+                                            val voiceResults = performSmartVoiceSearch(id, allSongs = allSongs)
+                                            if (voiceResults.isNotEmpty()) {
+                                                resolvedItems.addAll(voiceResults.map { it.toMediaItem() })
+                                            } else if (item.localConfiguration != null) {
+                                                resolvedItems.add(item)
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
-                        future.set(resolvedItems)
+                        val targetId = mediaItems.firstOrNull()?.mediaId
+                        val finalResolved = windowMediaItems(resolvedItems, targetId)
+                        future.set(finalResolved)
                     } catch (e: Exception) {
                         Log.e("PlaybackService", "Error in onAddMediaItems", e)
                         future.set(emptyList())
                     }
                 }
                 return future
+            }
+
+            private fun windowMediaItems(items: List<MediaItem>, targetMediaId: String? = null, maxQueueSize: Int = 1000): List<MediaItem> {
+                if (items.size <= maxQueueSize) return items
+                var targetIndex = 0
+                if (!targetMediaId.isNullOrBlank()) {
+                    val idx = items.indexOfFirst { it.mediaId == targetMediaId }
+                    if (idx != -1) targetIndex = idx
+                }
+                val halfWindow = maxQueueSize / 2
+                val winStart = (targetIndex - halfWindow).coerceAtLeast(0)
+                val winEnd = (targetIndex + halfWindow).coerceAtMost(items.size)
+                return items.subList(winStart, winEnd)
             }
 
             override fun onSearch(
@@ -1398,6 +1448,7 @@ class PlaybackService : MediaLibraryService() {
                         persistence.saveLastSongPath(path)
                     }
                 }
+                savePlaybackState()
 
                 updateWidgets()
                 updateMediaSessionCustomLayout()
@@ -1407,6 +1458,7 @@ class PlaybackService : MediaLibraryService() {
             
             override fun onPositionDiscontinuity(oldPosition: Player.PositionInfo, newPosition: Player.PositionInfo, reason: Int) {
                 if (exoPlayer !== player) return
+                savePlaybackState()
                 if (reason == Player.DISCONTINUITY_REASON_SEEK) {
                     startPlaybackMonitoring()
                 }
@@ -1457,6 +1509,7 @@ class PlaybackService : MediaLibraryService() {
             override fun onTimelineChanged(timeline: androidx.media3.common.Timeline, reason: Int) {
                 if (exoPlayer !== player) return
                 updateWidgets()
+                savePlaybackState()
             }
 
             override fun onPlayerError(error: PlaybackException) {
@@ -1794,67 +1847,112 @@ class PlaybackService : MediaLibraryService() {
         val savedQueuePaths = persistence.getSavedQueuePaths()
         val lastPath = persistence.lastSongPath.firstOrNull()
         val lastPos = persistence.lastPosition.firstOrNull() ?: 0L
-        
-        if (savedQueuePaths.isEmpty() && lastPath == null) return null
 
         val allSongs = musicRepository.getSongs(filterShortAudio = false)
+        if (allSongs.isEmpty()) return null
+
         val restoredQueue = mutableListOf<MediaItem>()
-        
+
         if (savedQueuePaths.isNotEmpty()) {
             for (path in savedQueuePaths) {
                 val normSaved = PlatformUtils.normalizePath(path)
                 var found = allSongs.find { PlatformUtils.normalizePath(it.path) == normSaved }
-                
+
                 if (found == null) {
                     val fileName = File(path).name
                     found = allSongs.find { File(it.path).name == fileName }
                 }
-                
+
                 found?.let { restoredQueue.add(it.toMediaItem()) }
             }
         }
 
         var startIndex = 0
-        if (lastPath != null) {
+        if (lastPath != null && restoredQueue.isNotEmpty()) {
             val normLast = PlatformUtils.normalizePath(lastPath)
-            val idx = restoredQueue.indexOfFirst { 
-                it.mediaMetadata.extras?.getString("path")?.let { p -> PlatformUtils.normalizePath(p) } == normLast 
+            val idx = restoredQueue.indexOfFirst {
+                it.mediaMetadata.extras?.getString("path")?.let { p -> PlatformUtils.normalizePath(p) } == normLast
             }
             if (idx != -1) {
                 startIndex = idx
             } else {
                 val lastFileName = File(lastPath).name
-                val idx2 = restoredQueue.indexOfFirst { 
-                    it.mediaMetadata.extras?.getString("path")?.let { p -> File(p).name } == lastFileName 
+                val idx2 = restoredQueue.indexOfFirst {
+                    it.mediaMetadata.extras?.getString("path")?.let { p -> File(p).name } == lastFileName
                 }
                 if (idx2 != -1) startIndex = idx2
             }
         }
 
-        // If queue was empty but we have a last path, try to restore at least that
-        if (restoredQueue.isEmpty() && lastPath != null) {
-            val normLast = PlatformUtils.normalizePath(lastPath)
-            val found = allSongs.find { PlatformUtils.normalizePath(it.path) == normLast } 
-                ?: allSongs.find { File(it.path).name == File(lastPath).name }
-            
-            found?.let { 
-                restoredQueue.add(it.toMediaItem())
-                startIndex = 0
+        // Fallback: If saved queue was empty or unmatched, but we have allSongs
+        if (restoredQueue.isEmpty() && allSongs.isNotEmpty()) {
+            allSongs.forEach { restoredQueue.add(it.toMediaItem()) }
+            if (lastPath != null) {
+                val normLast = PlatformUtils.normalizePath(lastPath)
+                val idx = restoredQueue.indexOfFirst {
+                    it.mediaMetadata.extras?.getString("path")?.let { p -> PlatformUtils.normalizePath(p) } == normLast
+                }
+                if (idx != -1) {
+                    startIndex = idx
+                } else {
+                    val lastFileName = File(lastPath).name
+                    val idx2 = restoredQueue.indexOfFirst {
+                        it.mediaMetadata.extras?.getString("path")?.let { p -> File(p).name } == lastFileName
+                    }
+                    if (idx2 != -1) startIndex = idx2
+                }
             }
         }
 
-        return if (restoredQueue.isNotEmpty()) {
-            MediaSession.MediaItemsWithStartPosition(restoredQueue, startIndex, lastPos)
+        // Window large queues to prevent OutOfMemoryError in ExoPlayer & MediaSession
+        val maxQueueSize = 1000
+        val finalQueue: List<MediaItem>
+        val finalStartIndex: Int
+
+        if (restoredQueue.size > maxQueueSize) {
+            val halfWindow = maxQueueSize / 2
+            val winStart = (startIndex - halfWindow).coerceAtLeast(0)
+            val winEnd = (startIndex + halfWindow).coerceAtMost(restoredQueue.size)
+            finalQueue = restoredQueue.subList(winStart, winEnd)
+            finalStartIndex = startIndex - winStart
+        } else {
+            finalQueue = restoredQueue
+            finalStartIndex = startIndex
+        }
+
+        return if (finalQueue.isNotEmpty()) {
+            MediaSession.MediaItemsWithStartPosition(finalQueue, finalStartIndex, lastPos)
         } else null
     }
 
     private fun savePlaybackState() {
-        val song = exoPlayer.currentMediaItem
-        val pos = exoPlayer.currentPosition
-        serviceScope.launch(Dispatchers.IO) {
-            song?.mediaMetadata?.extras?.getString("path")?.let { path ->
-                persistence.saveLastSongPath(path)
-                persistence.saveLastPosition(pos)
+        serviceScope.launch(Dispatchers.Main) {
+            val song = exoPlayer.currentMediaItem
+            val pos = exoPlayer.currentPosition
+            val queueCount = exoPlayer.mediaItemCount
+            val queuePaths = mutableListOf<String>()
+            for (i in 0 until queueCount) {
+                val item = exoPlayer.getMediaItemAt(i)
+                val path = item.mediaMetadata.extras?.getString("path")
+                    ?: item.requestMetadata.mediaUri?.path
+                    ?: item.localConfiguration?.uri?.path
+                if (!path.isNullOrBlank()) {
+                    queuePaths.add(path)
+                }
+            }
+
+            val currentPath = song?.mediaMetadata?.extras?.getString("path")
+                ?: song?.requestMetadata?.mediaUri?.path
+                ?: song?.localConfiguration?.uri?.path
+
+            withContext(Dispatchers.IO) {
+                if (!currentPath.isNullOrBlank()) {
+                    persistence.saveLastSongPath(currentPath)
+                    persistence.saveLastPosition(pos)
+                }
+                if (queuePaths.isNotEmpty()) {
+                    persistence.saveCurrentQueue(queuePaths)
+                }
             }
         }
     }
@@ -1864,9 +1962,13 @@ class PlaybackService : MediaLibraryService() {
             val restoredData = loadSavedQueueData()
             if (restoredData != null) {
                 withContext(Dispatchers.Main) {
-                    playerA.setMediaItems(restoredData.mediaItems, restoredData.startIndex, restoredData.startPositionMs)
-                    activePlayerReference = WeakReference(playerA)
-                    mediaSession?.player = playerA
+                    if (playerA.mediaItemCount == 0 && playerB.mediaItemCount == 0) {
+                        playerA.setMediaItems(restoredData.mediaItems, restoredData.startIndex, restoredData.startPositionMs)
+                        playerA.playWhenReady = false
+                        playerA.prepare()
+                        activePlayerReference = WeakReference(playerA)
+                        mediaSession?.player = playerA
+                    }
                 }
             }
         }

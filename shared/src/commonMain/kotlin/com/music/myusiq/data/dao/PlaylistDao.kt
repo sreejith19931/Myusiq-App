@@ -28,6 +28,10 @@ interface PlaylistDao {
     suspend fun addTrackToPlaylist(crossRef: PlaylistTrackCrossRef)
     @Query("DELETE FROM playlist_track_cross_ref WHERE playlistId = :playlistId AND trackId = :trackId")
     suspend fun removeTrackFromPlaylist(playlistId: Long, trackId: String)
+    @Query("DELETE FROM playlist_track_cross_ref WHERE trackId = :trackId")
+    suspend fun removeTrackFromAllPlaylists(trackId: String)
+    @Query("DELETE FROM library_tracks WHERE id = :trackId")
+    suspend fun deleteLibraryTrack(trackId: String)
     @Query("SELECT * FROM playlists ORDER BY name ASC")
     fun getAllPlaylists(): Flow<List<Playlist>>
 

@@ -443,6 +443,14 @@ object UpdateManager {
         kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
             try {
                 if (!wearApkFile.exists() || wearApkFile.length() == 0L) return@launch
+
+                val nodeClient = com.google.android.gms.wearable.Wearable.getNodeClient(context)
+                val nodes = com.google.android.gms.tasks.Tasks.await(nodeClient.connectedNodes)
+                if (nodes.isEmpty()) {
+                    Log.w(TAG, "No connected Wear OS nodes found to push watch update.")
+                    return@launch
+                }
+
                 val bytes = wearApkFile.readBytes()
                 val asset = com.google.android.gms.wearable.Asset.createFromBytes(bytes)
                 val request = com.google.android.gms.wearable.PutDataMapRequest.create("/myusiq/wear_apk").apply {
@@ -451,7 +459,7 @@ object UpdateManager {
                 }.asPutDataRequest().setUrgent()
 
                 com.google.android.gms.wearable.Wearable.getDataClient(context).putDataItem(request)
-                Log.d(TAG, "Transferred Wear APK asset to Wearable DataClient (${bytes.size} bytes)")
+                Log.d(TAG, "Transferred Wear APK asset to ${nodes.size} connected Wear OS node(s) (${bytes.size} bytes)")
                 withContext(Dispatchers.Main) {
                     Toast.makeText(context, "Watch update sent to your watch!", Toast.LENGTH_SHORT).show()
                 }

@@ -168,7 +168,7 @@ class AppearanceSettingsFragment : Fragment(R.layout.fragment_settings_appearanc
             val newStyle = if (isChecked) "palette_midnight" else "system_colors"
             requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE).edit()
                 .putString("cached_color_style", newStyle)
-                .commit()
+                .apply()
             viewLifecycleOwner.lifecycleScope.launch {
                 if (isChecked) {
                     themeManager.saveColorStyle("palette_midnight")
@@ -187,7 +187,7 @@ class AppearanceSettingsFragment : Fragment(R.layout.fragment_settings_appearanc
                     if (current != styleKey) {
                         requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE).edit()
                             .putString("cached_color_style", styleKey)
-                            .commit()
+                            .apply()
                         themeManager.saveColorStyle(styleKey)
                         themeManager.saveUseAlbumArtTheming(false)
                         activity?.recreate()
@@ -202,7 +202,7 @@ class AppearanceSettingsFragment : Fragment(R.layout.fragment_settings_appearanc
                 if (isChecked) {
                     requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE).edit()
                         .putString("cached_color_style", "system_colors")
-                        .commit()
+                        .apply()
                     themeManager.saveColorStyle("system_colors")
                     themeManager.saveUseAlbumArtTheming(true)
                     activity?.recreate()
@@ -241,7 +241,7 @@ class AppearanceSettingsFragment : Fragment(R.layout.fragment_settings_appearanc
             if (isInitialSetup) return@setOnCheckedChangeListener
             requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE).edit()
                 .putBoolean("cached_use_custom_font", isChecked)
-                .commit()
+                .apply()
             viewLifecycleOwner.lifecycleScope.launch {
                 themeManager.saveUseCustomFont(isChecked)
                 activity?.recreate()

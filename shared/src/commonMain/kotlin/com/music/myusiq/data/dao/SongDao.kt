@@ -15,6 +15,9 @@ interface SongDao {
     @Query("SELECT * FROM song_overrides")
     suspend fun getAllOverrides(): List<SongOverride>
 
+    @Query("SELECT * FROM song_overrides WHERE path = :path")
+    suspend fun getOverrideForPath(path: String): SongOverride?
+
     @Query("DELETE FROM song_overrides WHERE path = :path")
     suspend fun deleteOverride(path: String)
 

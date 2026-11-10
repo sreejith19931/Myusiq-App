@@ -59,13 +59,41 @@
                         android:layout_marginBottom="32dp"
                         tools:text="Artist Name" />
 
-                    <com.google.android.material.slider.RangeSlider
-                        android:id="@+id/rangeSliderTrim"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:valueFrom="0.0"
-                        android:valueTo="100.0"
-                        app:values="@array/initial_range_values"
+                        android:orientation="horizontal"
+                        android:gravity="center"
+                        android:layout_marginBottom="12dp">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnZoomOut"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Zoom Out (-)"
+                            android:layout_marginEnd="8dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnZoomReset"
+                            style="@style/Widget.Material3.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="1x"
+                            android:layout_marginEnd="8dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnZoomIn"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Zoom In (+)" />
+                    </LinearLayout>
+
+                    <com.music.myusiq.ui.components.TrimmerWaveformView
+                        android:id="@+id/trimmerWaveformView"
+                        android:layout_width="match_parent"
+                        android:layout_height="140dp"
                         android:layout_marginBottom="32dp" />
 
                     <LinearLayout
@@ -114,6 +142,29 @@
                                 android:textStyle="bold"
                                 tools:text="00:00" />
                         </LinearLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:layout_marginTop="20dp"
+                        android:layout_marginBottom="16dp">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Selected Clip Duration"
+                            android:textAppearance="?attr/textAppearanceLabelSmall"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                        <TextView
+                            android:id="@+id/tvSelectionDuration"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            android:textStyle="bold"
+                            android:textColor="?attr/colorPrimary"
+                            tools:text="03:21" />
                     </LinearLayout>
 
                     <Space

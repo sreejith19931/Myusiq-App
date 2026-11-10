@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 13,
-    "identityHash": "bfff47fd0ab8d2c21a973e41a388c7df",
+    "identityHash": "1f9377684a0abd660d8887d2acf7ab4f",
     "entities": [
       {
         "tableName": "songs",
@@ -249,7 +249,18 @@
             "playlistId",
             "trackId"
           ]
-        }
+        },
+        "indices": [
+          {
+            "name": "index_playlist_track_cross_ref_trackId",
+            "unique": false,
+            "columnNames": [
+              "trackId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_playlist_track_cross_ref_trackId` ON `${TABLE_NAME}` (`trackId`)"
+          }
+        ]
       },
       {
         "tableName": "song_overrides",
@@ -356,7 +367,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'bfff47fd0ab8d2c21a973e41a388c7df')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '1f9377684a0abd660d8887d2acf7ab4f')"
     ]
   }
 }

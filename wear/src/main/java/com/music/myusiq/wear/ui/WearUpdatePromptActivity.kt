@@ -2,7 +2,6 @@ package com.music.myusiq.wear.ui
 
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
@@ -58,7 +57,7 @@ class WearUpdatePromptActivity : ComponentActivity() {
                 return
             }
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !packageManager.canRequestPackageInstalls()) {
+            if (!packageManager.canRequestPackageInstalls()) {
                 Toast.makeText(this, "Please allow Myusiq to install apps in Settings", Toast.LENGTH_LONG).show()
                 val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
                     data = Uri.parse("package:$packageName")
@@ -68,15 +67,11 @@ class WearUpdatePromptActivity : ComponentActivity() {
                 return
             }
 
-            val installUri: Uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                FileProvider.getUriForFile(
-                    this,
-                    "$packageName.fileprovider",
-                    file
-                )
-            } else {
-                Uri.fromFile(file)
-            }
+            val installUri: Uri = FileProvider.getUriForFile(
+                this,
+                "$packageName.fileprovider",
+                file
+            )
 
             val installIntent = Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(installUri, "application/vnd.android.package-archive")

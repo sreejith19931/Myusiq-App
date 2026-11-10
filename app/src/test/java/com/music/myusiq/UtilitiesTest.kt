@@ -119,4 +119,86 @@ class UtilitiesTest {
         val isMessy = isUnknownArtist || hasFileExt || isGenericTitle || hasClutter
         assertTrue("Messy track with unknown artist and .mp3 in title should be flagged as messy", isMessy)
     }
+
+    @Test
+    fun testMetadataSanitizerUseCase_SanitizesMessySongAndExtractsArtistFromTitle() {
+        val sanitizer = com.music.myusiq.domain.usecase.MetadataSanitizerUseCase()
+        val messySong = com.music.myusiq.domain.models.Song(
+            id = 3L,
+            title = "Coldplay - Viva La Vida (Official Video) [4K] [y2mate.is].mp3",
+            artist = "Unknown Artist",
+            path = "/storage/emulated/0/Music/01_coldplay_viva_la_vida_y2mate.mp3",
+            duration = 240000,
+            albumId = 3L,
+            album = "<unknown>",
+            genre = "",
+            dateAdded = 0L,
+            size = 4000000L
+        )
+
+        val sanitized = sanitizer.sanitize(messySong, "2008", messySong.path, "240", 3L)
+
+        assertEquals("Viva La Vida", sanitized.title)
+        assertEquals("Coldplay", sanitized.artist)
+        assertEquals("Unknown Album", sanitized.album)
+    }
+
+    @Test
+    fun testYouTubeTitleCleaner_CleanArtistAndAlbum() {
+        val rawArtist = "  Unknown Artist (v.a.)  "
+        val rawAlbum = "  Unknown Album [audio]  "
+
+        assertEquals("Unknown Artist", YouTubeTitleCleaner.cleanArtist(rawArtist))
+        assertEquals("Unknown Album", YouTubeTitleCleaner.cleanAlbum(rawAlbum))
+
+        val validArtist = " Coldplay_Official_ "
+        val validAlbum = " Parachutes_Album_ "
+
+        assertEquals("Coldplay Official", YouTubeTitleCleaner.cleanArtist(validArtist))
+        assertEquals("Parachutes Album", YouTubeTitleCleaner.cleanAlbum(validAlbum))
+    }
+
+    @Test
+    fun testYouTubeTitleCleaner_PreservesUnicodeLetters() {
+        val japaneseTitle = "01 - 宇多田ヒカル - First Love (Official Audio).mp3"
+        val (artist, title) = YouTubeTitleCleaner.cleanAndSplit(japaneseTitle)
+
+        assertEquals("宇多田ヒカル", artist)
+        assertEquals("First Love", title)
+    }
+
+    @Test
+    fun testYouTubeTitleCleaner_FileSharingAlbumNamesSanitized() {
+        val shareMeAlbum = "ShareMe"
+        val shareItAlbum = "SHAREit"
+        val xenderAlbum = "Xender"
+        val snaptubeAlbum = "Snaptube"
+
+        assertTrue(YouTubeTitleCleaner.isGenericAlbumName(shareMeAlbum))
+        assertTrue(YouTubeTitleCleaner.isGenericAlbumName(shareItAlbum))
+        assertTrue(YouTubeTitleCleaner.isGenericAlbumName(xenderAlbum))
+        assertTrue(YouTubeTitleCleaner.isGenericAlbumName(snaptubeAlbum))
+
+        assertEquals("Unknown Album", YouTubeTitleCleaner.cleanAlbum(shareMeAlbum))
+        assertEquals("Unknown Album", YouTubeTitleCleaner.cleanAlbum(shareItAlbum))
+        assertEquals("Unknown Album", YouTubeTitleCleaner.cleanAlbum(xenderAlbum))
+        assertEquals("Unknown Album", YouTubeTitleCleaner.cleanAlbum(snaptubeAlbum))
+
+        val sanitizer = com.music.myusiq.domain.usecase.MetadataSanitizerUseCase()
+        val shareMeSong = com.music.myusiq.domain.models.Song(
+            id = 4L,
+            title = "Shape of You",
+            artist = "Ed Sheeran",
+            path = "/storage/emulated/0/ShareMe/Shape of You.mp3",
+            duration = 233000,
+            albumId = 4L,
+            album = "ShareMe",
+            genre = "",
+            dateAdded = 0L,
+            size = 3500000L
+        )
+
+        val sanitized = sanitizer.sanitize(shareMeSong, "2017", shareMeSong.path, "233", 4L)
+        assertEquals("Unknown Album", sanitized.album)
+    }
 }

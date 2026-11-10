@@ -68,14 +68,14 @@ class ThemeSettingsManager(private val context: Context) {
         context.dataStore.edit { prefs -> prefs[THEME_MODE_KEY] = mode }
         context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE).edit()
             .putString("cached_theme_mode", mode)
-            .commit()
+            .apply()
     }
 
     suspend fun saveColorStyle(style: String) {
         context.dataStore.edit { prefs -> prefs[COLOR_STYLE_KEY] = style }
         context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE).edit()
             .putString("cached_color_style", style)
-            .commit()
+            .apply()
     }
 
     suspend fun saveUseAlbumArtTheming(enabled: Boolean) {

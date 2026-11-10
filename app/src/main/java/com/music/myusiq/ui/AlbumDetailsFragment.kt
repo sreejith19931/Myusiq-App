@@ -77,11 +77,10 @@ class AlbumDetailsFragment : Fragment(R.layout.fragment_tracks) {
         val rv = view.findViewById<RecyclerView>(R.id.rvTracks)
         trackAdapter = TrackAdapter(
             isQueueMode = false,
-            onTrackClicked = { song, imageView ->
+            onTrackClicked = { _, imageView, position ->
                 val list = trackAdapter.currentList.map { it.song }
-                val index = list.indexOf(song)
-                if (index != -1) {
-                    (activity as? MainActivity)?.playFromView(list, index, imageView)
+                if (position in list.indices) {
+                    (activity as? MainActivity)?.playFromView(list, position, imageView)
                 }
             },
             onOptionSelected = { song, optionId ->

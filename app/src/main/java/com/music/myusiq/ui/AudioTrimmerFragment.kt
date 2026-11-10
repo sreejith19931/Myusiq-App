@@ -15,7 +15,6 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.slider.RangeSlider
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -35,6 +34,8 @@ import java.io.File
 import com.music.myusiq.domain.models.Song
 import com.music.myusiq.ui.viewmodels.PlaybackViewModel
 import com.music.myusiq.utils.AudioTrimmerUtil
+import com.music.myusiq.utils.WaveformExtractor
+import com.music.myusiq.ui.components.TrimmerWaveformView
 import com.music.myusiq.R
 
 class AudioTrimmerFragment : Fragment(R.layout.fragment_audio_trimmer) {
@@ -43,17 +44,27 @@ class AudioTrimmerFragment : Fragment(R.layout.fragment_audio_trimmer) {
     private var localPlayer: ExoPlayer? = null
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    private var currentStartMs = 0f
+    private var currentEndMs = 0f
+    private var zoomFromMs = 0f
+    private var zoomToMs = 0f
+    private var durationMs = 1f
+
     private val progressRunnable = object : Runnable {
         override fun run() {
             localPlayer?.let { player ->
+                val waveformView = view?.findViewById<TrimmerWaveformView>(R.id.trimmerWaveformView)
                 if (player.isPlaying) {
                     val currentPos = player.currentPosition
-                    val rangeSlider = view?.findViewById<RangeSlider>(R.id.rangeSliderTrim)
-                    val endMs = rangeSlider?.values?.get(1) ?: Float.MAX_VALUE
-                    if (currentPos >= endMs) {
+                    waveformView?.setPlaybackPosition(currentPos, durationMs)
+
+                    if (currentPos >= currentEndMs) {
                         player.pause()
-                        player.seekTo(rangeSlider?.values?.get(0)?.toLong() ?: 0L)
+                        player.seekTo(currentStartMs.toLong())
+                        waveformView?.setPlaybackPosition(-1L, durationMs)
                     }
+                } else {
+                    waveformView?.setPlaybackPosition(-1L, durationMs)
                 }
             }
             mainHandler.postDelayed(this, 100)
@@ -62,7 +73,7 @@ class AudioTrimmerFragment : Fragment(R.layout.fragment_audio_trimmer) {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        viewModel.pausePlayback() // Explicitly pause main playback
+        viewModel.pausePlayback()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -79,16 +90,16 @@ class AudioTrimmerFragment : Fragment(R.layout.fragment_audio_trimmer) {
 
         val tvTitle = view.findViewById<TextView>(R.id.tvTrimTrackTitle)
         val tvArtist = view.findViewById<TextView>(R.id.tvTrimTrackArtist)
-        val rangeSlider = view.findViewById<RangeSlider>(R.id.rangeSliderTrim)
-
         val tvStart = view.findViewById<TextView>(R.id.tvTrimStart)
         val tvEnd = view.findViewById<TextView>(R.id.tvTrimEnd)
+        val tvDuration = view.findViewById<TextView>(R.id.tvSelectionDuration)
         val btnPreview = view.findViewById<FloatingActionButton>(R.id.btnPreviewTrim)
-            val btnSave = view.findViewById<MaterialButton>(R.id.btnSaveTrim)
-            btnSave.text = getString(R.string.trim_audio)
+        val btnSave = view.findViewById<MaterialButton>(R.id.btnSaveTrim)
+        btnSave.text = getString(R.string.trim_audio)
 
-            val switchFadeIn = view.findViewById<MaterialSwitch>(R.id.switchFadeIn)
-            val switchFadeOut = view.findViewById<MaterialSwitch>(R.id.switchFadeOut)
+        val switchFadeIn = view.findViewById<MaterialSwitch>(R.id.switchFadeIn)
+        val switchFadeOut = view.findViewById<MaterialSwitch>(R.id.switchFadeOut)
+        val waveformView = view.findViewById<TrimmerWaveformView>(R.id.trimmerWaveformView)
 
         localPlayer = ExoPlayer.Builder(requireContext()).build()
 
@@ -104,41 +115,77 @@ class AudioTrimmerFragment : Fragment(R.layout.fragment_audio_trimmer) {
             localPlayer?.setMediaItem(mediaItem)
             localPlayer?.prepare()
 
+            durationMs = song.duration.toFloat()
+            currentStartMs = 0f
+            currentEndMs = durationMs
+            zoomFromMs = 0f
+            zoomToMs = durationMs
 
-            val durationMs = song.duration.toFloat()
-            rangeSlider.valueFrom = 0f
-            rangeSlider.valueTo = durationMs
-            rangeSlider.values = listOf(0f, durationMs)
+            updateTimeLabels(currentStartMs, currentEndMs, tvStart, tvEnd, tvDuration)
 
-            updateTimeLabels(0f, durationMs, tvStart, tvEnd)
+            waveformView.setSelectionRange(currentStartMs, currentEndMs, durationMs)
+            waveformView.setZoomRange(zoomFromMs, zoomToMs, durationMs)
 
-            rangeSlider.setLabelFormatter { value ->
-                formatTime(value.toInt())
+            waveformView.onRangeChangedListener = { start, end ->
+                currentStartMs = start
+                currentEndMs = end
+                updateTimeLabels(start, end, tvStart, tvEnd, tvDuration)
             }
 
-            rangeSlider.addOnSliderTouchListener(object : RangeSlider.OnSliderTouchListener {
-                override fun onStartTrackingTouch(slider: RangeSlider) {
-                    localPlayer?.pause()
-                }
+            waveformView.onSeekListener = { seekTime ->
+                localPlayer?.pause()
+                localPlayer?.seekTo(seekTime.toLong())
+                btnPreview.setImageResource(R.drawable.ic_play)
+                waveformView.setPlaybackPosition(seekTime.toLong(), durationMs)
+            }
 
-                override fun onStopTrackingTouch(slider: RangeSlider) {
-                    val startMs = slider.values[0].toLong()
-                    localPlayer?.seekTo(startMs)
-                    localPlayer?.play()
-                    btnPreview.setImageResource(R.drawable.ic_pause)
-                }
-            })
+            val btnZoomIn = view.findViewById<MaterialButton>(R.id.btnZoomIn)
+            val btnZoomOut = view.findViewById<MaterialButton>(R.id.btnZoomOut)
+            val btnZoomReset = view.findViewById<MaterialButton>(R.id.btnZoomReset)
 
-            rangeSlider.addOnChangeListener { slider, value, fromUser ->
-                val values = slider.values
-                updateTimeLabels(values[0], values[1], tvStart, tvEnd)
-                if (fromUser) {
-                    localPlayer?.pause()
-                    localPlayer?.seekTo(value.toLong())
-                    btnPreview.setImageResource(R.drawable.ic_play)
+            var zoomLevel = 1f
+            fun applyZoom() {
+                val center = (currentStartMs + currentEndMs) / 2f
+                val halfSpan = (durationMs / 2f) / zoomLevel
+                zoomFromMs = (center - halfSpan).coerceAtLeast(0f)
+                zoomToMs = (center + halfSpan).coerceAtMost(durationMs)
+                
+                if (zoomToMs - zoomFromMs < 1000f) return
+
+                btnZoomReset.text = "${zoomLevel.toInt()}x"
+                waveformView.setZoomRange(zoomFromMs, zoomToMs, durationMs)
+            }
+
+            btnZoomIn.setOnClickListener {
+                if (zoomLevel < 16f) {
+                    zoomLevel *= 2f
+                    applyZoom()
                 }
             }
 
+            btnZoomOut.setOnClickListener {
+                if (zoomLevel > 1f) {
+                    zoomLevel /= 2f
+                    applyZoom()
+                }
+            }
+
+            btnZoomReset.setOnClickListener {
+                zoomLevel = 1f
+                zoomFromMs = 0f
+                zoomToMs = durationMs
+                btnZoomReset.text = "1x"
+                waveformView.setZoomRange(zoomFromMs, zoomToMs, durationMs)
+            }
+
+            lifecycleScope.launch(Dispatchers.IO) {
+                val waveform = WaveformExtractor.extractWaveform(requireContext(), File(song.path).toUri())
+                withContext(Dispatchers.Main) {
+                    if (isAdded) {
+                        waveformView.setWaveform(waveform)
+                    }
+                }
+            }
 
             btnPreview.setOnClickListener {
                 localPlayer?.let { player ->
@@ -146,8 +193,8 @@ class AudioTrimmerFragment : Fragment(R.layout.fragment_audio_trimmer) {
                         player.pause()
                         btnPreview.setImageResource(R.drawable.ic_play)
                     } else {
-                        val startMs = rangeSlider.values[0].toLong()
-                        if (player.currentPosition < startMs || (player.currentPosition >= rangeSlider.values[1].toLong())) {
+                        val startMs = currentStartMs.toLong()
+                        if (player.currentPosition < startMs || (player.currentPosition >= currentEndMs.toLong())) {
                             player.seekTo(startMs)
                         }
                         player.play()
@@ -167,9 +214,8 @@ class AudioTrimmerFragment : Fragment(R.layout.fragment_audio_trimmer) {
 
     private fun showSaveOptionsDialog(fadeIn: Boolean, fadeOut: Boolean) {
         val song = currentSong ?: return
-        val rangeSlider = view?.findViewById<RangeSlider>(R.id.rangeSliderTrim) ?: return
-        val startMs = rangeSlider.values[0].toInt()
-        val endMs = rangeSlider.values[1].toInt()
+        val startMs = currentStartMs.toInt()
+        val endMs = currentEndMs.toInt()
 
         val originalFile = File(song.path)
         val defaultName = "trimmed_${originalFile.nameWithoutExtension}"
@@ -213,7 +259,6 @@ class AudioTrimmerFragment : Fragment(R.layout.fragment_audio_trimmer) {
                     return@launch
                 }
 
-                // If replace, save to a temporary file in cache first
                 val outputFile = if (replace) {
                     File(requireContext().cacheDir, "trimmed_temp_${System.currentTimeMillis()}.${originalFile.extension}")
                 } else {
@@ -223,8 +268,7 @@ class AudioTrimmerFragment : Fragment(R.layout.fragment_audio_trimmer) {
                     File(trimmedDir, "$newName.${originalFile.extension}")
                 }
 
-                // Actual trimming logic
-                val success = AudioTrimmerUtil.trimAudio(originalFile.absolutePath, outputFile.absolutePath, startMs, endMs)
+                val success = AudioTrimmerUtil.trimAudio(originalFile.absolutePath, outputFile.absolutePath, startMs, endMs, fadeIn, fadeOut)
 
                 if (!success) {
                     withContext(Dispatchers.Main) {
@@ -234,7 +278,6 @@ class AudioTrimmerFragment : Fragment(R.layout.fragment_audio_trimmer) {
                 }
 
                 if (replace) {
-                    // Use ContentResolver to overwrite the original file in Scoped Storage
                     val uri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id)
                     try {
                         requireContext().contentResolver.openOutputStream(uri, "rwt")?.use { output ->
@@ -242,18 +285,13 @@ class AudioTrimmerFragment : Fragment(R.layout.fragment_audio_trimmer) {
                                 input.copyTo(output)
                             }
                         }
-                        outputFile.delete() // Clean up temp
-                        
-                        Log.d("AudioTrimmer", "Original file replaced via MediaStore URI: $uri")
+                        outputFile.delete()
                     } catch (e: SecurityException) {
-                        // On Android 11+, we might need to request write permission for this specific URI
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                             val pendingIntent = MediaStore.createWriteRequest(requireContext().contentResolver, listOf(uri))
                             withContext(Dispatchers.Main) {
-                                // We'd need to store the pending state and retry after permission
-                                // For now, we'll use the existing ViewModel mechanism if available
                                 Toast.makeText(requireContext(), "Permission needed to replace file. Try again after granting.", Toast.LENGTH_LONG).show()
-                                viewModel.requestEdit(pendingIntent) // Requesting write permission
+                                viewModel.requestEdit(pendingIntent)
                             }
                         }
                         return@launch
@@ -265,7 +303,6 @@ class AudioTrimmerFragment : Fragment(R.layout.fragment_audio_trimmer) {
                     val fadeInfo = if (fadeIn || fadeOut) " (Applied fades)" else ""
                     Toast.makeText(requireContext(), "Trimmed audio $msg$fadeInfo!", Toast.LENGTH_SHORT).show()
                     
-                    // Scan the file
                     val pathToScan = if (replace) song.path else outputFile.absolutePath
                     MediaScannerConnection.scanFile(requireContext(), arrayOf(pathToScan), null) { _, _ ->
                         viewModel.loadSongs(force = true)
@@ -281,8 +318,6 @@ class AudioTrimmerFragment : Fragment(R.layout.fragment_audio_trimmer) {
         }
     }
 
-
-
     override fun onDestroyView() {
         super.onDestroyView()
         mainHandler.removeCallbacks(progressRunnable)
@@ -290,9 +325,11 @@ class AudioTrimmerFragment : Fragment(R.layout.fragment_audio_trimmer) {
         localPlayer = null
     }
 
-    private fun updateTimeLabels(startMs: Float, endMs: Float, tvStart: TextView, tvEnd: TextView) {
+    private fun updateTimeLabels(startMs: Float, endMs: Float, tvStart: TextView, tvEnd: TextView, tvDuration: TextView) {
         tvStart.text = formatTime(startMs.toInt())
         tvEnd.text = formatTime(endMs.toInt())
+        val duration = (endMs - startMs).toInt().coerceAtLeast(0)
+        tvDuration.text = formatTime(duration)
     }
 
     private fun formatTime(ms: Int): String {

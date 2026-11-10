@@ -1,12 +1,13 @@
 package com.music.myusiq.domain.usecase
 
 import com.music.myusiq.domain.models.Song
+import com.music.myusiq.utils.YouTubeTitleCleaner
 
 class MetadataSanitizerUseCase {
 
     /**
-     * Sanitizes a given song object, removing identified source names from fields and aligning with
-     * required caller parameters.
+     * Sanitizes a given song object, cleaning title, artist, and album of web clutter,
+     * track numbers, file extensions, and generic tags before searching for metadata.
      *
      * @param song The original song object containing raw metadata.
      * @param year The year of the track (null safe).
@@ -16,14 +17,31 @@ class MetadataSanitizerUseCase {
      * @return A new Song object with sanitized fields.
      */
     fun sanitize(song: Song, year: String?, path: String?, duration: String?, albumId: Long?): Song {
-        val cleanedTitle = cleanTitle(song.title)
-        val cleanedArtist = cleanArtist(song.artist)
-        val cleanedAlbum = cleanAlbum(song.album)
+        val safePath = path ?: song.path
 
-        // Handle safe parameter values, converting null types to appropriate types
-        // Assuming year and duration should be Int based on compiler error
+        // Check if raw artist is generic/unknown, but raw title contains "Artist - Song Title"
+        val rawArtistIsGeneric = YouTubeTitleCleaner.isGenericArtistName(song.artist)
+        val (splitArtist, splitTitle) = if (rawArtistIsGeneric && song.title.contains("-")) {
+            YouTubeTitleCleaner.cleanAndSplit(song.title)
+        } else {
+            Pair("", "")
+        }
+
+        val rawTitle = if (splitTitle.isNotBlank()) splitTitle else song.title
+        var cleanedTitle = YouTubeTitleCleaner.cleanTitle(rawTitle)
+        if (cleanedTitle.isBlank() && safePath.isNotBlank()) {
+            cleanedTitle = YouTubeTitleCleaner.cleanFilename(safePath)
+        }
+
+        val rawArtist = if (!splitArtist.equals("Unknown Artist", ignoreCase = true) && splitArtist.isNotBlank()) {
+            splitArtist
+        } else {
+            song.artist
+        }
+        val cleanedArtist = YouTubeTitleCleaner.cleanArtist(rawArtist)
+        val cleanedAlbum = YouTubeTitleCleaner.cleanAlbum(song.album)
+
         val safeYear = year?.toIntOrNull() ?: 0
-        val safePath = path ?: ""
         val safeDuration = duration?.toIntOrNull() ?: 0
         val safeAlbumId = albumId ?: 0L
 
@@ -38,22 +56,5 @@ class MetadataSanitizerUseCase {
             duration = safeDuration,
             albumId = safeAlbumId,
         )
-    }
-
-    private fun cleanTitle(title: String?): String {
-        // Remove common junk characters from titles
-        return (title ?: "").replace(Regex("[^a-zA-Z0-9\\s\\-_.,()?'\":]"), "").trim()
-    }
-
-    private fun cleanArtist(artist: String?): String {
-        // Remove common junk characters from artists
-        return (artist ?: "").replace(Regex("[^a-zA-Z0-9\\s\\-_.,()?'\"]"), "")
-                   .trim()
-    }
-
-    private fun cleanAlbum(album: String?): String {
-        // Remove common junk characters from album names
-        return (album ?: "").replace(Regex("[^a-zA-Z0-9\\s\\-_.,()?'\"]"), "")
-                   .trim()
     }
 }

@@ -120,6 +120,8 @@ class MusicRepository(
     suspend fun addTrackToPlaylist(crossRef: PlaylistTrackCrossRef) = playlistDao.addTrackToPlaylist(crossRef)
     suspend fun deletePlaylist(playlistId: Long) = playlistDao.deletePlaylist(playlistId)
     suspend fun removeTrackFromPlaylist(playlistId: Long, trackId: String) = playlistDao.removeTrackFromPlaylist(playlistId, trackId)
+    suspend fun removeTrackFromAllPlaylists(trackId: String) = playlistDao.removeTrackFromAllPlaylists(trackId)
+    suspend fun deleteLibraryTrack(trackId: String) = playlistDao.deleteLibraryTrack(trackId)
     fun getPlaylistWithTracks(playlistId: Long) = playlistDao.getPlaylistWithTracks(playlistId)
 
     suspend fun getLastPlayedTimestamps() = songHistoryDao.getLastPlayedTimestamps()

@@ -16,7 +16,7 @@ object AudioTrimmerUtil {
      * This performs a packet-level copy (no re-encoding), so it's fast but may not be 
      * accurate to the millisecond if the format uses large frames.
      */
-    fun trimAudio(sourcePath: String, outputPath: String, startMs: Int, endMs: Int): Boolean {
+    fun trimAudio(sourcePath: String, outputPath: String, startMs: Int, endMs: Int, fadeIn: Boolean = false, fadeOut: Boolean = false): Boolean {
         val extractor = MediaExtractor()
         try {
             extractor.setDataSource(sourcePath)
@@ -40,7 +40,7 @@ object AudioTrimmerUtil {
             }
 
             val mime = format.getString(MediaFormat.KEY_MIME) ?: ""
-            Log.d(TAG, "Trimming $mime from $startMs to $endMs")
+            Log.d(TAG, "Trimming $mime from $startMs to $endMs (fadeIn=$fadeIn, fadeOut=$fadeOut)")
 
             // MP3 files often fail with MediaMuxer. Fallback to manual frame copy.
             if (mime.equals("audio/mpeg", ignoreCase = true)) {

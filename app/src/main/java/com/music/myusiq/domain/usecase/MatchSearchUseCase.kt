@@ -38,13 +38,15 @@ class MatchSearchUseCase {
     ): Flow<SuggestedMetadataItem> = flow {
         val (extractedArtist, extractedTitle) = YouTubeTitleCleaner.cleanAndSplit(song.title)
         val cleanTitle = extractedTitle.ifBlank { YouTubeTitleCleaner.cleanTitle(song.title) }.ifBlank { YouTubeTitleCleaner.cleanFilename(song.path) }
-        val cleanArtist = if (!CloudMetadataResolver.isGenericArtist(song.artist)) {
-            song.artist
-        } else if (extractedArtist != "Unknown Artist" && !CloudMetadataResolver.isGenericArtist(extractedArtist)) {
+        val cleanArtist = if (!YouTubeTitleCleaner.isGenericArtistName(song.artist)) {
+            YouTubeTitleCleaner.cleanArtist(song.artist)
+        } else if (extractedArtist != "Unknown Artist" && !YouTubeTitleCleaner.isGenericArtistName(extractedArtist)) {
             extractedArtist
         } else ""
 
-        val searchQuery = if (cleanArtist.isNotBlank()) "$cleanArtist $cleanTitle" else cleanTitle
+        val cleanAlbum = YouTubeTitleCleaner.cleanAlbum(song.album).takeIf { !YouTubeTitleCleaner.isGenericAlbumName(it) } ?: ""
+
+        val searchQuery = if (cleanArtist.isNotBlank() && cleanArtist != "Unknown Artist") "$cleanArtist $cleanTitle" else cleanTitle
 
         val durationSec = (song.duration / 1000).coerceAtLeast(0)
         val acoustIdMatches = if (durationSec > 0 && fingerprint.isNotBlank()) {
@@ -86,7 +88,6 @@ class MatchSearchUseCase {
 
         val hasAcousticProfile = fingerprint.contains("energy:")
         val localDuration = song.duration
-        val cleanAlbum = if (!ArtworkUtils.isGenericAlbum(song.album)) song.album else ""
 
         candidateList.take(5).forEachIndexed { index, meta ->
             val isMatch = meta.foundTitle != null && CloudMetadataResolver.isAcceptableMatch(

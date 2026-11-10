@@ -50,7 +50,7 @@ class QueueFragment : Fragment(R.layout.fragment_queue) {
 
         queueAdapter = TrackAdapter(
             isQueueMode = true,
-            onTrackClicked = { selectedSong, imageView ->
+            onTrackClicked = { selectedSong, imageView, _ ->
                 val completeQueue = viewModel.currentQueue.value
                 val clickedIndex = completeQueue.indexOfFirst { it.id == selectedSong.id }
                 if (clickedIndex != -1) {
