@@ -431,7 +431,18 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
             } else {
                 originalLyricsText!!
             }
+
+            val activeTimeMs = if (activeLyricIndex in currentLyrics.indices) currentLyrics[activeLyricIndex].timeMs else -1L
             parseLyrics(textToDisplay)
+
+            if (activeTimeMs != -1L) {
+                val newIndex = currentLyrics.indexOfFirst { it.timeMs == activeTimeMs }
+                if (newIndex != -1) {
+                    activeLyricIndex = newIndex
+                    rvLyrics.scrollToPosition(newIndex)
+                    lyricsAdapter.notifyDataSetChanged()
+                }
+            }
         }
         btnLyricsEdit.setOnClickListener {
             showLyricsEditorDialog()
@@ -1728,6 +1739,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
 
     override fun onResume() {
         super.onResume()
+        visualizerComponent.onResume()
         try {
             requireContext().registerReceiver(volumeReceiver,
                 IntentFilter("android.media.VOLUME_CHANGED_ACTION")
@@ -1749,6 +1761,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
 
     override fun onPause() {
         super.onPause()
+        visualizerComponent.onPause()
         try {
             requireContext().unregisterReceiver(volumeReceiver)
         } catch (e: Exception) {

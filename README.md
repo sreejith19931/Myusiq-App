@@ -90,7 +90,7 @@
 
 ---
 
-## 🚀 Key Capabilities (`v1.6.0`)
+## 🚀 Key Capabilities (`v1.7.0`)
 
 * ✂️ **Interactive Touch Waveform Audio Trimmer**: Direct touch waveform dragging for precise start/end trim points, zoom-in/out (`1x` to `16x`) controls, real-time selected clip duration counter, and live playback progress line.
 * 🔔 **Audio Trimmer Ringtone & Quick Share**: Immediate 1-tap options after trimming to set audio as default ringtone, notification sound, or share via FileProvider.
@@ -133,7 +133,7 @@ Need help, have feature requests, or want to discuss Myusiq? Join our official c
 ### Option 1: Direct APK Download (Recommended)
 Download the latest signed release APK from GitHub Releases:
 
-👉 **[Download Myusiq-v1.6.0.apk](https://github.com/sreejith19931/Myusiq-App/releases/download/v1.6.0/Myusiq-v1.6.0.apk)**
+👉 **[Download Myusiq-v1.7.0.apk](https://github.com/sreejith19931/Myusiq-App/releases/download/v1.7.0/Myusiq-v1.7.0.apk)**
 
 ---
 

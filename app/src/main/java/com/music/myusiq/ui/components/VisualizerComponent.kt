@@ -51,6 +51,14 @@ class VisualizerComponent(
         }
     }
 
+    fun onPause() {
+        fftManager?.setPaused(true)
+    }
+
+    fun onResume() {
+        fftManager?.setPaused(false)
+    }
+
     fun release() {
         fftManager?.release()
         fftManager = null

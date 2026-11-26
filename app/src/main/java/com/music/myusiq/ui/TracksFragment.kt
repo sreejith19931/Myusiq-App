@@ -38,6 +38,8 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.music.myusiq.domain.models.Song
 import com.music.myusiq.domain.models.Playlist
 import com.music.myusiq.R
@@ -488,34 +490,36 @@ class TracksFragment : Fragment(), BackPressHandler {
                         viewModel.artworkRefreshSignatures,
                         selectedSongs
                     ) { args: Array<Any?> ->
-                        @Suppress("UNCHECKED_CAST")
-                        val allSongs = args[0] as? List<Song> ?: emptyList()
-                        val currentSong = args[1] as? Song
-                        val isPlaying = args[2] as? Boolean ?: false
-                        val favorites = args[3] as? Set<String> ?: emptySet()
-                        val signatures = args[4] as? Map<String, Long> ?: emptyMap()
-                        val selected = args[5] as? Set<Long> ?: emptySet()
-                        val position = viewModel.currentPositionThrottled.value
+                        withContext(Dispatchers.Default) {
+                            @Suppress("UNCHECKED_CAST")
+                            val allSongs = args[0] as? List<Song> ?: emptyList()
+                            val currentSong = args[1] as? Song
+                            val isPlaying = args[2] as? Boolean ?: false
+                            val favorites = args[3] as? Set<String> ?: emptySet()
+                            val signatures = args[4] as? Map<String, Long> ?: emptyMap()
+                            val selected = args[5] as? Set<Long> ?: emptySet()
+                            val position = viewModel.currentPositionThrottled.value
 
-                        val folderPath = arguments?.getString("folder_path")
-                        val songs = if (folderPath != null) {
-                            allSongs.filter { it.path.startsWith(folderPath, ignoreCase = true) }
-                        } else {
-                            allSongs
-                        }
+                            val folderPath = arguments?.getString("folder_path")
+                            val songs = if (folderPath != null) {
+                                allSongs.filter { it.path.startsWith(folderPath, ignoreCase = true) }
+                            } else {
+                                allSongs
+                            }
 
-                        songs.map { song ->
-                            val normPath = PlatformUtils.normalizePath(song.path)
-                            val isActive = song.id == currentSong?.id
-                            TrackUiModel(
-                                song = song,
-                                isFavorite = favorites.contains(song.id.toString()),
-                                isActive = isActive,
-                                isPlaying = isActive && isPlaying,
-                                isSelected = selected.contains(song.id),
-                                progress = if (isActive && (song.duration > 0)) position.toFloat() / song.duration.toFloat() else 0f,
-                                artworkSignature = signatures[normPath] ?: signatures[song.id.toString()] ?: 0L
-                            )
+                            songs.map { song ->
+                                val normPath = PlatformUtils.normalizePath(song.path)
+                                val isActive = song.id == currentSong?.id
+                                TrackUiModel(
+                                    song = song,
+                                    isFavorite = favorites.contains(song.id.toString()),
+                                    isActive = isActive,
+                                    isPlaying = isActive && isPlaying,
+                                    isSelected = selected.contains(song.id),
+                                    progress = if (isActive && (song.duration > 0)) position.toFloat() / song.duration.toFloat() else 0f,
+                                    artworkSignature = signatures[normPath] ?: signatures[song.id.toString()] ?: 0L
+                                )
+                            }
                         }
                     }.collectLatest { uiModels ->
                         currentTrackList = uiModels.map { it.song }

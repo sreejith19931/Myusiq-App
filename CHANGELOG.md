@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.0] - 2026-11-20
+
+### Added & Fixed
+- **Version & Build Infrastructure Upgrade**: Synchronized version bump (`v1.7.0` / versionCode `10700`) across `:app` and `:wear` modules.
+- **Interactive Touch Waveform Audio Trimmer & Export**: Full touch-draggable audio trimmer with multi-scale zoom (`1x`-`16x`), instant ringtone/notification setup, and file sharing via FileProvider.
+- **Spacious Library Janitor Sheet & Quick Filters**: Upgraded metadata review dialog into a full-page scrollable bottom sheet with filter chips (*All, Missing Art, Unknown Artist, Messy Titles*).
+- **Studio Equalizer Preset Serialization**: 1-tap JSON export and sharing of custom 10-band equalizer, bass boost, and 3D spatializer profiles.
+- **Engine Stability & Storage Resilience**: Refined scoped storage fallback resolution on Android 14+ / Xiaomi HyperOS and zero-delay playback initiation.
+
 ## [1.6.0] - 2026-11-10
 
 ### Added & Fixed

@@ -148,11 +148,21 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
             return
         }
 
+        startAcousticAutoId()
+
         val appContext = requireContext().applicationContext
         val prefs = appContext.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
         prefs.edit().putBoolean("janitor_initial_scan_done", true).apply()
 
         showUnifiedJanitorDialog(allSongs)
+    }
+
+    private fun startAcousticAutoId() {
+        context?.let { ctx ->
+            val workRequest = androidx.work.OneTimeWorkRequestBuilder<com.music.myusiq.service.AudioMatcherWorker>().build()
+            androidx.work.WorkManager.getInstance(ctx).enqueue(workRequest)
+            Toast.makeText(ctx, "Acoustic Auto-ID & Metadata Healer started in background", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun startAutoFix() {

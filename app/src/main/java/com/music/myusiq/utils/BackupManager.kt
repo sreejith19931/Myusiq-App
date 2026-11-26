@@ -7,13 +7,54 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.InputStream
 import java.io.OutputStream
+import java.security.SecureRandom
+import javax.crypto.Cipher
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.IvParameterSpec
+import javax.crypto.spec.PBEKeySpec
+import javax.crypto.spec.SecretKeySpec
 import com.music.myusiq.domain.models.*
 import com.music.myusiq.data.dao.SongDao
 import com.music.myusiq.DatabaseProvider
 
 object BackupManager {
 
-    suspend fun exportBackup(context: Context, outputStream: OutputStream): Boolean {
+    private fun encrypt(data: String, password: String): ByteArray {
+        val salt = ByteArray(16).apply { SecureRandom().nextBytes(this) }
+        val iv = ByteArray(16).apply { SecureRandom().nextBytes(this) }
+        val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+        val spec = PBEKeySpec(password.toCharArray(), salt, 65536, 256)
+        val tmp = factory.generateSecret(spec)
+        val secretKey = SecretKeySpec(tmp.encoded, "AES")
+
+        val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey, IvParameterSpec(iv))
+        val encrypted = cipher.doFinal(data.toByteArray(Charsets.UTF_8))
+
+        val output = ByteArray(16 + 16 + encrypted.size)
+        System.arraycopy(salt, 0, output, 0, 16)
+        System.arraycopy(iv, 0, output, 16, 16)
+        System.arraycopy(encrypted, 0, output, 32, encrypted.size)
+        return output
+    }
+
+    private fun decrypt(bytes: ByteArray, password: String): String {
+        val salt = bytes.copyOfRange(0, 16)
+        val iv = bytes.copyOfRange(16, 32)
+        val encrypted = bytes.copyOfRange(32, bytes.size)
+
+        val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+        val spec = PBEKeySpec(password.toCharArray(), salt, 65536, 256)
+        val tmp = factory.generateSecret(spec)
+        val secretKey = SecretKeySpec(tmp.encoded, "AES")
+
+        val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, IvParameterSpec(iv))
+        val decrypted = cipher.doFinal(encrypted)
+        return String(decrypted, Charsets.UTF_8)
+    }
+
+    suspend fun exportBackup(context: Context, outputStream: OutputStream, password: String? = null): Boolean {
         return withContext(Dispatchers.IO) {
             try {
                 val db = DatabaseProvider.getDatabase(context)
@@ -85,7 +126,13 @@ object BackupManager {
                 }
                 backup.put("lyrics", lyricsArray)
 
-                outputStream.write(backup.toString(2).toByteArray())
+                val jsonString = backup.toString(2)
+                if (!password.isNullOrEmpty()) {
+                    val encryptedBytes = encrypt(jsonString, password)
+                    outputStream.write(encryptedBytes)
+                } else {
+                    outputStream.write(jsonString.toByteArray())
+                }
                 outputStream.close()
                 true
             } catch (e: Exception) {
@@ -95,11 +142,22 @@ object BackupManager {
         }
     }
 
-    suspend fun importBackup(context: Context, inputStream: InputStream): Boolean {
+    suspend fun importBackup(context: Context, inputStream: InputStream, password: String? = null): Boolean {
         return withContext(Dispatchers.IO) {
             try {
                 val db = DatabaseProvider.getDatabase(context)
-                val content = inputStream.bufferedReader().use { it.readText() }
+                val bytes = inputStream.readBytes()
+                val content = if (!password.isNullOrEmpty()) {
+                    try {
+                        decrypt(bytes, password)
+                    } catch (e: Exception) {
+                        // Fallback to unencrypted text if decryption fails
+                        String(bytes, Charsets.UTF_8)
+                    }
+                } else {
+                    String(bytes, Charsets.UTF_8)
+                }
+
                 val backup = JSONObject(content)
 
                 // 1. Restore Library Tracks (Favorites)
@@ -108,16 +166,16 @@ object BackupManager {
                     val tracks = mutableListOf<TrackEntity>()
                     for (i in 0 until libArray.length()) {
                         val tObj = libArray.getJSONObject(i)
-                    tracks.add(
-                        TrackEntity(
-                            id = tObj.getString("id"),
-                            title = tObj.getString("title"),
-                            artist = tObj.getString("artist"),
-                            isFavorite = tObj.getBoolean("isFavorite"),
-                        ),
-                    )
-                }
-                db.playlistDao().insertLibraryTracks(tracks)
+                        tracks.add(
+                            TrackEntity(
+                                id = tObj.getString("id"),
+                                title = tObj.getString("title"),
+                                artist = tObj.getString("artist"),
+                                isFavorite = tObj.getBoolean("isFavorite"),
+                            ),
+                        )
+                    }
+                    db.playlistDao().insertLibraryTracks(tracks)
                 }
 
                 // 2. Restore History

@@ -3,6 +3,7 @@ package com.music.myusiq.service
 import android.content.Context
 import android.media.audiofx.Visualizer
 import android.util.Log
+import android.os.PowerManager
 
 class FftEngineManager(
     private val context: Context,
@@ -48,6 +49,12 @@ class FftEngineManager(
             release()
             return
         }
+        val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+        if (powerManager?.isPowerSaveMode == true) {
+            release()
+            return
+        }
+
         if (targetWaveSeekBar != null) {
             val sharedPreferences = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
             val isFeatureEnabled = sharedPreferences.getBoolean("fft_visualizer_enabled", false)

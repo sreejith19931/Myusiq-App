@@ -2126,6 +2126,31 @@ class PlaybackService : MediaLibraryService() {
             }
         }
     }
+
+    fun syncPlaylistsToWearables() {
+        serviceScope.launch(Dispatchers.IO) {
+            try {
+                val db = com.music.myusiq.DatabaseProvider.getDatabase(applicationContext)
+                val playlists = db.playlistDao().getAllPlaylistsWithTracksSync()
+                val playlistNames = ArrayList<String>()
+                val playlistSizes = ArrayList<Int>()
+                playlists.forEach { pwt ->
+                    playlistNames.add(pwt.playlist.name)
+                    playlistSizes.add(pwt.tracks.size)
+                }
+
+                val putDataMapReq = PutDataMapRequest.create("/myusiq/playlists_sync").apply {
+                    dataMap.putStringArrayList("playlistNames", playlistNames)
+                    dataMap.putIntegerArrayList("playlistSizes", playlistSizes)
+                    dataMap.putLong("timestamp", System.currentTimeMillis())
+                }
+                val request = putDataMapReq.asPutDataRequest().setUrgent()
+                Wearable.getDataClient(applicationContext).putDataItem(request)
+            } catch (e: Exception) {
+                Log.e("PlaybackService", "Error syncing playlists to wearables", e)
+            }
+        }
+    }
     
     // Direct controls for other components
     fun togglePlayPause() {

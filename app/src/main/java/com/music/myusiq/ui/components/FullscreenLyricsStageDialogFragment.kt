@@ -94,10 +94,12 @@ class FullscreenLyricsStageDialogFragment : DialogFragment() {
             } else {
                 originalLyricsText!!
             }
-            stageLyricsAdapter?.setRawLyrics(textToDisplay)
+            stageLyricsAdapter?.setRawLyricsPreservingActive(textToDisplay)
         }
 
-        stageLyricsAdapter = StageLyricsAdapter()
+        stageLyricsAdapter = StageLyricsAdapter { pos ->
+            rvStageLyrics.smoothScrollToPosition(pos)
+        }
         rvStageLyrics.layoutManager = LinearLayoutManager(requireContext())
         rvStageLyrics.adapter = stageLyricsAdapter
 
@@ -334,13 +336,15 @@ class FullscreenLyricsStageDialogFragment : DialogFragment() {
         fun newInstance() = FullscreenLyricsStageDialogFragment()
     }
 
-    // Inner Adapter for Fullscreen Stage Lyrics
-    private class StageLyricsAdapter : RecyclerView.Adapter<StageLyricsAdapter.StageViewHolder>() {
+    data class LyricLine(val timeMs: Long, val text: String)
+
+    // Adapter for Fullscreen Stage Lyrics
+    private class StageLyricsAdapter(
+        private val scrollToPosition: (Int) -> Unit
+    ) : RecyclerView.Adapter<StageLyricsAdapter.StageViewHolder>() {
         private var lines = mutableListOf<LyricLine>()
         private var activeIndex = -1
         private var activeColor = Color.CYAN
-
-        data class LyricLine(val timeMs: Long, val text: String)
 
         fun setRawLyrics(raw: String) {
             lines.clear()
@@ -369,6 +373,19 @@ class FullscreenLyricsStageDialogFragment : DialogFragment() {
             }
             activeIndex = -1
             notifyDataSetChanged()
+        }
+
+        fun setRawLyricsPreservingActive(raw: String) {
+            val currentActiveTime = if (activeIndex in lines.indices) lines[activeIndex].timeMs else -1L
+            setRawLyrics(raw)
+            if (currentActiveTime != -1L) {
+                val newIndex = lines.indexOfFirst { it.timeMs == currentActiveTime }
+                if (newIndex != -1) {
+                    activeIndex = newIndex
+                    notifyDataSetChanged()
+                    scrollToPosition(newIndex)
+                }
+            }
         }
 
         fun updatePosition(posMs: Long, onActiveChanged: (Int) -> Unit) {
