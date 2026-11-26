@@ -7,7 +7,24 @@
 function closeBanner() {
     const banner = document.getElementById('announcement-banner');
     if (banner) banner.style.display = 'none';
+    try {
+        localStorage.setItem('myusiq-banner-dismissed', '1');
+    } catch (e) { /* storage unavailable: banner just returns next visit */ }
     syncNavbarOffset();
+}
+
+// Restore a previously dismissed announcement banner
+function initAnnouncementBanner() {
+    const banner = document.getElementById('announcement-banner');
+    if (!banner) return;
+    let dismissed = false;
+    try {
+        dismissed = localStorage.getItem('myusiq-banner-dismissed') === '1';
+    } catch (e) { dismissed = false; }
+    if (dismissed) {
+        banner.style.display = 'none';
+        syncNavbarOffset();
+    }
 }
 
 // Keep the fixed navbar below the in-flow announcement banner while it is visible,
@@ -230,6 +247,10 @@ function closeLightbox() {
 let lastScrollY = window.scrollY;
 let scrollVelocity = 0;
 
+// Respect the OS "reduce motion" accessibility setting:
+// skip the scroll-driven 3D tilt and the animated wave canvas entirely
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 function initScrollProgressBar() {
     const progressBar = document.getElementById('scroll-progress-bar');
     if (!progressBar) return;
@@ -244,6 +265,8 @@ function initScrollProgressBar() {
 }
 
 function initHeroPhoneTiltOnScroll() {
+    if (prefersReducedMotion) return;
+
     const phoneFrame = document.querySelector('.phone-frame');
     const heroSection = document.querySelector('.hero');
     if (!phoneFrame || !heroSection) return;
@@ -339,18 +362,13 @@ function initScrollAudioWaveCanvas() {
 
     let phase = 0;
 
-    function drawWave() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        const currentScrollY = window.scrollY;
-        scrollVelocity = Math.abs(currentScrollY - lastScrollY);
-        lastScrollY = currentScrollY;
+    // Shared wave renderer: used by the animation loop and the
+    // reduced-motion static frame
+    function renderWaves() {
+        const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#A78BFA';
 
         const baseAmplitude = 18 + Math.min(40, scrollVelocity * 1.5);
         const baseFrequency = 0.015 + Math.min(0.02, scrollVelocity * 0.001);
-        phase += 0.03 + Math.min(0.05, scrollVelocity * 0.002);
-
-        const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#A78BFA';
 
         for (let waveIdx = 0; waveIdx < 3; waveIdx++) {
             ctx.beginPath();
@@ -369,8 +387,28 @@ function initScrollAudioWaveCanvas() {
             }
             ctx.stroke();
         }
+    }
+
+    function drawWave() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const currentScrollY = window.scrollY;
+        scrollVelocity = Math.abs(currentScrollY - lastScrollY);
+        lastScrollY = currentScrollY;
+
+        phase += 0.03 + Math.min(0.05, scrollVelocity * 0.002);
+
+        renderWaves();
 
         requestAnimationFrame(drawWave);
+    }
+
+    if (prefersReducedMotion) {
+        // Draw a single static frame instead of running the animation loop
+        scrollVelocity = 0;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        renderWaves();
+        return;
     }
 
     drawWave();
@@ -434,6 +472,7 @@ function filterGallery(category, btnEl) {
 
 // DOM Ready Initialization
 document.addEventListener('DOMContentLoaded', () => {
+    initAnnouncementBanner();
     initThemeToggle();
     initEqualizer();
     initScrollAnimations();

@@ -51,6 +51,11 @@ html {
     scroll-behavior: smooth;
 }
 
+/* Fixed navbar sits over the page; keep anchor jumps clear of it */
+section[id] {
+    scroll-margin-top: 96px;
+}
+
 /* --- Scroll Reading Progress Bar --- */
 #scroll-progress-bar {
     position: fixed;
@@ -107,6 +112,11 @@ html {
     margin-left: 6px;
 }
 
+/* Compact label shown instead of the long release blurb on phones */
+.announcement-banner .banner-text-short {
+    display: none;
+}
+
 .announcement-banner .banner-close {
     background: none;
     border: none;
@@ -131,11 +141,18 @@ body {
     line-height: 1.6;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
 }
 
 h1, h2, h3, h4, .brand-font {
     font-family: 'Syne', sans-serif;
     letter-spacing: -0.03em;
+}
+
+/* Avoid orphan words ("Purists", "&") sitting alone on their own line */
+h1, h2 {
+    text-wrap: balance;
 }
 
 a {
@@ -190,7 +207,7 @@ a {
 }
 
 .section-title {
-    font-size: 2.75rem;
+    font-size: clamp(1.85rem, 1.65rem + 0.8vw, 2.375rem);
     font-weight: 800;
     margin-bottom: 16px;
     line-height: 1.2;
@@ -322,7 +339,10 @@ button, input, select {
 }
 
 .hero-text h1 {
-    font-size: 3.8rem;
+    /* Fluid type tuned to Syne 800's wide advance: 2.5rem (40px) is the max that
+       keeps the 3-line headline break inside the 655px two-column hero text
+       column. Larger sizes collapse to one-word-per-line wrapping. */
+    font-size: clamp(1.95rem, 1.7rem + 0.9vw, 2.5rem);
     font-weight: 800;
     line-height: 1.1;
     margin-bottom: 20px;
@@ -748,7 +768,9 @@ button, input, select {
 }
 
 /* --- Responsive Media Queries --- */
-@media (max-width: 900px) {
+/* Hero collapses to a single column at 1000px: between 900-1000 the
+   two-column grid squeezed the headline into 6-line wraps */
+@media (max-width: 1000px) {
     .hero {
         padding: 120px 0 60px 0;
     }
@@ -757,10 +779,6 @@ button, input, select {
         grid-template-columns: 1fr;
         text-align: center;
         gap: 40px;
-    }
-
-    .hero-text h1 {
-        font-size: 2.8rem;
     }
 
     .hero-text p {
@@ -806,14 +824,43 @@ button, input, select {
         font-size: 0.85rem;
     }
 
+    /* Compact banner: short label instead of the 7-line release blurb */
+    .announcement-banner {
+        font-size: 0.85rem;
+        padding: 8px 12px;
+        gap: 8px;
+    }
+
+    .announcement-banner .banner-text-full {
+        display: none;
+    }
+
+    .announcement-banner .banner-text-short {
+        display: inline;
+    }
+
+    .announcement-banner .banner-badge {
+        display: none;
+    }
+
     /* Hero adjustments */
     .hero {
         padding: 100px 0 40px 0;
     }
 
     .hero-text h1 {
-        font-size: 2.1rem;
         line-height: 1.15;
+    }
+
+    .hero-visual {
+        min-height: 480px;
+    }
+
+    /* Smaller canvas surface: the 140% oversize is pure overdraw on phones,
+       mostly clipped away by .hero { overflow: hidden } */
+    #scroll-audio-canvas {
+        width: 100%;
+        height: 100%;
     }
 
     .hero-text p {
@@ -844,10 +891,6 @@ button, input, select {
     /* Section & Cards */
     .section-header {
         margin-bottom: 36px;
-    }
-
-    .section-title {
-        font-size: 1.85rem;
     }
 
     .section-subtitle {
@@ -1088,4 +1131,50 @@ button, input, select {
     gap: 16px;
     flex-wrap: wrap;
     align-items: center;
+}
+
+/* --- Touch Target Comfort (coarse pointers: phones/tablets) --- */
+@media (pointer: coarse) {
+    /* Native range input hit area equals its box: widen EQ sliders (18px is
+       well under the 44px touch guideline) without overflowing 320px screens */
+    .eq-slider {
+        width: 22px;
+    }
+
+    .eq-controls {
+        gap: 3px;
+    }
+
+    .gallery-tab {
+        padding: 9px 18px;
+    }
+
+    .preset-btn {
+        padding: 8px 12px;
+    }
+
+    .lightbox-close {
+        padding: 12px;
+        margin: -12px;
+    }
+
+    .banner-close {
+        padding: 8px 10px;
+        margin-right: -10px;
+    }
+}
+
+/* --- Reduced Motion: respect the OS setting --- */
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }
