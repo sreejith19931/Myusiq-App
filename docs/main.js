@@ -7,6 +7,20 @@
 function closeBanner() {
     const banner = document.getElementById('announcement-banner');
     if (banner) banner.style.display = 'none';
+    syncNavbarOffset();
+}
+
+// Keep the fixed navbar below the in-flow announcement banner while it is visible,
+// otherwise the banner (z-index 1001) paints over the navbar (z-index 100).
+// As the page scrolls past the banner, the navbar slides back to the top.
+function syncNavbarOffset() {
+    const navbar = document.getElementById('navbar');
+    const banner = document.getElementById('announcement-banner');
+    if (!navbar) return;
+    const bannerVisible = banner && banner.style.display !== 'none' && banner.offsetHeight > 0;
+    const bannerH = bannerVisible ? banner.offsetHeight : 0;
+    const overlap = Math.max(0, bannerH - window.scrollY);
+    navbar.style.top = `${overlap}px`;
 }
 
 // --- 1. Theme Sandbox & Dark/Light Mode ---
@@ -381,7 +395,10 @@ function initScrollAnimations() {
     // Navbar Scroll Blur Effect
     const navbar = document.getElementById('navbar');
     if (navbar) {
+        syncNavbarOffset();
+        window.addEventListener('resize', syncNavbarOffset, { passive: true });
         window.addEventListener('scroll', () => {
+            syncNavbarOffset();
             if (window.scrollY > 40) {
                 navbar.classList.add('scrolled');
             } else {

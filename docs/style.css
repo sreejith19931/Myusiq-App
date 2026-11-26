@@ -364,11 +364,26 @@ button, input, select {
     z-index: 0;
     pointer-events: none;
     opacity: 0.6;
+    background: transparent;
+    /* Screen blend makes any mis-composited black canvas pixels invisible over the dark page
+       (works around Firefox GPU paths that render composited canvases opaque) */
+    mix-blend-mode: screen;
 }
 
 .phone-3d-wrapper {
     perspective: 1000px;
     z-index: 1;
+    position: relative;
+}
+
+/* Ambient glow/shadow lives on a non-transformed layer: Firefox mis-rasterizes
+   box-shadows on elements with 3D transforms (renders as a large dark quad) */
+.phone-glow {
+    position: absolute;
+    inset: 0;
+    border-radius: 56px;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 50px var(--glow-primary);
+    pointer-events: none;
 }
 
 .phone-frame {
@@ -377,11 +392,10 @@ button, input, select {
     background: #000;
     border-radius: 44px;
     border: 12px solid #1E293B;
-    box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 50px var(--glow-primary);
     position: relative;
     overflow: hidden;
     transform-style: preserve-3d;
-    transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease;
+    transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
     will-change: transform;
 }
 
