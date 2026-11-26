@@ -101,7 +101,7 @@
 * ⚡ **60fps Visualizer Studio**: Hardware-accelerated visualizer suite featuring 4 audio-reactive modes (*Spectrum Analyzer, Circular Pulse Ring, Liquid Waveform, Particle Field*).
 * 🔊 **Audiophile Audio Engine**: Powered by **Jetpack Media3 & ExoPlayer** with EBU R128 ReplayGain volume normalization, dynamic Hi-Res sample rate badges (`96.0 kHz FLAC`), and variable speed/pitch controls.
 * 🚗 **Driving Mode & Wear OS**: High-contrast, large-touch driving controls and a companion smartwatch app.
-* 🔒 **Zero Tracking Privacy Guarantee**: 100% offline, ad-free, with zero analytics or cloud account requirements.
+* 🔒 **Zero Tracking Privacy Guarantee**: No accounts, no ads, no analytics or cloud requirement. Playback and library management work fully offline; internet is used only for optional metadata/artwork lookups, lyrics fetching, and in-app update checks.
 
 ---
 
@@ -110,7 +110,7 @@
 | Layer | Technology / Library |
 | :--- | :--- |
 | **Language & Async** | Kotlin 100%, Coroutines (`Semaphore(4)` parallel speedups), StateFlow |
-| **UI & Design System** | Material Design 3, Jetpack Compose / Android Views, Dynamic Theme Palette Extraction |
+| **UI & Design System** | Material Design 3, Android Views (ViewBinding) + Jetpack Compose (Wear OS), Dynamic Theme Palette Extraction |
 | **Audio Playback Engine** | AndroidX Media3 (ExoPlayer), `PlaybackParameters`, AudioTargetRouting |
 | **Audio Processing** | Android Native `AudioEffect` Framework (`BassBoost`, `Virtualizer`, `PresetReverb`) |
 | **Tagging & Metadata** | JAudioTagger ID3v2, Shared Public Storage Backups (`.myusiq_backup`) |

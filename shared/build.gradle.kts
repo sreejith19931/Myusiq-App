@@ -12,10 +12,6 @@ kotlin {
 
     jvmToolchain(17)
 
-    iosX64()
-    iosArm64()
-    iosSimulatorArm64()
-
     sourceSets {
         commonMain.dependencies {
             implementation(libs.androidx.room.runtime)

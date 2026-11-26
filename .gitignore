@@ -11,5 +11,7 @@ local.properties
 keystore.properties
 *.jks
 *.keystore
+myusiq-release-keys
 .artifacts/
+*.artifact.md
 .kotlin/
