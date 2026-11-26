@@ -80,10 +80,10 @@ function initEqualizer() {
 
     function updateCurve() {
         const values = Array.from(eqSliders).map(s => parseInt(s.value));
-        // Map 5 band values (-10 to +10) to SVG Y coordinates (height 120, center 60)
-        // Values: band1 (x=30), band2 (x=100), band3 (x=170), band4 (x=240), band5 (x=310)
+        // Map 10 band values (-10 to +10) to SVG Y coordinates (height 120, center 60)
+        // 10 bands spread across x=17..323 (viewBox 340)
         const coords = values.map((val, idx) => {
-            const x = 30 + idx * 70;
+            const x = 17 + idx * 34;
             const y = 60 - (val * 4); // +10 dB -> y=20, -10 dB -> y=100
             return { x, y };
         });
@@ -93,20 +93,21 @@ function initEqualizer() {
         for (let i = 0; i < coords.length - 1; i++) {
             const curr = coords[i];
             const next = coords[i + 1];
-            const cp1x = curr.x + 35;
-            const cp2x = next.x - 35;
+            const cp1x = curr.x + 17;
+            const cp2x = next.x - 17;
             d += ` C ${cp1x} ${curr.y}, ${cp2x} ${next.y}, ${next.x} ${next.y}`;
         }
-        d += ` C ${coords[4].x + 15} ${coords[4].y}, 325 60, 340 60`;
+        const last = coords[coords.length - 1];
+        d += ` C ${last.x + 15} ${last.y}, 325 60, 340 60`;
 
         path.setAttribute('d', d);
 
-        // Update gain badges
+        // Update gain badges (compact signed number, frequency label sits below)
         eqSliders.forEach((s, idx) => {
             const badge = document.getElementById(`eq-val-${idx}`);
             if (badge) {
                 const val = parseInt(s.value);
-                badge.innerText = (val > 0 ? `+${val}` : `${val}`) + ' dB';
+                badge.innerText = val > 0 ? `+${val}` : `${val}`;
                 badge.style.color = val !== 0 ? 'var(--primary)' : 'var(--on-surface-variant)';
             }
         });
@@ -122,10 +123,10 @@ function initEqualizer() {
 // Preset loader for Equalizer
 function applyEqPreset(preset) {
     const presets = {
-        bass: [8, 6, 2, 0, 1],
-        vocal: [-2, 1, 6, 4, 1],
-        flat: [0, 0, 0, 0, 0],
-        electronic: [6, 4, -1, 5, 7]
+        bass: [8, 7, 5, 4, 2, 0, 0, -1, 0, 1],
+        vocal: [-4, -2, -1, 2, 4, 6, 5, 3, 1, 0],
+        flat: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        electronic: [7, 6, 4, 2, 0, -1, 2, 4, 6, 7]
     };
 
     const vals = presets[preset] || presets.flat;
@@ -200,6 +201,7 @@ function openLightbox(imgSrc, captionText) {
     if (modalCaption) modalCaption.innerText = captionText || '';
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
+    modalImg.focus?.();
 }
 
 function closeLightbox() {
@@ -423,4 +425,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') closeLightbox();
     });
+
+    // Keyboard access for screenshot cards (Enter / Space activates)
+    document.querySelectorAll('.screenshot-card').forEach(card => {
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('role', 'button');
+        card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                card.click();
+            }
+        });
+    });
+
+    // Accessibility: lightbox img is a focus target while modal is open
+    const lightboxImg = document.getElementById('lightbox-img');
+    if (lightboxImg) lightboxImg.setAttribute('tabindex', '-1');
 });

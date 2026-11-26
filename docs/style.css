@@ -473,21 +473,22 @@ button, input, select {
 .eq-controls {
     display: flex;
     justify-content: space-between;
-    gap: 12px;
+    gap: 2px;
 }
 
 .eq-band {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    min-width: 0;
 }
 
 .eq-slider {
     writing-mode: vertical-lr;
     direction: rtl;
     -webkit-appearance: slider-vertical;
-    width: 24px;
+    width: 18px;
     height: 90px;
     padding: 0 !important;
     margin: 0;
@@ -497,9 +498,15 @@ button, input, select {
 }
 
 .eq-badge {
-    font-size: 0.75rem;
+    font-size: 0.62rem;
     font-weight: 700;
     color: var(--on-surface-variant);
+}
+
+.eq-freq {
+    font-size: 0.55rem;
+    color: var(--on-surface-variant);
+    letter-spacing: -0.2px;
 }
 
 .preset-btns {
@@ -653,6 +660,11 @@ button, input, select {
     position: relative;
     aspect-ratio: 9 / 19.5;
     background: var(--surface-container);
+}
+
+.screenshot-card:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 3px;
 }
 
 .screenshot-card img {
