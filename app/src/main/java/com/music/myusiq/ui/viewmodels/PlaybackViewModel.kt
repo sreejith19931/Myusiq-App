@@ -557,6 +557,63 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     fun createNewPlaylist(name: String) { viewModelScope.launch(Dispatchers.IO) { musicRepository.createPlaylist(Playlist(name = name)) } }
 
+    // ---- M3U playlist export / import -----------------------------------
+
+    /** Resolves a playlist's tracks against the library and hands the songs
+     *  to the caller (main thread) for M3U export. */
+    fun exportPlaylistM3U(playlistId: Long, onReady: (String, List<Song>) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val pwt = musicRepository.getPlaylistWithTracks(playlistId).first()
+                val byId = originalTrackList.associateBy { it.id.toString() }
+                val songs = (pwt?.tracks ?: emptyList()).mapNotNull { byId[it.id] }
+                val name = pwt?.playlist?.name ?: "Playlist"
+                withContext(Dispatchers.Main) { onReady(name, songs) }
+            } catch (t: Throwable) {
+                Log.w("PlaybackViewModel", "M3U export resolution failed", t)
+            }
+        }
+    }
+
+    /** Imports an M3U path list, matching against the library by normalized
+     *  path with a file-name fallback. Creates a new playlist and reports
+     *  (matched, missing) on the main thread. */
+    fun importM3U(name: String?, paths: List<String>, onResult: (Int, Int) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            var matchedCount = 0
+            var missing = 0
+            try {
+                val byPath = originalTrackList.associateBy { PlatformUtils.normalizePath(it.path).lowercase() }
+                val byBase = originalTrackList.associateBy { it.path.substringAfterLast('/').lowercase() }
+                val matched = LinkedHashSet<Song>()
+                for (raw in paths) {
+                    if (raw.isBlank()) continue
+                    val key = PlatformUtils.normalizePath(raw).lowercase()
+                    val song = byPath[key] ?: byBase[raw.substringAfterLast('/').lowercase()]
+                    if (song != null) matched.add(song) else missing++
+                }
+                if (matched.isNotEmpty()) {
+                    val pName = name?.takeIf { it.isNotBlank() }
+                        ?: "Imported " + java.text.SimpleDateFormat("MMM d", java.util.Locale.getDefault())
+                            .format(java.util.Date())
+                    val playlistId = musicRepository.createPlaylist(Playlist(name = pName))
+                    matched.forEach { song ->
+                        val trackId = song.id.toString()
+                        val existing = musicRepository.getTrackByIdSync(trackId)
+                        if (existing == null) {
+                            musicRepository.upsertTrack(TrackEntity(trackId, song.title, song.artist))
+                        }
+                        musicRepository.addTrackToPlaylist(PlaylistTrackCrossRef(playlistId, trackId))
+                    }
+                }
+                matchedCount = matched.size
+            } catch (t: Throwable) {
+                Log.w("PlaybackViewModel", "M3U import failed", t)
+            }
+            withContext(Dispatchers.Main) { onResult(matchedCount, missing) }
+        }
+    }
+
     fun addTrackToPlaylist(trackId: String, playlistId: Long) {
         viewModelScope.launch(Dispatchers.IO) {
             val song = originalTrackList.find { it.id.toString() == trackId }

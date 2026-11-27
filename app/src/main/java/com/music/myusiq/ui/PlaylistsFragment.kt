@@ -13,6 +13,7 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -210,8 +211,17 @@ class PlaylistsFragment : Fragment(R.layout.fragment_playlists) {
             }
         }
 
-        fabAddPlaylist.setOnClickListener {
-            showCreatePlaylistDialog()
+        fabAddPlaylist.setOnClickListener { view ->
+            val menu = PopupMenu(requireContext(), view)
+            menu.menu.add(0, Menu.FIRST + 1, Menu.NONE, R.string.create_playlist)
+            menu.menu.add(0, Menu.FIRST + 2, Menu.NONE, R.string.import_m3u)
+            menu.setOnMenuItemClickListener {
+                when (it.itemId) {
+                    Menu.FIRST + 2 -> { importM3ULauncher.launch(arrayOf("*/*")); true }
+                    else -> { showCreatePlaylistDialog(); true }
+                }
+            }
+            menu.show()
         }
 
         setupMoodChips(view)
@@ -317,14 +327,63 @@ class PlaylistsFragment : Fragment(R.layout.fragment_playlists) {
             .show()
     }
 
+    private var pendingM3UExport: Pair<String, List<Song>>? = null
+
+    private val exportM3ULauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("audio/x-mpegurl")
+    ) { uri ->
+        val pending = pendingM3UExport ?: return@registerForActivityResult
+        pendingM3UExport = null
+        uri ?: return@registerForActivityResult
+        lifecycleScope.launch(Dispatchers.IO) {
+            val ok = try {
+                requireContext().contentResolver.openOutputStream(uri)?.let {
+                    com.music.myusiq.utils.M3UUtils.write(pending.first, pending.second, it)
+                } ?: false
+            } catch (_: Exception) { false }
+            withContext(Dispatchers.Main) {
+                val resId = if (ok) R.string.m3u_exported else R.string.backup_failed
+                Toast.makeText(requireContext(), resId, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private val importM3ULauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri ?: return@registerForActivityResult
+        lifecycleScope.launch(Dispatchers.IO) {
+            val parsed = try {
+                requireContext().contentResolver.openInputStream(uri)?.bufferedReader()?.use {
+                    com.music.myusiq.utils.M3UUtils.parse(it.readText())
+                }
+            } catch (_: Exception) { null }
+            if (parsed == null) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(requireContext(), R.string.m3u_import_failed, Toast.LENGTH_SHORT).show()
+                }
+                return@launch
+            }
+            viewModel.importM3U(parsed.name, parsed.paths) { matched, missing ->
+                val msg = getString(R.string.m3u_imported, matched, missing)
+                Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     private fun showPlaylistOptions(playlist: PlaylistWithTracks, view: View) {
         val popup = PopupMenu(requireContext(), view)
         popup.menu.add(SUGGEST_TRACKS_ID, Menu.FIRST + 1, Menu.NONE, R.string.mood_suggest_menu)
+        popup.menu.add(SUGGEST_TRACKS_ID, Menu.FIRST + 2, Menu.NONE, R.string.export_m3u)
         popup.menu.add(R.string.delete)
         popup.setOnMenuItemClickListener {
             when (it.itemId) {
                 SUGGEST_TRACKS_ID -> {
                     showTrackSuggestions(playlist)
+                    true
+                }
+                Menu.FIRST + 2 -> {
+                    exportPlaylistM3U(playlist)
                     true
                 }
                 else -> {
@@ -334,6 +393,22 @@ class PlaylistsFragment : Fragment(R.layout.fragment_playlists) {
             }
         }
         popup.show()
+    }
+
+    /** Resolves the playlist's songs, then opens the SAF file picker for
+     *  the .m3u destination. */
+    private fun exportPlaylistM3U(playlist: PlaylistWithTracks) {
+        viewModel.exportPlaylistM3U(playlist.playlist.id) { name, songs ->
+            if (songs.isEmpty()) {
+                Toast.makeText(requireContext(), R.string.m3u_empty_playlist, Toast.LENGTH_SHORT).show()
+                return@exportPlaylistM3U
+            }
+            pendingM3UExport = name to songs
+            try {
+                val safeName = name.replace(Regex("[\\\\/:*?\"<>|]"), "_")
+                exportM3ULauncher.launch("$safeName.m3u")
+            } catch (_: Exception) {}
+        }
     }
 
     /**

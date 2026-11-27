@@ -263,6 +263,12 @@
     <string name="authorize_permissions_toast">Please authorize media permissions first.</string>
     <string name="select_directory_toast">Please select a directory to scan.</string>
     <string name="failed_to_persist_access">Failed to persist directory access. Please choose another folder.</string>
+    <string name="export_m3u">Export M3U</string>
+    <string name="import_m3u">Import M3U file</string>
+    <string name="m3u_exported">Playlist exported</string>
+    <string name="m3u_empty_playlist">Nothing to export: playlist is empty</string>
+    <string name="m3u_import_failed">Could not read the M3U file</string>
+    <string name="m3u_imported">Imported playlist: %1$d tracks matched, %2$d missing from library</string>
     <string name="mood_auto_dj">Mood Auto-DJ</string>
     <string name="mood_auto_dj_desc">Keep the queue flowing: when a mood playlist runs out, more matching tracks are added automatically</string>
     <string name="mood_preparing">Preparing playlist… The Mood Engine is organizing your tracks</string>
