@@ -947,8 +947,10 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                                 feedbackLastDurationMs = mediaController?.duration?.toFloat() ?: 0f
                                 syncServiceStateWithLiveData()
                                 refreshAudioSessionId()
+                                trackAutoDjPlayed(mediaItem?.mediaId)
                                 if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO ||
-                                    reason == Player.MEDIA_ITEM_TRANSITION_REASON_SEEK) {
+                                    reason == Player.MEDIA_ITEM_TRANSITION_REASON_SEEK ||
+                                    reason == Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED) {
                                     maybeExtendAutoDjQueue()
                                 }
                             }
@@ -979,7 +981,15 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                         restoreJob?.cancel()
                         restoreJob = null
                         Log.i("PlaybackViewModel", "Executing pending playback for ${pending.first.getOrNull(pending.second)?.title}")
+                        // playSong clears the Auto-DJ mood (it assumes a new
+                        // non-mood request); the mood was armed AFTER the
+                        // original call, so preserve it across this deferred run.
+                        val armedMood = autoDjMood
                         playSong(pending.first, pending.second, playImmediately = true)
+                        if (armedMood != null) {
+                            autoDjMood = armedMood
+                            maybeExtendAutoDjQueue()
+                        }
                     } else {
                         restoreLastPlayedTrack()
                     }
@@ -1824,7 +1834,21 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     // steering which tracks surface over time.
     @Volatile private var autoDjMood: String? = null
     private val autoDjRecentIds = LinkedHashSet<String>()
+    private val autoDjPlayedIds = LinkedHashSet<String>()
     private var autoDjExtendJob: kotlinx.coroutines.Job? = null
+
+    /** Called on track transitions so Auto-DJ knows what just played and
+     *  avoids re-appending it right away (wrap-around reshuffles instead). */
+    private fun trackAutoDjPlayed(mediaId: String?) {
+        if (mediaId.isNullOrBlank()) return
+        synchronized(autoDjPlayedIds) {
+            autoDjPlayedIds.add(mediaId)
+            while (autoDjPlayedIds.size > 10) {
+                val first = autoDjPlayedIds.firstOrNull() ?: break
+                autoDjPlayedIds.remove(first)
+            }
+        }
+    }
 
     /** Arms Auto-DJ for a mood playlist (call AFTER the playback request). */
     fun setAutoDjMood(mood: String?) {
@@ -1848,33 +1872,49 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         if (remaining > 2) return
         if (autoDjExtendJob?.isActive == true) return
 
-        autoDjExtendJob = viewModelScope.launch(Dispatchers.IO) {
+        autoDjExtendJob = viewModelScope.launch(Dispatchers.Main) {
             try {
+                // MediaController must only be touched on the application's
+                // main thread; DB/mix work runs off it below.
                 val queuedIds = (0 until controller.mediaItemCount)
                     .map { controller.getMediaItemAt(it).mediaId }
                     .toSet()
-                val penalized = moodEngine.penalizedTrackIds()
-                val mix = getMoodMix(mood) ?: return@launch
+                val penalized = withContext(Dispatchers.IO) { moodEngine.penalizedTrackIds() }
+                val mix = withContext(Dispatchers.IO) { getMoodMix(mood) } ?: return@launch
 
-                val fresh = mix.filter { song ->
-                    val id = song.id.toString()
-                    id !in queuedIds && id !in autoDjRecentIds && id !in penalized
-                }.shuffled().take(10)
+                // Items right after the current one are already lined up;
+                // duplicating them immediately would play them twice.
+                val tailIds = ((controller.currentMediaItemIndex + 1) until controller.mediaItemCount)
+                    .take(3)
+                    .map { controller.getMediaItemAt(it).mediaId }
+                    .toSet()
+                val playedRecent = synchronized(autoDjPlayedIds) { autoDjPlayedIds.toSet() }
+                val recentAppends = synchronized(autoDjRecentIds) { autoDjRecentIds.toSet() }
 
-                val batch = if (fresh.isNotEmpty()) {
-                    fresh
-                } else {
-                    // The mix is exhausted relative to the recent pool:
-                    // reset it and reshuffle whatever is not currently queued.
-                    autoDjRecentIds.clear()
-                    mix.filter { it.id.toString() !in queuedIds }.shuffled().take(10)
+                fun candidates(preferNeverQueued: Boolean, excludeAppends: Boolean): List<Song> {
+                    val excluded = buildSet {
+                        addAll(penalized)
+                        addAll(tailIds)
+                        addAll(playedRecent)
+                        if (excludeAppends) addAll(recentAppends)
+                    }
+                    return mix.filter { song ->
+                        val id = song.id.toString()
+                        id !in excluded && (!preferNeverQueued || id !in queuedIds)
+                    }
                 }
+
+                // Prefer tracks not already in the queue; when the mix is
+                // already fully queued (e.g. queue restored from a previous
+                // session), wrap around: reshuffle everything except what
+                // just played and what is about to play.
+                val batch = candidates(true, true)
+                    .ifEmpty { candidates(false, true) }
+                    .ifEmpty { candidates(false, false) }
+                    .shuffled().take(10)
                 if (batch.isEmpty()) return@launch
 
-                withContext(Dispatchers.Main) {
-                    val c = mediaController ?: return@withContext
-                    c.addMediaItems(batch.map { it.toMediaItem() })
-                }
+                controller.addMediaItems(batch.map { it.toMediaItem() })
                 synchronized(autoDjRecentIds) {
                     batch.forEach { autoDjRecentIds.add(it.id.toString()) }
                     while (autoDjRecentIds.size > 60) {
