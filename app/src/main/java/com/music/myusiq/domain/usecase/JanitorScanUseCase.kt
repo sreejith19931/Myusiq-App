@@ -37,6 +37,7 @@ class JanitorScanUseCase(
     private val fingerprintingUseCase: AudioFingerprintingUseCase,
     private val matchSearchUseCase: MatchSearchUseCase,
     private val waveformProvider: suspend () -> Map<String, String> = { emptyMap() },
+    private val isTrackProcessed: (Song) -> Boolean = { false },
 ) {
     fun scanTracks(tracks: List<Song>, context: Context): Flow<ScanState> = channelFlow {
         val totalTracks = tracks.size
@@ -83,6 +84,14 @@ class JanitorScanUseCase(
                 launch {
                     semaphore.withPermit {
                         try {
+                            // 0. Already reviewed/fixed in a previous install or
+                            // session, and the file is still healthy? Skip the
+                            // network round-trip and proposal entirely.
+                            val preArt = ArtworkUtils.getArtworkFile(context, song.id, song.path, song.album)
+                            val hasArtNow = preArt != null && preArt.exists() && preArt.length() > 0
+                            if (isTrackProcessed(song) && !isMessyOrUnknownTrack(song) && hasArtNow) {
+                                return@withPermit
+                            }
                             kotlinx.coroutines.withTimeoutOrNull(30000L) {
                                 // 1. Sanitize metadata using song properties
                                 val sanitizedSong = metadataSanitizerUseCase.sanitize(
@@ -226,6 +235,27 @@ class JanitorScanUseCase(
     }
 
 
+
+    /**
+     * True when the stored metadata is clearly broken (unknown artist/album,
+     * filename-as-title, URL clutter, YouTube leftovers).
+     */
+    fun isMessyOrUnknownTrack(song: Song): Boolean {
+        val title = song.title.trim().lowercase()
+        val artist = song.artist.trim().lowercase()
+        val album = song.album.trim().lowercase()
+
+        val isUnknownArtist = artist.isBlank() || artist == "<unknown>" || artist == "unknown artist" || artist == "unknown"
+        val isUnknownAlbum = album.isBlank() || album == "<unknown>" || album == "unknown album" || album == "unknown"
+        val hasFileExtension = title.endsWith(".mp3") || title.endsWith(".flac") || title.endsWith(".m4a") || title.endsWith(".wav") || title.endsWith(".aac")
+        val isGenericTitle = Regex("(?i)^(track|audio|sound|recording|song)[_\\s\\-]*\\d*$").matches(title) || title.isBlank()
+
+        val hasClutter = title.contains("_") ||
+                         Regex("(?i)\\b(www\\.|https?://)?[a-z0-9\\-]+\\.(com|net|org|io|me|co|info|biz)\\b").containsMatchIn(title) ||
+                         Regex("(?i)[(\\[{].*?(official|music\\s+video|official\\s+audio|lyric\\s+video|hd\\s+1080p|4k|visualizer|y2mate|ytmp3).*?[)\\]}]").containsMatchIn(title)
+
+        return isUnknownArtist || isUnknownAlbum || hasFileExtension || isGenericTitle || hasClutter
+    }
 
     private fun dismissKey(songId: String, match: SuggestedMetadataItem): String =
         "$songId|${match.suggestedTitle.trim().lowercase()}|${match.suggestedArtist.trim().lowercase()}"

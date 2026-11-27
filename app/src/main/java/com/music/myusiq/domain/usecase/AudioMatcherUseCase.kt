@@ -98,6 +98,21 @@ class AudioMatcherUseCase(private val context: Context) {
                         genre = best.suggestedGenre ?: song.genre
                     )
                 )
+                // Persist to the public processed record so a reinstall
+                // skips this healed track.
+                try {
+                    com.music.myusiq.utils.JanitorProcessedCache.markProcessedFingerprints(
+                        context,
+                        listOf(
+                            com.music.myusiq.utils.JanitorProcessedCache.fingerprintOf(
+                                newPath.ifBlank { song.path },
+                                best.suggestedTitle,
+                                best.suggestedArtist,
+                                best.suggestedAlbum
+                            )
+                        )
+                    )
+                } catch (_: Exception) {}
                 true
             } catch (e: Exception) {
                 Log.e("AudioMatcherUseCase", "Error matching/healing song: ${song.title}", e)

@@ -280,7 +280,10 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
             val groups = (pathGroups + titleGroups).distinctBy { group -> group.map { it.id }.sorted() }
 
             val prefs = appContext.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
-            val initialScanDone = prefs.getBoolean("janitor_initial_scan_done", false)
+            // A previous install's processed record survives data clears —
+            // treat it as "the initial scan already happened".
+            val initialScanDone = prefs.getBoolean("janitor_initial_scan_done", false) ||
+                com.music.myusiq.utils.JanitorProcessedCache.hasRecords(appContext)
 
             val missingArt = allSongs
                 .distinctBy { PlatformUtils.normalizePath(it.path) }
@@ -314,6 +317,8 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
                 val statusMessage = when {
                     !initialScanDone ->
                         "First-time Scan: ${allSongs.size} tracks ready for artwork & metadata check. Tap to start."
+                    allFixCandidates.isEmpty() ->
+                        "All metadata and artwork look clean. Use 'Rescan & Fix All Tracks' to perform a complete reset and scan."
                     toRepair.isNotEmpty() && missingArt.isNotEmpty() ->
                         "Found ${toRepair.size} tracks with messy metadata and ${missingArt.size} tracks with missing artwork. Tap to review."
                     toRepair.isNotEmpty() ->

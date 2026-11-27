@@ -121,6 +121,13 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             } catch (_: Exception) {
                 emptyMap()
             }
+        },
+        isTrackProcessed = { song ->
+            try {
+                com.music.myusiq.utils.JanitorProcessedCache.isProcessed(application, song)
+            } catch (_: Exception) {
+                false
+            }
         }
     )
     private val _janitorScanState = MutableStateFlow<com.music.myusiq.domain.usecase.ScanState?>(null)
@@ -234,6 +241,20 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             // Corrected metadata invalidates the old mood classification
             viewModelScope.launch(Dispatchers.IO) {
                 try { moodEngine.invalidateProfile(data.songId.toString()) } catch (_: Exception) {}
+            }
+            // Record the FIXED fingerprint so a future reinstall (data clear)
+            // recognizes this track as already healed.
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    com.music.myusiq.utils.JanitorProcessedCache.markProcessedFingerprints(
+                        application,
+                        listOf(
+                            com.music.myusiq.utils.JanitorProcessedCache.fingerprintOf(
+                                data.path, data.title, data.artist, data.album
+                            )
+                        )
+                    )
+                } catch (_: Exception) {}
             }
             finishMetadataUpdate(data, refreshLibrary)
         }

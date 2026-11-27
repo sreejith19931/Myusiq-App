@@ -99,6 +99,30 @@ class JanitorReviewBottomSheet : BottomSheetDialogFragment() {
 
         var candidateItems: List<JanitorUpdateItem> = emptyList()
 
+        // Persists "this track was reviewed" to the public .myusiq_backup
+        // record: selected items under their NEW (fixed) metadata, unselected
+        // items under their CURRENT metadata.
+        fun markAllReviewed() {
+            if (candidateItems.isEmpty()) return
+            lifecycleScope.launch(Dispatchers.IO) {
+                try {
+                    val fingerprints = candidateItems.map { item ->
+                        if (item.isSelected) {
+                            com.music.myusiq.utils.JanitorProcessedCache.fingerprintOf(
+                                item.song.path,
+                                item.proposedEdit.title,
+                                item.proposedEdit.artist,
+                                item.proposedEdit.album
+                            )
+                        } else {
+                            com.music.myusiq.utils.JanitorProcessedCache.fingerprint(item.song)
+                        }
+                    }
+                    com.music.myusiq.utils.JanitorProcessedCache.markProcessedFingerprints(requireContext(), fingerprints)
+                } catch (_: Exception) {}
+            }
+        }
+
         fun updateApplyButtonText() {
             val selectedCount = candidateItems.count { it.isSelected }
             btnApply.text = "Apply Selected ($selectedCount)"
@@ -112,6 +136,9 @@ class JanitorReviewBottomSheet : BottomSheetDialogFragment() {
             if (unselected.isNotEmpty()) {
                 com.music.myusiq.utils.JanitorResultsCache.recordDismissed(requireContext(), unselected)
             }
+            // Everything reviewed here (applied or dismissed) is done — persist
+            // to the public record so reinstalls skip these tracks.
+            markAllReviewed()
             viewModel.cancelJanitorScan()
             viewModel.cancelBulkUpdate()
             viewModel.clearJanitorScanState()
@@ -181,6 +208,7 @@ class JanitorReviewBottomSheet : BottomSheetDialogFragment() {
                     permissionJob.cancel()
 
                     if (!isCancelledByUser) {
+                        markAllReviewed()
                         val appliedCount = viewModel.bulkUpdateProgress.value.first.let { if (it > 0) it else selectedEdits.size }
                         tvTitle.text = "Updates Applied Successfully!"
                         tvSub.text = "Successfully updated $appliedCount tracks in your music library."
