@@ -35,6 +35,7 @@ import kotlinx.coroutines.withContext
 import com.music.myusiq.domain.models.*
 import com.music.myusiq.data.AppDatabase
 import com.music.myusiq.data.dao.PlaylistDao
+import com.music.myusiq.domain.usecase.MoodClassifier
 import com.music.myusiq.ui.viewmodels.PlaybackViewModel
 import com.music.myusiq.utils.*
 import com.music.myusiq.DatabaseProvider
@@ -75,7 +76,7 @@ class PlaylistsFragment : Fragment(R.layout.fragment_playlists) {
                 headerIconRes = R.drawable.ic_playlist,
                 features = listOf(
                     GuideFeatureItem(R.drawable.ic_speed, "Smart AI Auto-Mixes", "Enjoy auto-generated Morning Mix, Top Artists, Forgotten Favorites, and Discover mixes."),
-                    GuideFeatureItem(R.drawable.ic_heart_filled, "Mood Playlists", "Tap Mood mixes (Energize, Relax, Party, Focus, Romance) to instantly load matching tracks."),
+                    GuideFeatureItem(R.drawable.ic_heart_filled, "Mood Playlists", "Tap a mood chip (Energize, Relax, Party, Focus, Romance, Drive) to open its mood playlist. Tap Auto-Organize to let the Mood Engine analyze your library and learn from your playlists. Long-press a chip to play it instantly."),
                     GuideFeatureItem(R.drawable.ic_add, "Custom Playlists", "Tap the floating '+' button to create user playlists and organize your audio collection.")
                 )
             )
@@ -225,24 +226,51 @@ class PlaylistsFragment : Fragment(R.layout.fragment_playlists) {
     }
 
     private fun setupMoodChips(view: View) {
+        // chipId -> (engine mood key, display name)
         val moods = mapOf(
-            R.id.chipEnergize to getString(R.string.mood_energize),
-            R.id.chipRelax to getString(R.string.mood_relax),
-            R.id.chipParty to getString(R.string.mood_party),
-            R.id.chipFocus to getString(R.string.mood_focus),
-            R.id.chipRomance to getString(R.string.mood_romance),
-            R.id.chipDrive to getString(R.string.mood_drive)
+            R.id.chipEnergize to MoodChip(MoodClassifier.MOOD_ENERGIZE, getString(R.string.mood_energize)),
+            R.id.chipRelax to MoodChip(MoodClassifier.MOOD_RELAX, getString(R.string.mood_relax)),
+            R.id.chipParty to MoodChip(MoodClassifier.MOOD_PARTY, getString(R.string.mood_party)),
+            R.id.chipFocus to MoodChip(MoodClassifier.MOOD_FOCUS, getString(R.string.mood_focus)),
+            R.id.chipRomance to MoodChip(MoodClassifier.MOOD_ROMANCE, getString(R.string.mood_romance)),
+            R.id.chipDrive to MoodChip(MoodClassifier.MOOD_DRIVE, getString(R.string.mood_drive))
         )
 
-        moods.forEach { (chipId, moodName) ->
-            view.findViewById<Chip?>(chipId)?.setOnClickListener {
-                startMoodPlaylist(moodName)
+        moods.forEach { (chipId, chip) ->
+            view.findViewById<Chip?>(chipId)?.apply {
+                // Tap: open the Mood Engine-powered playlist page for this mood.
+                // Long-press: instantly start playing the mix (legacy behavior).
+                setOnClickListener { openMoodPlaylist(chip.key, chip.displayName) }
+                setOnLongClickListener {
+                    startMoodPlaylist(chip.key, chip.displayName)
+                    true
+                }
             }
         }
 
         view.findViewById<Chip?>(R.id.chipOrganizeMoods)?.setOnClickListener {
             organizeMoodPlaylists()
         }
+    }
+
+    private data class MoodChip(val key: String, val displayName: String)
+
+    /** Opens the mood playlist page with the engine-ranked track list. */
+    private fun openMoodPlaylist(moodKey: String, displayName: String) {
+        val fragment = PlaylistDetailsFragment().apply {
+            arguments = Bundle().apply {
+                putLong("playlistId", -1L)
+                putString("playlistName", displayName)
+                putString("moodKey", moodKey)
+            }
+        }
+        parentFragmentManager.beginTransaction()
+            .setReorderingAllowed(true)
+            .setCustomAnimations(R.anim.slide_in_up, 0, 0, R.anim.slide_out_down)
+            .add(R.id.navHostFragment, fragment)
+            .hide(this@PlaylistsFragment)
+            .addToBackStack(null)
+            .commit()
     }
 
     /**
@@ -268,7 +296,7 @@ class PlaylistsFragment : Fragment(R.layout.fragment_playlists) {
         Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
     }
 
-    private fun startMoodPlaylist(mood: String) {
+    private fun startMoodPlaylist(moodKey: String, displayName: String) {
         val allTracks = viewModel.originalTrackList
         if (allTracks.isEmpty()) {
             Toast.makeText(requireContext(), R.string.library_loading, Toast.LENGTH_SHORT).show()
@@ -276,15 +304,15 @@ class PlaylistsFragment : Fragment(R.layout.fragment_playlists) {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            val songs = viewModel.getMoodMix(mood)
+            val songs = viewModel.getMoodMix(moodKey)
 
             if (songs.isNotEmpty()) {
                 viewModel.playSong(songs, 0, true)
-                val msg = getString(R.string.playing_mood_mix, mood)
+                val msg = getString(R.string.playing_mood_mix, displayName)
                 Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
                 viewModel.navigateToTab(R.id.dest_queue)
             } else {
-                val msg = getString(R.string.no_mood_tracks_found, mood)
+                val msg = getString(R.string.no_mood_tracks_found, displayName)
                 Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
             }
         }

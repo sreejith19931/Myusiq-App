@@ -185,17 +185,28 @@ class PlaylistDetailsFragment : Fragment(R.layout.fragment_tracks) {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     if (playlistId == -1L) {
+                        val moodKey = arguments?.getString("moodKey")
                         currentPlaylistSongs = withContext(Dispatchers.IO) {
-                            when (playlistName) {
-                                "Recently Added" -> viewModel.getRecentlyAddedTracks()
-                                "Most Popular" -> viewModel.getMostPopularTracks()
-                                "Morning Mix" -> viewModel.getMorningMix()
-                                "Evening Chill" -> viewModel.getEveningMix()
-                                "Top Artists Mix" -> viewModel.getTopArtistsMix()
-                                "Forgotten Favorites" -> viewModel.getForgottenFavorites()
-                                "Discover" -> viewModel.getDiscoverMix()
+                            when {
+                                // Mood Engine playlists (Energize, Relax, Party, Focus, Romance, Drive):
+                                // engine-ranked tracks, refined by learned playlist profiles
+                                moodKey != null -> viewModel.getMoodMix(moodKey)
+                                playlistName == "Recently Added" -> viewModel.getRecentlyAddedTracks()
+                                playlistName == "Most Popular" -> viewModel.getMostPopularTracks()
+                                playlistName == "Morning Mix" -> viewModel.getMorningMix()
+                                playlistName == "Evening Chill" -> viewModel.getEveningMix()
+                                playlistName == "Top Artists Mix" -> viewModel.getTopArtistsMix()
+                                playlistName == "Forgotten Favorites" -> viewModel.getForgottenFavorites()
+                                playlistName == "Discover" -> viewModel.getDiscoverMix()
                                 else -> emptyList()
                             }
+                        }
+                        if (moodKey != null && currentPlaylistSongs.isEmpty()) {
+                            Toast.makeText(
+                                requireContext(),
+                                getString(R.string.no_mood_tracks_found, playlistName),
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                         updateAdapterItems()
                         tvSubtitle.text = getString(R.string.tracks_count_format, currentPlaylistSongs.size)
