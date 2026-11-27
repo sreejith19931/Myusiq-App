@@ -333,19 +333,23 @@ class MoodEngine(
         }
 
     /**
-     * Hard veto: a track whose measured energy flatly contradicts a mood can
-     * never enter that mood's mix, regardless of weak genre/title scores
-     * (e.g. energy-9 club bangers must not surface in Relax).
+     * Hard veto: a track whose measured energy falls outside a mood's
+     * acceptable window can never enter that mood's mix, regardless of weak
+     * genre/title scores. Windows are symmetric around each archetype:
+     * loud club tracks can't surface in chill moods and quiet ballads can't
+     * surface in party moods.
      */
     private fun energyContradictsMood(mood: String, profile: MoodProfile): Boolean {
         val e = profile.energyScore
         if (e !in 1..10) return false // no audio evidence yet
-        return when (mood) {
-            MoodClassifier.MOOD_RELAX, MoodClassifier.MOOD_FOCUS -> e >= 7
-            MoodClassifier.MOOD_ROMANCE -> e >= 8
-            MoodClassifier.MOOD_ENERGIZE, MoodClassifier.MOOD_PARTY -> e <= 2
-            else -> false
+        val acceptable = when (mood) {
+            MoodClassifier.MOOD_RELAX, MoodClassifier.MOOD_FOCUS -> 1..6
+            MoodClassifier.MOOD_ROMANCE -> 1..7
+            MoodClassifier.MOOD_DRIVE -> 4..10
+            MoodClassifier.MOOD_ENERGIZE, MoodClassifier.MOOD_PARTY -> 5..10
+            else -> 1..10
         }
+        return e !in acceptable
     }
 
     /**
