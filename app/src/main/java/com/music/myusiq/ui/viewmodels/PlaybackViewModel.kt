@@ -1015,7 +1015,9 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                 delay(750)
 
                 val waveformUsable = entity?.waveformAmplitudes != null &&
-                    !WaveformExtractor.isSaturated(entity.waveformAmplitudes)
+                    !WaveformExtractor.isSaturated(entity.waveformAmplitudes) &&
+                    !WaveformExtractor.isLegacyPeakEnvelope(entity.waveformAmplitudes) &&
+                    !WaveformExtractor.isLowResolution(entity.waveformAmplitudes)
                 if (entity?.waveformAmplitudes == null || !waveformUsable) {
                     val waveform = WaveformExtractor.extractWaveform(getApplication(), songItem.path.toUri())
                     if (waveform != null) {
@@ -1543,11 +1545,19 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                 emptyMap()
             }
 
+            // Immediate tags/keywords pass so mood playlists exist right away;
+            // they refresh with audio evidence as waveforms land below.
+            Log.d("PlaybackViewModel", "waveform job: firing initial mood pass")
+            autoClassifyMoodsLocalOnly()
+
+            var processed = 0
             for (song in tracksToAnalyze) {
                 if (!coroutineContext.isActive) break
                 val entity = libraryEntities[song.id.toString()]
                 val waveformUsable = entity?.waveformAmplitudes != null &&
-                    !WaveformExtractor.isSaturated(entity.waveformAmplitudes)
+                    !WaveformExtractor.isSaturated(entity.waveformAmplitudes) &&
+                    !WaveformExtractor.isLegacyPeakEnvelope(entity.waveformAmplitudes) &&
+                    !WaveformExtractor.isLowResolution(entity.waveformAmplitudes)
                 if (entity?.waveformAmplitudes == null || entity.energyScore == -1 || !waveformUsable) {
                     try {
                         val waveform = WaveformExtractor.extractWaveform(getApplication(), song.path.toUri())
@@ -1564,13 +1574,17 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                         Log.d("PlaybackViewModel", "Background waveform extraction skipped: ${e.message}")
                     }
                     delay(100)
+                    processed++
+                    // Incremental mood refresh: as soon as every ~10 waveforms
+                    // land, re-classify stale profiles so the mood playlists
+                    // improve continuously instead of waiting for the whole
+                    // waveform pass to finish.
+                    if (processed % 10 == 0) autoClassifyMoodsLocalOnly()
                 }
             }
 
-            // Mood classification runs AFTER waveforms exist, so profiles carry
-            // real energy/BPM evidence instead of being written unusable and
-            // never refreshed. Local pass first, then the background worker
-            // finishes the job with online genre enrichment + playlist learning.
+            // Final pass once waveforms are complete, then the background
+            // worker finishes the job with online genre enrichment + learning.
             autoClassifyMoodsLocalOnly()
             scheduleMoodClassification(enrichOnline = true)
         }
@@ -1720,12 +1734,16 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     }
 
     /** Runs a local-only classification pass (no network) in the background. */
+    private var moodClassifyJob: kotlinx.coroutines.Job? = null
     private fun autoClassifyMoodsLocalOnly() {
-        viewModelScope.launch(Dispatchers.IO) {
+        // Single-flight: skip if a pass is already running
+        if (moodClassifyJob?.isActive == true) return
+        moodClassifyJob = viewModelScope.launch(Dispatchers.IO) {
             try {
                 moodEngine.organize(originalTrackList.toList(), enrichOnline = false, onlineLimit = 0)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
                 // Mood classification must never break library loading
+                Log.e("PlaybackViewModel", "mood classify failed", e)
             }
         }
     }

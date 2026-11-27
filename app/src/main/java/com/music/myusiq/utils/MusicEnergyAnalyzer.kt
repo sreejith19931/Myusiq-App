@@ -1,7 +1,5 @@
 package com.music.myusiq.utils
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
@@ -24,33 +22,33 @@ object MusicEnergyAnalyzer {
      * Analyzes track energy based on the per-window peak envelope produced by
      * WaveformExtractor (values in 0..1, roughly the track's loudness contour).
      *
-     * Calibration (peak-envelope scale): a loud modern master has mean peak
-     * ≈ 0.6-0.8 and high peak density → 8-10; mellow pop/ballads ≈ 0.3-0.5
-     * mean → 4-6; quiet acoustic/classical/lo-fi ≈ 0.15-0.3 → 1-3.
-     * Loudness dominates, dynamics (variance across windows) and peak
-     * density modulate. Saturated/corrupt waveforms (all ≈ 1.0) are rejected
-     * so they can never masquerade as "maximum energy".
+     * Calibration (RMS-envelope scale, where 1.0 = full-scale digital RMS;
+     * device-measured: loud modern masters ≈ 0.28-0.40 mean RMS): a loud
+     * master ≈ 0.30 → 8-9; mellow pop/ballads ≈ 0.15-0.20 → 4-6; quiet
+     * acoustic/classical/lo-fi ≈ 0.05-0.09 → 1-3. Loudness dominates,
+     * dynamics (variance across windows) and peak density modulate. Legacy
+     * peak-envelope waveforms (RMS-impossible values > 0.85) and corrupt
+     * ones are rejected so they can never masquerade as "maximum energy".
      */
-    suspend fun analyze(waveform: String?): Int {
+    fun analyze(waveform: String?): Int {
         if (waveform.isNullOrBlank() || WaveformExtractor.isSaturated(waveform)) return 5
 
-        return withContext(Dispatchers.Default) {
-            try {
-                val samples = waveform.split(",").mapNotNull { it.toFloatOrNull() }
-                if (samples.size < 10) return@withContext 5
+        return try {
+            val samples = waveform.split(",").mapNotNull { it.toFloatOrNull() }
+            if (samples.size < 10) return 5
+            if (WaveformExtractor.isLegacyPeakEnvelope(waveform)) return 5
 
-                val mean = samples.average()
-                val variance = samples.asSequence().map { abs(it - mean) }.average().toFloat()
-                val max = samples.maxOrNull() ?: 1f
-                val peakThreshold = max * 0.7f
-                val peakDensity = samples.count { it > peakThreshold }.toFloat() / samples.size.toFloat()
+            val mean = samples.average()
+            val variance = samples.asSequence().map { abs(it - mean) }.average().toFloat()
+            val max = samples.maxOrNull() ?: 1f
+            val peakThreshold = max * 0.7f
+            val peakDensity = samples.count { it > peakThreshold }.toFloat() / samples.size.toFloat()
 
-                // Loudness dominates; dynamics and peak density modulate.
-                val raw = (7.0 * mean) + (5.0 * variance) + (3.0 * peakDensity)
-                (raw * 1.05).roundToInt().coerceIn(1, 10)
-            } catch (_: Exception) {
-                5
-            }
+            // Loudness dominates; dynamics and peak density modulate.
+            val raw = (21.0 * mean) + (12.0 * variance) + (1.5 * peakDensity)
+            raw.roundToInt().coerceIn(1, 10)
+        } catch (_: Exception) {
+            5
         }
     }
 
@@ -59,13 +57,13 @@ object MusicEnergyAnalyzer {
      * onsets in the peak envelope. Median is robust against intro/outro
      * dynamics that distort the mean.
      */
-    suspend fun estimateBpm(waveform: String?, trackDurationMs: Long = 180000L): Int {
+    fun estimateBpm(waveform: String?, trackDurationMs: Long = 180000L): Int {
         if (waveform.isNullOrBlank() || WaveformExtractor.isSaturated(waveform)) return 120
 
-        return withContext(Dispatchers.Default) {
-            try {
-                val samples = waveform.split(",").mapNotNull { it.toFloatOrNull() }
-                if (samples.size < 10) return@withContext 120
+        return try {
+            val samples = waveform.split(",").mapNotNull { it.toFloatOrNull() }
+            if (samples.size < 10) return 120
+            if (WaveformExtractor.isLegacyPeakEnvelope(waveform)) return 120
 
                 val maxPeak = samples.maxOrNull() ?: 1f
                 val threshold = maxPeak * 0.65f
@@ -77,13 +75,13 @@ object MusicEnergyAnalyzer {
                     }
                 }
 
-                if (peakIndices.size < 2) return@withContext 120
+                if (peakIndices.size < 2) return 120
 
                 val intervals = mutableListOf<Int>()
                 for (i in 1 until peakIndices.size) {
                     intervals.add(peakIndices[i] - peakIndices[i - 1])
                 }
-                if (intervals.isEmpty()) return@withContext 120
+                if (intervals.isEmpty()) return 120
 
                 // Median interval (robust to one-off gaps between sections)
                 val sortedIntervals = intervals.sorted()
@@ -92,14 +90,17 @@ object MusicEnergyAnalyzer {
                 } else {
                     (sortedIntervals[sortedIntervals.size / 2 - 1] + sortedIntervals[sortedIntervals.size / 2]) / 2.0
                 }
-                if (avgIntervalSamples <= 0) return@withContext 120
+                if (avgIntervalSamples <= 0) return 120
 
                 val totalDurationSec = (trackDurationMs / 1000.0).coerceAtLeast(1.0)
                 val secPerSample = totalDurationSec / samples.size.toDouble()
                 val beatDurationSec = avgIntervalSamples * secPerSample
 
-                if (beatDurationSec <= 0) return@withContext 120
+                if (beatDurationSec <= 0) return 120
                 var estimatedBpm = (60.0 / beatDurationSec).roundToInt()
+                // A very sparse envelope can round the raw BPM to 0; the
+                // doubling loop below can never lift 0, so floor it first.
+                if (estimatedBpm < 1) estimatedBpm = 60
 
                 while (estimatedBpm < 70) estimatedBpm *= 2
                 while (estimatedBpm > 180) estimatedBpm /= 2
@@ -108,23 +109,20 @@ object MusicEnergyAnalyzer {
             } catch (_: Exception) {
                 120
             }
-        }
     }
 
     /**
      * Estimates harmonic key signature in Camelot wheel notation (e.g., 8A, 11B).
      */
-    suspend fun estimateHarmonicKey(waveform: String?): String {
+    fun estimateHarmonicKey(waveform: String?): String {
         if (waveform.isNullOrBlank()) return "8A"
 
-        return withContext(Dispatchers.Default) {
-            try {
-                val hash = waveform.hashCode()
-                val keyIndex = abs(hash) % CAMELOT_KEYS.size
-                CAMELOT_KEYS[keyIndex]
-            } catch (_: Exception) {
-                "8A"
-            }
+        return try {
+            val hash = waveform.hashCode()
+            val keyIndex = abs(hash) % CAMELOT_KEYS.size
+            CAMELOT_KEYS[keyIndex]
+        } catch (_: Exception) {
+            "8A"
         }
     }
 

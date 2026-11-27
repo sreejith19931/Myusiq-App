@@ -60,17 +60,19 @@ class MoodEngine(
         onlineGenre: String?,
         lyrics: String?,
     ): MoodClassifier.TrackSignals {
-        // Energy is only trustworthy when the waveform itself is usable;
-        // saturated garbage (the old extractor bug) must never count as audio.
-        val waveformUsable = !WaveformExtractor.isSaturated(waveform)
+        val waveformUsable = !WaveformExtractor.isSaturated(waveform) &&
+            !WaveformExtractor.isLegacyPeakEnvelope(waveform)
         val energy = if (waveformUsable) trackEnergy else -1
-        val bpm = if (waveform.isNullOrBlank() || !waveformUsable || energy < 1) -1
-        else MusicEnergyAnalyzer.estimateBpm(waveform, song.duration.toLong() * 1000L)
+        // BPM only from envelopes fine enough to pulse with beats; coarse
+        // (low-resolution) envelopes would yield arbitrary doubled values.
+        val bpm = if (waveform.isNullOrBlank() || !waveformUsable || energy < 1 ||
+            WaveformExtractor.isLowResolution(waveform)
+        ) -1 else MusicEnergyAnalyzer.estimateBpm(waveform, song.duration.toLong())
 
         val extraTags = onlineGenre?.let { MoodClassifier.tokenizeGenre(it).toSet() } ?: emptySet()
 
         return MoodClassifier.TrackSignals(
-            energyScore = trackEnergy,
+            energyScore = energy,
             bpm = bpm,
             genre = song.genre,
             title = song.title,
@@ -137,18 +139,25 @@ class MoodEngine(
             val profile = existingProfiles[id]
 
             // A profile is only trusted when it carries real audio evidence
-            // (energy + bpm). Profiles written before waveform analysis
-            // finished, or from corrupt waveforms, get re-classified.
-            val profileTrusted = profile != null && profile.energyScore in 1..10 && profile.bpm != -1
+            // from a usable RMS waveform. Profiles written from legacy/corrupt
+            // waveforms (e.g. peak-envelope energy=10, fallback bpm) get
+            // re-classified.
+            val trackWaveformUsable = track?.waveformAmplitudes != null &&
+                !WaveformExtractor.isSaturated(track.waveformAmplitudes) &&
+                !WaveformExtractor.isLegacyPeakEnvelope(track.waveformAmplitudes)
+            val profileTrusted = profile != null && profile.energyScore in 1..10 && trackWaveformUsable
             if (profileTrusted) {
                 skipped++
                 continue
             }
             val audioUsable = (track?.energyScore ?: -1) in 1..10 &&
-                !WaveformExtractor.isSaturated(track?.waveformAmplitudes)
-            if (!audioUsable && profile != null) {
+                !WaveformExtractor.isSaturated(track?.waveformAmplitudes) &&
+                !WaveformExtractor.isLegacyPeakEnvelope(track?.waveformAmplitudes)
+            if (!audioUsable && profile != null && profile.energyScore == -1) {
                 // No new audio evidence yet and a tags-only profile exists:
-                // keep it and avoid churning on every run.
+                // keep it and avoid churning on every run. Profiles that CLAIM
+                // audio evidence but have no usable waveform are stale garbage
+                // and fall through to re-classification.
                 skipped++
                 continue
             }
@@ -163,7 +172,8 @@ class MoodEngine(
             val id = song.id.toString()
             val track = tracksById[id]
             val trackWaveform = track?.waveformAmplitudes
-            val waveformUsable = !WaveformExtractor.isSaturated(trackWaveform)
+            val waveformUsable = !WaveformExtractor.isSaturated(trackWaveform) &&
+                !WaveformExtractor.isLegacyPeakEnvelope(trackWaveform)
             val waveform = if (waveformUsable) trackWaveform else null
             val energy = if (waveformUsable) (track?.energyScore ?: -1) else -1
             val lyrics = lyricsByPath[song.path]?.rawLyrics
@@ -197,8 +207,11 @@ class MoodEngine(
             }.joinToString(",")
 
             val signals = buildSignals(song, energy, waveform, onlineGenre, lyrics)
-            newProfiles.add(profileFromSignals(id, signals, sources, now))
+            val profile = profileFromSignals(id, signals, sources, now)
+            newProfiles.add(profile)
         }
+
+        Log.d("MoodEngine", "organize: songs=${songs.size} toClassify=${toClassify.size} skipped=$skipped profiles=${newProfiles.size} online=$enrichedOnline")
 
         if (newProfiles.isNotEmpty()) {
             moodDao.upsertMoodProfiles(newProfiles)

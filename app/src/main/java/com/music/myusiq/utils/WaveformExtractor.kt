@@ -10,7 +10,7 @@ import kotlinx.coroutines.withContext
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.Locale
-import kotlin.math.abs
+import kotlin.math.sqrt
 import kotlin.math.sin
 
 /**
@@ -24,7 +24,7 @@ import kotlin.math.sin
  */
 object WaveformExtractor {
 
-    private const val WINDOW_COUNT = 100
+    private const val WINDOW_COUNT = 400
 
     suspend fun extractWaveform(context: Context, uri: Uri): String? {
         return withContext(Dispatchers.IO) {
@@ -55,8 +55,12 @@ object WaveformExtractor {
                 decoder.configure(format, null, null, 0)
                 decoder.start()
 
-                // Peak envelope: max |PCM| per time window
-                val windows = arrayOfNulls<Int>(WINDOW_COUNT)
+                // RMS envelope: root-mean-square |PCM| per time window.
+                // RMS (not peak) is used because modern loud masters clip
+                // near full scale in every window, which makes peak
+                // envelopes quasi-saturated and dynamics-free.
+                val windowSumSq = DoubleArray(WINDOW_COUNT)
+                val windowCounts = IntArray(WINDOW_COUNT)
                 val info = MediaCodec.BufferInfo()
                 var inputDone = false
                 var outputDone = false
@@ -98,30 +102,33 @@ object WaveformExtractor {
                                 ((info.presentationTimeUs * WINDOW_COUNT) / durationUs)
                                     .toInt().coerceIn(0, WINDOW_COUNT - 1)
                             } else {
-                                (windows.count { it != null }.coerceAtMost(WINDOW_COUNT - 1))
+                                (windowCounts.count { it > 0 }.coerceAtMost(WINDOW_COUNT - 1))
                             }
                             out.position(0)
                             val isFloatPcm = decoder.outputFormat
                                 ?.getInteger(MediaFormat.KEY_PCM_ENCODING, android.media.AudioFormat.ENCODING_PCM_16BIT) ==
                                 android.media.AudioFormat.ENCODING_PCM_FLOAT
-                            var peak = 0
+                            var sumSq = 0.0
+                            var count = 0
                             if (isFloatPcm) {
                                 out.order(ByteOrder.LITTLE_ENDIAN)
                                 while (out.remaining() >= 4) {
-                                    val v = abs(out.float)
-                                    if (v > peak) peak = (v * 32768f).toInt()
+                                    val v = out.float.toDouble()
+                                    sumSq += v * v
+                                    count++
                                 }
                             } else {
                                 out.order(ByteOrder.LITTLE_ENDIAN)
                                 while (out.remaining() >= 2) {
-                                    val v = abs(out.short.toInt())
-                                    if (v > peak) peak = v
+                                    val v = out.short.toDouble()
+                                    sumSq += v * v
+                                    count++
                                 }
                             }
-                            if (peak > 0) {
+                            if (count > 0) {
                                 sawPcm = true
-                                val existing = windows[windowIndex] ?: 0
-                                if (peak > existing) windows[windowIndex] = peak
+                                windowSumSq[windowIndex] += sumSq
+                                windowCounts[windowIndex] += count
                             }
                         }
                         decoder.releaseOutputBuffer(outIndex, false)
@@ -131,14 +138,15 @@ object WaveformExtractor {
                     }
 
                     // Early exit once every window has data
-                    if (windows.all { it != null }) break
+                    if (windowCounts.all { it > 0 }) break
                 }
 
-                val filled = windows.map { it ?: 0 }
-                val amplitudeList = filled.map { (it / 32768f).coerceIn(0f, 1f) }
-
-                if (!sawPcm || amplitudeList.all { it == 0f }) {
+                if (!sawPcm) {
                     return@withContext syntheticFallback(uri)
+                }
+                val amplitudeList = (0 until WINDOW_COUNT).map { i ->
+                    if (windowCounts[i] == 0) 0f
+                    else sqrt(windowSumSq[i] / windowCounts[i]).toFloat() / 32768f
                 }
 
                 amplitudeList.joinToString(",") { String.format(Locale.US, "%.3f", it) }
@@ -170,6 +178,36 @@ object WaveformExtractor {
      * readSampleData-based extractor (every value ≈ 1.0). These must be
      * re-extracted and must never be treated as a usable audio signal.
      */
+    /** True when no window decoded any PCM (decode failed outright). */
+    fun isBlank(waveform: String?): Boolean {
+        if (waveform.isNullOrBlank()) return true
+        return waveform.split(",").all { (it.toFloatOrNull() ?: 0f) == 0f }
+    }
+
+    /**
+     * Detects waveforms produced by the legacy full-scale peak metric.
+     * Real RMS envelopes of music stay far below 0.85 (sustained -1.4 dBFS
+     * RMS is physically impossible), while legacy peak envelopes sit at
+     * 0.9-1.0 for loud masters. Such entries are stale and must be
+     * re-extracted with the RMS metric.
+     */
+    fun isLegacyPeakEnvelope(waveform: String?): Boolean {
+        if (waveform.isNullOrBlank()) return false
+        val values = waveform.split(",").mapNotNull { it.toFloatOrNull() }
+        if (values.size < 10) return false
+        return values.max() > 0.85f
+    }
+
+    /**
+     * True for waveforms stored with the old 100-window resolution. Tempo
+     * estimation needs windows shorter than a beat (~0.9s or less), so
+     * low-resolution envelopes carry energy but no BPM evidence.
+     */
+    fun isLowResolution(waveform: String?): Boolean {
+        if (waveform.isNullOrBlank()) return true
+        return waveform.split(",").size < 200
+    }
+
     fun isSaturated(waveform: String?): Boolean {
         if (waveform.isNullOrBlank()) return false
         val values = waveform.split(",").mapNotNull { it.toFloatOrNull() }
