@@ -341,8 +341,8 @@ class MoodEngine(
         val e = profile.energyScore
         if (e !in 1..10) return false // no audio evidence yet
         return when (mood) {
-            MoodClassifier.MOOD_RELAX, MoodClassifier.MOOD_FOCUS -> e >= 8
-            MoodClassifier.MOOD_ROMANCE -> e >= 9
+            MoodClassifier.MOOD_RELAX, MoodClassifier.MOOD_FOCUS -> e >= 7
+            MoodClassifier.MOOD_ROMANCE -> e >= 8
             MoodClassifier.MOOD_ENERGIZE, MoodClassifier.MOOD_PARTY -> e <= 2
             else -> false
         }
