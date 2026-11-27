@@ -317,12 +317,36 @@ class MoodEngine(
                 }
                 // Small freshness nudge for recently added tracks
                 val freshBonus = if (System.currentTimeMillis() - song.dateAdded * 1000L < 14L * 24 * 60 * 60 * 1000) 0.02 else 0.0
-                Triple(song, score + freshBonus, profile.primaryMood)
-            }.filter { (_, score, primary) -> score > 0.05 || primary == mood }
+                Triple(song, score + freshBonus, profile)
+            }.filter { (_, score, profile) -> score > 0.05 || profile.primaryMood == mood }
+            .filter { (_, _, profile) -> !energyContradictsMood(mood, profile) }
 
             if (scored.isEmpty()) return@withContext emptyList<Song>()
-            scored.sortedByDescending { it.second }.shuffled().take(limit).map { it.first }
+
+            // Prefer tracks that genuinely match the mood; only fall back to
+            // the wider pool when there is not enough real evidence yet.
+            // No shuffle: the ranking must survive (shuffling put loud tracks
+            // on top of the Relax list).
+            val strong = scored.filter { (_, score, profile) -> profile.primaryMood == mood || score >= 0.30 }
+            val pool = if (strong.size >= 8) strong else scored
+            pool.sortedByDescending { it.second }.take(limit).map { it.first }
         }
+
+    /**
+     * Hard veto: a track whose measured energy flatly contradicts a mood can
+     * never enter that mood's mix, regardless of weak genre/title scores
+     * (e.g. energy-9 club bangers must not surface in Relax).
+     */
+    private fun energyContradictsMood(mood: String, profile: MoodProfile): Boolean {
+        val e = profile.energyScore
+        if (e !in 1..10) return false // no audio evidence yet
+        return when (mood) {
+            MoodClassifier.MOOD_RELAX, MoodClassifier.MOOD_FOCUS -> e >= 8
+            MoodClassifier.MOOD_ROMANCE -> e >= 9
+            MoodClassifier.MOOD_ENERGIZE, MoodClassifier.MOOD_PARTY -> e <= 2
+            else -> false
+        }
+    }
 
     /**
      * Ranks library tracks (not already in the playlist) by similarity to the
