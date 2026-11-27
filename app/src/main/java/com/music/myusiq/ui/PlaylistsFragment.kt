@@ -20,6 +20,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import android.view.Menu
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -47,6 +48,7 @@ class PlaylistsFragment : Fragment(R.layout.fragment_playlists) {
     private lateinit var tvHeaderSubtitle: TextView
 
     companion object {
+        private const val SUGGEST_TRACKS_ID = 11
         private const val TYPE_INSIGHTS = 0
         private const val TYPE_REPLAY = 1
         private const val TYPE_SMART = 2
@@ -149,6 +151,14 @@ class PlaylistsFragment : Fragment(R.layout.fragment_playlists) {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.moodOrganizeResult.observe(viewLifecycleOwner) { result ->
+                        result?.let {
+                            showOrganizeResult(it)
+                            viewModel.clearMoodOrganizeResult()
+                        }
+                    }
+                }
                 viewModel.playlistsWithTracks.collectLatest { playlists ->
                     // Fetch Insights
                     val appContext = requireContext().applicationContext
@@ -229,6 +239,33 @@ class PlaylistsFragment : Fragment(R.layout.fragment_playlists) {
                 startMoodPlaylist(moodName)
             }
         }
+
+        view.findViewById<Chip?>(R.id.chipOrganizeMoods)?.setOnClickListener {
+            organizeMoodPlaylists()
+        }
+    }
+
+    /**
+     * Runs the Mood Engine: classifies unanalyzed tracks (audio + tags +
+     * capped online genre enrichment), learns from the user's playlists, and
+     * reports a summary. Results then power the mood chips and suggestions.
+     */
+    private fun organizeMoodPlaylists() {
+        val allTracks = viewModel.originalTrackList
+        if (allTracks.isEmpty()) {
+            Toast.makeText(requireContext(), R.string.library_loading, Toast.LENGTH_SHORT).show()
+            return
+        }
+        Toast.makeText(requireContext(), R.string.mood_organize_running, Toast.LENGTH_SHORT).show()
+        viewModel.organizeMoodPlaylists()
+    }
+
+    private fun showOrganizeResult(result: com.music.myusiq.domain.usecase.MoodEngine.OrganizeResult) {
+        val msg = getString(
+            R.string.mood_organize_done,
+            result.analyzed, result.classified, result.enrichedOnline, result.playlistsLearned
+        )
+        Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
     }
 
     private fun startMoodPlaylist(mood: String) {
@@ -270,12 +307,53 @@ class PlaylistsFragment : Fragment(R.layout.fragment_playlists) {
 
     private fun showPlaylistOptions(playlist: PlaylistWithTracks, view: View) {
         val popup = PopupMenu(requireContext(), view)
+        popup.menu.add(SUGGEST_TRACKS_ID, Menu.FIRST + 1, Menu.NONE, R.string.mood_suggest_menu)
         popup.menu.add(R.string.delete)
         popup.setOnMenuItemClickListener {
-            viewModel.deletePlaylist(playlist.playlist.id)
-            true
+            when (it.itemId) {
+                SUGGEST_TRACKS_ID -> {
+                    showTrackSuggestions(playlist)
+                    true
+                }
+                else -> {
+                    viewModel.deletePlaylist(playlist.playlist.id)
+                    true
+                }
+            }
         }
         popup.show()
+    }
+
+    /**
+     * Mood Engine suggestions: ranks library tracks that are not in the
+     * playlist by similarity to its learned profile; the user picks which
+     * ones to add.
+     */
+    private fun showTrackSuggestions(playlist: PlaylistWithTracks) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val existingIds = playlist.tracks.map { it.id }.toSet()
+            val suggestions = viewModel.suggestTracksForPlaylist(playlist.playlist.id, existingIds)
+            if (suggestions.isEmpty()) {
+                Toast.makeText(requireContext(), R.string.mood_suggest_none, Toast.LENGTH_LONG).show()
+                return@launch
+            }
+            val labels = suggestions.map { "${it.title} — ${it.artist}" }.toTypedArray()
+            val checked = BooleanArray(labels.size) { false }
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(getString(R.string.mood_suggest_title, playlist.playlist.name))
+                .setMultiChoiceItems(labels, checked) { _, which, isChecked -> checked[which] = isChecked }
+                .setPositiveButton(R.string.mood_suggest_add) { _, _ ->
+                    val selected = suggestions.filterIndexed { i, _ -> checked[i] }
+                    selected.forEach { song ->
+                        viewModel.addTrackToPlaylist(song.id.toString(), playlist.playlist.id)
+                    }
+                    if (selected.isNotEmpty()) {
+                        Toast.makeText(requireContext(), R.string.mood_suggest_added, Toast.LENGTH_SHORT).show()
+                    }
+                }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
+        }
     }
 
     private inner class PlaylistsAdapter(

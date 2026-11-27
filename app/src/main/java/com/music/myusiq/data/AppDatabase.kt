@@ -15,8 +15,10 @@ import com.music.myusiq.data.dao.*
         SongOverride::class,
         LyricsOverride::class,
         SearchHistory::class,
+        MoodProfile::class,
+        PlaylistProfile::class,
     ],
-    version = 14,
+    version = 15,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -24,4 +26,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun playlistDao(): PlaylistDao
     abstract fun songDao(): SongDao
     abstract fun searchHistoryDao(): SearchHistoryDao
+    abstract fun moodDao(): MoodDao
 }

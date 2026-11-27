@@ -66,15 +66,28 @@ object DatabaseProvider {
         }
     }
 
+    val MIGRATION_14_15 = object : Migration(14, 15) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // Mood Engine tables: per-track mood profiles and learned playlist profiles
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `mood_profiles` (`trackId` TEXT NOT NULL, `energyScore` INTEGER NOT NULL, `bpm` INTEGER NOT NULL, `primaryMood` TEXT NOT NULL, `moodScores` TEXT NOT NULL, `genreTags` TEXT NOT NULL, `keywords` TEXT NOT NULL, `sources` TEXT NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`trackId`))"
+            )
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `playlist_profiles` (`profileKey` TEXT NOT NULL, `meanEnergy` REAL NOT NULL, `meanBpm` REAL NOT NULL, `genreTokens` TEXT NOT NULL, `keywordTokens` TEXT NOT NULL, `sampleSize` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`profileKey`))"
+            )
+        }
+    }
+
     private val ALL_MIGRATIONS: Array<Migration> by lazy {
         val olderMigrations = (1..12).map { startVersion ->
-            object : Migration(startVersion, 14) {
+            object : Migration(startVersion, 15) {
                 override fun migrate(db: SupportSQLiteDatabase) {
                     ensureSchemaIntegrity(db)
+                    MIGRATION_14_15.migrate(db)
                 }
             }
         }
-        (olderMigrations + MIGRATION_13_14).toTypedArray()
+        (olderMigrations + MIGRATION_13_14 + MIGRATION_14_15).toTypedArray()
     }
 
     fun getDatabase(context: Context): AppDatabase {

@@ -73,5 +73,47 @@ class AppDatabaseMigrationTest {
         val migration13To14 = com.music.myusiq.DatabaseProvider.MIGRATION_13_14
         assertEquals(13, migration13To14.startVersion)
         assertEquals(14, migration13To14.endVersion)
+
+        val migration14To15 = com.music.myusiq.DatabaseProvider.MIGRATION_14_15
+        assertEquals(14, migration14To15.startVersion)
+        assertEquals(15, migration14To15.endVersion)
+    }
+
+    @Test
+    fun testDatabaseMigrations_MoodEngineDaosRegistered() {
+        val daos = AppDatabase::class.java.declaredMethods.map { it.name }
+        assertEquals(true, daos.contains("moodDao"))
+    }
+
+    @Test
+    fun testMoodProfileModel_Instantiation() {
+        val profile = MoodProfile(
+            trackId = "123",
+            energyScore = 9,
+            bpm = 128,
+            primaryMood = "energize",
+            moodScores = "energize:0.80|party:0.55",
+            genreTags = "edm,dance",
+            keywords = "",
+            sources = "AUDIO,TAGS",
+            updatedAt = 1000L,
+        )
+        assertEquals("123", profile.trackId)
+        assertEquals("energize", profile.primaryMood)
+    }
+
+    @Test
+    fun testPlaylistProfileModel_Instantiation() {
+        val profile = PlaylistProfile(
+            profileKey = "learned:energize",
+            meanEnergy = 8.4,
+            meanBpm = 130.0,
+            genreTokens = "rock:12,metal:8",
+            keywordTokens = "power:4",
+            sampleSize = 20,
+            updatedAt = 2000L,
+        )
+        assertEquals("learned:energize", profile.profileKey)
+        assertEquals(20, profile.sampleSize)
     }
 }

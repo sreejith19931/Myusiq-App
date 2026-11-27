@@ -269,6 +269,14 @@
     <string name="mood_focus">Focus</string>
     <string name="mood_romance">Romance</string>
     <string name="mood_drive">Drive</string>
+    <string name="mood_auto_organize">✨ Auto-Organize</string>
+    <string name="mood_organize_running">Mood engine is analyzing your library…</string>
+    <string name="mood_organize_done">Mood engine: %1$d analyzed · %2$d classified · %3$d enriched online · %4$d playlists learned</string>
+    <string name="mood_suggest_menu">Suggest Tracks</string>
+    <string name="mood_suggest_title">Suggested for "%1$s"</string>
+    <string name="mood_suggest_add">Add</string>
+    <string name="mood_suggest_added">Added to playlist</string>
+    <string name="mood_suggest_none">No suggestions yet. Play some tracks, then tap ✨ Auto-Organize to let the mood engine learn this playlist.</string>
     <string name="delete">Delete</string>
     <string name="library_janitor">Library Janitor</string>
     <string name="library_janitor_desc">Clean up duplicates and missing art</string>

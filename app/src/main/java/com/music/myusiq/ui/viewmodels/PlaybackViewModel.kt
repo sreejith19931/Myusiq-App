@@ -32,7 +32,11 @@ import android.widget.Toast
 import androidx.core.net.toUri
 import androidx.activity.result.IntentSenderRequest
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.music.myusiq.utils.CloudMetadataResolver
+import com.music.myusiq.domain.usecase.MoodEngine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -90,6 +94,18 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     private val lyricsUseCase = LyricsUseCase(musicRepository, application, viewModelScope)
     private val smartPlaylistUseCase = SmartPlaylistUseCase(musicRepository)
+
+    // Mood Engine: classifies tracks (audio + tags + online genre) and learns
+    // from the user's playlists to organize mood mixes and suggestions.
+    private val moodEngine by lazy {
+        MoodEngine(
+            repository = musicRepository,
+            moodDao = DatabaseProvider.getDatabase(getApplication()).moodDao(),
+            metadataResolver = CloudMetadataResolver,
+        )
+    }
+    private val _moodOrganizeResult = MutableLiveData<MoodEngine.OrganizeResult?>()
+    val moodOrganizeResult: LiveData<MoodEngine.OrganizeResult?> = _moodOrganizeResult
     private val metadataUpdateUseCase = MetadataUpdateUseCase(musicRepository, application, viewModelScope)
     private val metadataSanitizerUseCase = MetadataSanitizerUseCase()
     private val audioFingerprintUseCase = AudioFingerprintingUseCase()
@@ -1508,6 +1524,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             loadFoldersInternal(force = true)
             startAutoMetadataImprovement()
             startBackgroundWaveformAnalysis()
+            autoClassifyMoodsLocalOnly()
         }
     }
 
@@ -1678,7 +1695,59 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     suspend fun getGenreMix(genre: String): List<Song> = smartPlaylistUseCase.getGenreMix(originalTrackList, genre)
 
-    suspend fun getMoodMix(mood: String): List<Song> = smartPlaylistUseCase.getMoodMix(originalTrackList, mood)
+    /**
+     * Mood mixes: preferred path is the Mood Engine's learned/classified
+     * ranking; falls back to the original keyword heuristics when the
+     * library has not been analyzed yet.
+     */
+    suspend fun getMoodMix(mood: String): List<Song> {
+        val engineMix = try {
+            moodEngine.getMoodMix(originalTrackList, mood)
+        } catch (_: Exception) {
+            null
+        }
+        if (!engineMix.isNullOrEmpty()) return engineMix
+        return smartPlaylistUseCase.getMoodMix(originalTrackList, mood)
+    }
+
+    /** Runs a local-only classification pass (no network) in the background. */
+    private fun autoClassifyMoodsLocalOnly() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                moodEngine.organize(originalTrackList.toList(), enrichOnline = false, onlineLimit = 0)
+            } catch (_: Exception) {
+                // Mood classification must never break library loading
+            }
+        }
+    }
+
+    /**
+     * Full Mood Engine run requested by the user: classification with capped
+     * online genre enrichment plus playlist learning.
+     */
+    fun organizeMoodPlaylists() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = try {
+                moodEngine.organize(originalTrackList.toList(), enrichOnline = true, onlineLimit = 25)
+            } catch (e: Exception) {
+                MoodEngine.OrganizeResult(0, 0, 0, 0)
+            }
+            withContext(Dispatchers.Main) { _moodOrganizeResult.value = result }
+        }
+    }
+
+    fun clearMoodOrganizeResult() {
+        _moodOrganizeResult.value = null
+    }
+
+    /** Ranked tracks similar to a playlist's learned profile. */
+    suspend fun suggestTracksForPlaylist(playlistId: Long, existingTrackIds: Set<String>): List<Song> {
+        return try {
+            moodEngine.suggestTracksForPlaylist(playlistId, originalTrackList.toList(), existingTrackIds)
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
 
     fun requestBulkMetadataUpdate(context: Context, updates: List<PendingTrackEdit>) {
         metadataUpdateUseCase.requestBulkMetadataUpdate(context, updates, metadataUpdateListener) { intent ->

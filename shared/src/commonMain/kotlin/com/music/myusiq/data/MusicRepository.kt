@@ -123,6 +123,7 @@ class MusicRepository(
     suspend fun removeTrackFromAllPlaylists(trackId: String) = playlistDao.removeTrackFromAllPlaylists(trackId)
     suspend fun deleteLibraryTrack(trackId: String) = playlistDao.deleteLibraryTrack(trackId)
     fun getPlaylistWithTracks(playlistId: Long) = playlistDao.getPlaylistWithTracks(playlistId)
+    suspend fun getAllPlaylistsWithTracksSync() = playlistDao.getAllPlaylistsWithTracksSync()
 
     suspend fun getLastPlayedTimestamps() = songHistoryDao.getLastPlayedTimestamps()
     suspend fun getAllPlayCounts() = songHistoryDao.getAllPlayCounts()
