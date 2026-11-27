@@ -194,7 +194,21 @@ class PlayerFragment : Fragment(R.layout.fragment_player) {
         var preGapMs: Long = 0
     )
 
+    private fun setUpCastButton(view: View) {
+        val castButton = view.findViewById<androidx.mediarouter.app.MediaRouteButton>(R.id.mediaRouteButton)
+        try {
+            com.google.android.gms.cast.framework.CastButtonFactory.setUpMediaRouteButton(
+                requireContext(), castButton
+            )
+            castButton.visibility = View.VISIBLE
+        } catch (e: Exception) {
+            // No Cast support (missing Play services) - keep the button hidden
+            castButton.visibility = View.GONE
+        }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        setUpCastButton(view)
         super.onViewCreated(view, savedInstanceState)
         themeManager = ThemeSettingsManager(requireContext())
         audioManager = requireContext().getSystemService(Context.AUDIO_SERVICE) as AudioManager

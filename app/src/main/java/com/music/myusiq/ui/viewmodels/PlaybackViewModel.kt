@@ -978,46 +978,11 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         if (dur <= 0) return
         val fraction = (feedbackLastPositionMs / dur).coerceIn(0f, 1f)
         val id = mediaId
-        val listenedMs = feedbackLastPositionMs
         feedbackMediaId = null
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 moodEngine.applyListeningFeedback(id, fraction)
             } catch (_: Exception) {
-            }
-        }
-        maybeScrobble(fraction, listenedMs.toLong())
-    }
-
-    // ---- ListenBrainz scrobbling ----------------------------------------
-    // A listen is submitted once the track is considered "heard":
-    // >= 50% played or >= 4 minutes, matching common scrobbling rules.
-    private fun scrobblingEnabled(): Boolean =
-        getApplication<Application>().getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-            .getBoolean("listenbrainz_enabled", false)
-
-    private fun scrobbleToken(): String =
-        getApplication<Application>().getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-            .getString("listenbrainz_token", "") ?: ""
-
-    private fun maybeScrobble(fraction: Float, listenedMs: Long) {
-        if (!scrobblingEnabled()) return
-        val token = scrobbleToken()
-        if (token.isBlank()) return
-        // The song state still points at the track that just ended
-        val song = _currentPlayingSong.value ?: return
-        val heard = fraction >= 0.5f || listenedMs >= 240_000L
-        if (!heard) return
-        val listenedAt = System.currentTimeMillis() / 1000 - (listenedMs / 1000)
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                com.music.myusiq.utils.ListenBrainzClient.enqueue(
-                    token, song.title, song.artist, song.album, song.duration.toLong(), listenedAt
-                )
-                val sent = com.music.myusiq.utils.ListenBrainzClient.flush(token)
-                if (sent > 0) Log.d("PlaybackViewModel", "ListenBrainz: $sent listen(s) submitted")
-            } catch (t: Throwable) {
-                Log.w("PlaybackViewModel", "ListenBrainz scrobble failed", t)
             }
         }
     }

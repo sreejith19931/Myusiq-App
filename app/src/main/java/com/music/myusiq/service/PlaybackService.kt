@@ -31,7 +31,12 @@ import android.os.Bundle
 import android.os.IBinder
 import android.provider.MediaStore
 import android.util.Log
+import java.util.concurrent.Executor
 import androidx.annotation.OptIn
+import androidx.media3.cast.CastPlayer
+import com.google.android.gms.cast.framework.CastContext
+import com.google.android.gms.cast.framework.CastState
+import com.google.android.gms.cast.framework.CastStateListener
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -121,6 +126,13 @@ class PlaybackService : MediaLibraryService() {
         get() = if (exoPlayer === playerA) playerB else playerA
 
     internal var mediaSession: MediaLibrarySession? = null
+
+    // Cast support: while a Cast session is connected the media session is
+    // backed by CastPlayer and playback happens on the remote device; the
+    // local dual-player crossfade machinery is untouched and dormant.
+    private var castContext: CastContext? = null
+    private var castPlayer: CastPlayer? = null
+    private var isCasting = false
     
     var isUpdatingMetadataInPlace = false
     private var lastBluetoothConnectionTime: Long = 0L
@@ -369,8 +381,7 @@ class PlaybackService : MediaLibraryService() {
         }
         
         // Immediately make next the active session player so Android routes audio output and focus correctly
-        activePlayerReference = WeakReference(next)
-        mediaSession?.player = next
+        updateLocalEngine(next)
         
         // Prepare next player
         next.stop()
@@ -420,8 +431,7 @@ class PlaybackService : MediaLibraryService() {
         }
         
         // Swap active player reference so UI updates immediately
-        activePlayerReference = WeakReference(next)
-        mediaSession?.player = next
+        updateLocalEngine(next)
     }
 
     private val audioDeviceCallback = object : AudioDeviceCallback() {
@@ -445,8 +455,7 @@ class PlaybackService : MediaLibraryService() {
                                 val restoredData = loadSavedQueueData()
                                 if (restoredData != null) {
                                     playerA.setMediaItems(restoredData.mediaItems, restoredData.startIndex, restoredData.startPositionMs)
-                                    activePlayerReference = WeakReference(playerA)
-                                    mediaSession?.player = playerA
+                                    updateLocalEngine(playerA)
                                     playerA.prepare()
                                 }
                             }
@@ -497,8 +506,7 @@ class PlaybackService : MediaLibraryService() {
                                     val restoredData = loadSavedQueueData()
                                     if (restoredData != null) {
                                         playerA.setMediaItems(restoredData.mediaItems, restoredData.startIndex, restoredData.startPositionMs)
-                                        activePlayerReference = WeakReference(playerA)
-                                        mediaSession?.player = playerA
+                                        updateLocalEngine(playerA)
                                         playerA.prepare()
                                     }
                                 }
@@ -1339,6 +1347,7 @@ class PlaybackService : MediaLibraryService() {
             }
         }
 
+        setupCast()
         mediaSession = MediaLibrarySession.Builder(this, exoPlayer, callback)
             .setSessionActivity(pendingIntent)
             .build()
@@ -1408,6 +1417,81 @@ class PlaybackService : MediaLibraryService() {
             withContext(Dispatchers.Main) {
                 mediaSession?.setCustomLayout(customLayout)
             }
+        }
+    }
+
+    private fun setupCast() {
+        try {
+            val context = CastContext.getSharedInstance(this, Executor { it.run() }).result
+            castContext = context
+            castPlayer = CastPlayer.Builder(this).build()
+            castContext?.addCastStateListener(CastStateListener { state ->
+                if (state == CastState.CONNECTED) {
+                    isCasting = true
+                    serviceScope.launch(Dispatchers.Main) { transferPlaybackToCast() }
+                } else if (state == CastState.NOT_CONNECTED && isCasting) {
+                    isCasting = false
+                    serviceScope.launch(Dispatchers.Main) { restorePlaybackFromCast() }
+                }
+            })
+        } catch (e: Exception) {
+            Log.w("PlaybackService", "Cast unavailable (no Play services?): ${e.message}")
+            castContext = null
+            castPlayer = null
+        }
+    }
+
+    /** Copies the current queue onto the Cast device and backs the session with it. */
+    private suspend fun transferPlaybackToCast() = withContext(Dispatchers.Main) {
+        val remote = castPlayer ?: return@withContext
+        val engine = exoPlayer
+        try {
+            val items = (0 until engine.mediaItemCount).map { engine.getMediaItemAt(it) }
+            if (items.isEmpty()) return@withContext
+            val index = engine.currentMediaItemIndex
+            val position = engine.currentPosition.coerceAtLeast(0L)
+            val wasPlaying = engine.isPlaying
+            engine.pause()
+            remote.setMediaItems(items, index, position)
+            remote.repeatMode = engine.repeatMode
+            remote.shuffleModeEnabled = engine.shuffleModeEnabled
+            remote.prepare()
+            remote.playWhenReady = wasPlaying
+            if (wasPlaying) remote.play()
+            mediaSession?.player = remote
+        } catch (t: Throwable) {
+            Log.w("PlaybackService", "Cast transfer failed", t)
+        }
+    }
+
+    /** Pulls the (possibly changed) queue back from the Cast device. */
+    private suspend fun restorePlaybackFromCast() = withContext(Dispatchers.Main) {
+        val remote = castPlayer ?: return@withContext
+        val engine = exoPlayer
+        try {
+            val items = (0 until remote.mediaItemCount).map { remote.getMediaItemAt(it) }
+            if (items.isNotEmpty()) {
+                val index = remote.currentMediaItemIndex
+                val position = remote.currentPosition.coerceAtLeast(0L)
+                val wasPlaying = remote.playWhenReady
+                engine.setMediaItems(items, index, position)
+                engine.playWhenReady = wasPlaying
+                engine.prepare()
+            }
+            mediaSession?.player = engine
+        } catch (t: Throwable) {
+            Log.w("PlaybackService", "Cast restore failed", t)
+        }
+    }
+
+    /**
+     * Points the session's local playback at the given engine. Skipped
+     * while casting so the session keeps routing to the remote player.
+     */
+    private fun updateLocalEngine(next: ExoPlayer) {
+        activePlayerReference = WeakReference(next)
+        if (!isCasting) {
+            mediaSession?.player = next
         }
     }
 
@@ -2001,7 +2085,7 @@ class PlaybackService : MediaLibraryService() {
                         playerA.playWhenReady = false
                         playerA.prepare()
                         activePlayerReference = WeakReference(playerA)
-                        mediaSession?.player = playerA
+                        updateLocalEngine(playerA)
                     }
                 }
             }

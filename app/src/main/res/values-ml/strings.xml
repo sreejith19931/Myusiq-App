@@ -43,13 +43,7 @@
     <string name="m3u_imported">പ്ലേലിസ്റ്റ് ഇമ്പോർട്ട് ചെയ്തു: %1$d ട്രാക്കുകൾ പൊരുത്തപ്പെട്ടു, %2$d ലൈബ്രറിയിൽ ഇല്ല</string>
 
     <!-- Mood -->
-        <string name="scrobble_title">ListenBrainz-ലേക്ക് സ്ക്രോബിൾ ചെയ്യുക</string>
-        <string name="scrobble_desc">നിങ്ങളുടെ ListenBrainz പ്രൊഫൈലിലേക്ക് പ്ലേകൾ അയയ്ക്കുക (സൗജന്യം, ഓപ്പൺ സോഴ്സ്)</string>
-        <string name="scrobble_token_title">ListenBrainz ടോക്കൺ</string>
-        <string name="scrobble_token_message">സ്ക്രോബിളിംഗ് ആരംഭിക്കാൻ listenbrainz.org/profile-ൽ നിന്ന് ടോക്കൺ ഒട്ടിക്കുക.</string>
-        <string name="scrobble_token_hint">ListenBrainz യൂസർ ടോക്കൺ</string>
-        <string name="scrobble_token_saved">ListenBrainz കണക്റ്റ് ചെയ്തു</string>
-        <string name="scrobble_token_invalid">ഈ ടോക്കൺ സാധുവായില്ല. പരിശോധിച്ച് വീണ്ടും ശ്രമിക്കുക.</string>
+        <string name="cast_to_device">ഉപകരണത്തിലേക്ക് കാസ്റ്റ് ചെയ്യുക</string>
     <string name="mood_auto_dj">മൂഡ് ഓട്ടോ-DJ</string>
     <string name="mood_auto_dj_desc">ക്യൂ തുടരട്ടെ: മൂഡ് പ്ലേലിസ്റ്റ് അവസാനിക്കുമ്പോൾ, ചേരുന്ന ട്രാക്കുകൾ സ്വയമേവ ചേർക്കുന്നു</string>
     <string name="mood_preparing">പ്ലേലിസ്റ്റ് തയ്യാറാക്കുന്നു… മൂഡ് എഞ്ചിൻ നിങ്ങളുടെ ട്രാക്കുകൾ ക്രമീകരിക്കുന്നു</string>

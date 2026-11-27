@@ -43,13 +43,7 @@
     <string name="m3u_imported">பிளேலிஸ்ட் இறக்குமதி: %1$d ட்ரேக்குகள் பொருந்தின, %2$d லைப்ரரியில் இல்லை</string>
 
     <!-- Mood -->
-        <string name="scrobble_title">ListenBrainz-இல் ஸ்க்ராபில் செய்</string>
-        <string name="scrobble_desc">உங்கள் ListenBrainz சுயவிவரத்தில் இயக்கங்களை அனுப்புக (இலவசம், ஓபன் சோர்ஸ்)</string>
-        <string name="scrobble_token_title">ListenBrainz டோக்கன்</string>
-        <string name="scrobble_token_message">ஸ்க்ராபிலிங் தொடங்க listenbrainz.org/profile-இல் உங்கள் டோக்கனை ஒட்டவும்.</string>
-        <string name="scrobble_token_hint">ListenBrainz யூசர் டோக்கன்</string>
-        <string name="scrobble_token_saved">ListenBrainz இணைக்கப்பட்டது</string>
-        <string name="scrobble_token_invalid">இந்த டோக்கன் சரிபார்க்கப்படவில்லை. சரிபார்த்து மீண்டும் முயற்சிக்கவும்.</string>
+        <string name="cast_to_device">சாதனத்திற்கு காஸ்ட் செய்</string>
     <string name="mood_auto_dj">மூட் ஆட்டோ-DJ</string>
     <string name="mood_auto_dj_desc">வரிசை தொடரட்டும்: மூட் பிளேலிஸ்ட் முடியும்போது, பொருந்தும் ட்ரேக்குகள் தானாக சேர்க்கப்படும்</string>
     <string name="mood_preparing">பிளேலிஸ்ட் தயாராகிறது… மூட் எஞ்சின் உங்கள் ட்ரேக்குகளை ஒழுங்குபடுத்துகிறது</string>

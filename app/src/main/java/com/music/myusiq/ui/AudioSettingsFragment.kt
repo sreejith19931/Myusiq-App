@@ -4,7 +4,6 @@ import android.content.Context
 import android.os.Bundle
 import android.view.View
 import android.widget.TextView
-import android.widget.Toast
 import androidx.core.content.edit
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -15,39 +14,6 @@ import com.music.myusiq.R
 
 class AudioSettingsFragment : Fragment(R.layout.fragment_settings_audio) {
     private val viewModel: PlaybackViewModel by activityViewModels()
-
-    private fun showScrobbleTokenDialog(
-        prefs: android.content.SharedPreferences,
-        switchScrobble: com.google.android.material.materialswitch.MaterialSwitch
-    ) {
-        val input = android.widget.EditText(requireContext()).apply {
-            hint = getString(R.string.scrobble_token_hint)
-            setText(prefs.getString("listenbrainz_token", ""))
-            setSingleLine(true)
-        }
-        val container = android.widget.FrameLayout(requireContext()).apply {
-            val pad = (48 * resources.displayMetrics.density).toInt()
-            setPadding(pad, 0, pad, 0)
-            addView(input)
-        }
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.scrobble_token_title)
-            .setMessage(R.string.scrobble_token_message)
-            .setView(container)
-            .setPositiveButton(R.string.save) { _, _ ->
-                val token = input.text.toString().trim()
-                if (token.isNotEmpty()) {
-                    prefs.edit {
-                        putString("listenbrainz_token", token)
-                        putBoolean("listenbrainz_enabled", true)
-                    }
-                    switchScrobble.isChecked = true
-                    Toast.makeText(requireContext(), R.string.scrobble_token_saved, Toast.LENGTH_SHORT).show()
-                }
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
-    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -121,24 +87,6 @@ class AudioSettingsFragment : Fragment(R.layout.fragment_settings_audio) {
         switchFadeIn.setOnCheckedChangeListener { _, isChecked ->
             sharedPreferences.edit { putBoolean("audio_fade_in", isChecked) }
             viewModel.notifySettingsChanged()
-        }
-
-        // ListenBrainz scrobbling
-        val rowScrobble = view.findViewById<View>(R.id.rowScrobble)
-        val switchScrobble = view.findViewById<MaterialSwitch>(R.id.switchScrobble)
-        val prefs = sharedPreferences
-        switchScrobble.isChecked = prefs.getBoolean("listenbrainz_enabled", false)
-        switchScrobble.setOnCheckedChangeListener { button, isChecked ->
-            if (isChecked) {
-                // Flip back until a token is provided
-                button.isChecked = false
-                showScrobbleTokenDialog(prefs, switchScrobble)
-            } else {
-                prefs.edit { putBoolean("listenbrainz_enabled", false) }
-            }
-        }
-        rowScrobble.setOnClickListener {
-            showScrobbleTokenDialog(prefs, switchScrobble)
         }
 
         // Mood Auto-DJ (endless mood queue)

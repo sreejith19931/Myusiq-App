@@ -64,6 +64,18 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <androidx.mediarouter.app.MediaRouteButton
+        android:id="@+id/mediaRouteButton"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="4dp"
+        android:contentDescription="@string/cast_to_device"
+        android:visibility="gone"
+        app:mediaRouteButtonTint="?attr/colorOnSurfaceVariant"
+        app:layout_constraintTop_toTopOf="@id/tvPlayerTitle"
+        app:layout_constraintBottom_toBottomOf="@id/tvPlayerTitle"
+        app:layout_constraintEnd_toStartOf="@id/btnPlayerHelp" />
+
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnPlayerHelp"
         style="@style/Widget.Material3.Button.IconButton"

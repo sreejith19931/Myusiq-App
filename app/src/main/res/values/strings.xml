@@ -292,13 +292,7 @@
     <string name="stats_top_artist">Most Played Artist: %1$s</string>
     <string name="stats_top_track">Most Played Track: %1$s</string>
     <string name="stats_keep_listening">Keep listening to see more detailed trends!</string>
-        <string name="scrobble_title">Scrobble to ListenBrainz</string>
-        <string name="scrobble_desc">Submit plays to your ListenBrainz profile (free, open source)</string>
-        <string name="scrobble_token_title">ListenBrainz token</string>
-        <string name="scrobble_token_message">Paste your user token from listenbrainz.org/profile to start scrobbling.</string>
-        <string name="scrobble_token_hint">ListenBrainz user token</string>
-        <string name="scrobble_token_saved">ListenBrainz connected</string>
-        <string name="scrobble_token_invalid">That token did not validate. Check it and try again.</string>
+        <string name="cast_to_device">Cast to a device</string>
     <string name="mood_auto_dj">Mood Auto-DJ</string>
     <string name="mood_auto_dj_desc">Keep the queue flowing: when a mood playlist runs out, more matching tracks are added automatically</string>
     <string name="mood_preparing">Preparing playlist… The Mood Engine is organizing your tracks</string>
