@@ -63,7 +63,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.lang.ref.WeakReference
@@ -242,7 +241,12 @@ class PlaybackService : MediaLibraryService() {
         if (player === playerA) volumeAnimatorA = animator else volumeAnimatorB = animator
     }
 
-    private fun getSongDuration(player: ExoPlayer): Long {
+    // MediaMetadataRetriever is disk I/O and must never run on the main
+    // dispatcher; the crossfade monitor polls on Dispatchers.Main, so the
+    // fallback lookup is offloaded and cached per path.
+    private val durationLookupCache = mutableMapOf<String, Long>()
+
+    private suspend fun getSongDuration(player: ExoPlayer): Long {
         val d = player.duration
         if (d > 0 && d != C.TIME_UNSET) return d
         
@@ -256,14 +260,19 @@ class PlaybackService : MediaLibraryService() {
         val uri = player.currentMediaItem?.localConfiguration?.uri
         val path = extra?.getString("path") ?: uri?.path
         if (!path.isNullOrBlank()) {
-            try {
-                val retriever = android.media.MediaMetadataRetriever()
-                retriever.setDataSource(path)
-                val timeStr = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
-                retriever.release()
-                val dur = timeStr?.toLongOrNull() ?: 0L
-                if (dur > 0) return dur
-            } catch (_: Exception) {}
+            durationLookupCache[path]?.let { if (it > 0) return it }
+            val looked = withContext(Dispatchers.IO) {
+                try {
+                    val retriever = android.media.MediaMetadataRetriever()
+                    retriever.setDataSource(path)
+                    val timeStr = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
+                    retriever.release()
+                    timeStr?.toLongOrNull() ?: 0L
+                } catch (_: Exception) { 0L }
+            }
+            durationLookupCache[path] = looked
+            if (looked > 0) return looked
+            if (durationLookupCache.size > 64) durationLookupCache.clear()
         }
         
         return 0L
@@ -336,7 +345,10 @@ class PlaybackService : MediaLibraryService() {
                         delay(500.milliseconds)
                     }
                 } else {
-                    delay(500.milliseconds)
+                    // Paused/idle: the monitor re-arms instantly from
+                    // onIsPlayingChanged, so there is no need to keep polling
+                    // at 500ms while paused.
+                    delay(2500.milliseconds)
                 }
             }
         }
@@ -1520,20 +1532,27 @@ class PlaybackService : MediaLibraryService() {
                 serviceScope.launch {
                     withContext(Dispatchers.Main) {
                         if (consecutiveErrorCount >= 5) {
+                            // Actually stop: pausing breaks the skip cycle and
+                            // resets on the next successful STATE_READY.
                             Toast.makeText(applicationContext, "Playback stopped due to repeated errors", Toast.LENGTH_LONG).show()
+                            player.pause()
                             consecutiveErrorCount = 0
                             return@withContext
                         }
 
-                        val message = when (error.errorCode) {
-                            PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND -> "Track file not found"
-                            PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS,
-                            PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED -> "Network or stream error"
-                            PlaybackException.ERROR_CODE_DECODER_INIT_FAILED,
-                            PlaybackException.ERROR_CODE_DECODER_QUERY_FAILED -> "Codec error playing track"
-                            else -> "Error playing track"
+                        // Only toast the first error of a burst — a corrupted
+                        // batch would otherwise flash five toasts in 5 seconds.
+                        if (consecutiveErrorCount == 1) {
+                            val message = when (error.errorCode) {
+                                PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND -> "Track file not found"
+                                PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS,
+                                PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED -> "Network or stream error"
+                                PlaybackException.ERROR_CODE_DECODER_INIT_FAILED,
+                                PlaybackException.ERROR_CODE_DECODER_QUERY_FAILED -> "Codec error playing track"
+                                else -> "Error playing track"
+                            }
+                            Toast.makeText(applicationContext, message, Toast.LENGTH_SHORT).show()
                         }
-                        Toast.makeText(applicationContext, message, Toast.LENGTH_SHORT).show()
 
                         if (player.hasNextMediaItem()) {
                             delay(1000.milliseconds)
@@ -1694,8 +1713,13 @@ class PlaybackService : MediaLibraryService() {
             while (true) {
                 if (exoPlayer.isPlaying) {
                     updateWidgets()
+                    // 1s cadence keeps the widget seekbar smooth while playing
+                    delay(1000.milliseconds)
+                } else {
+                    // Idle: nothing to update; state changes re-trigger
+                    // updateWidgets() directly from the player listeners.
+                    delay(5000.milliseconds)
                 }
-                delay(1000.milliseconds)
             }
         }
     }
