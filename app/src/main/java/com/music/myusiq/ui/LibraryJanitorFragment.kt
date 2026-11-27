@@ -20,6 +20,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -106,18 +107,17 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
         }
     }
 
+    @OptIn(kotlinx.coroutines.FlowPreview::class)
     private fun setupObservers() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // Debounced: rapid library/artwork emissions re-trigger the
+                // whole duplicate scan; wait for things to settle first.
                 launch {
-                    viewModel.songsLibrary.collectLatest { 
-                        performScan() 
-                    }
+                    viewModel.songsLibrary.debounce(600).collectLatest { performScan() }
                 }
                 launch {
-                    viewModel.artworkRefreshSignatures.collectLatest {
-                        performScan()
-                    }
+                    viewModel.artworkRefreshSignatures.debounce(600).collectLatest { performScan() }
                 }
                 launch {
                     viewModel.janitorScanState.collectLatest { state ->
@@ -374,6 +374,9 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
     private fun deleteDuplicates() {
         val songsToDelete = duplicateGroups.flatMap { it.drop(1) }
         if (songsToDelete.isEmpty()) return
+
+        // Removed tracks' mood profiles would linger as stale evidence
+        viewModel.invalidateMoodProfilesFor(songsToDelete.map { it.id })
 
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {

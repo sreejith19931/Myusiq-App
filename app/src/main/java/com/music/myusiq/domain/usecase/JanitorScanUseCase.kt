@@ -42,6 +42,8 @@ class JanitorScanUseCase(
         val totalTracks = tracks.size
         val results = Collections.synchronizedList(mutableListOf<JanitorUpdateItem>())
         val albumArtworkMap = Collections.synchronizedMap(mutableMapOf<String, Uri>())
+        // One download per unique artwork URL, shared across an album's tracks
+        val downloadedArtMap = Collections.synchronizedMap(mutableMapOf<String, Uri>())
 
         if (totalTracks == 0) {
             try {
@@ -119,10 +121,13 @@ class JanitorScanUseCase(
 
                                     val artworkUri: Uri? = if (!bestMatch.suggestedArtUri.isNullOrBlank()) {
                                         if (bestMatch.suggestedArtUri.startsWith("http://") || bestMatch.suggestedArtUri.startsWith("https://")) {
-                                            try {
-                                                kotlinx.coroutines.withTimeoutOrNull(2500L) {
+                                            val cached = downloadedArtMap[bestMatch.suggestedArtUri]
+                                            cached ?: try {
+                                                val downloaded = kotlinx.coroutines.withTimeoutOrNull(2500L) {
                                                     downloadImage(context, bestMatch.suggestedArtUri)
                                                 }
+                                                if (downloaded != null) downloadedArtMap[bestMatch.suggestedArtUri] = downloaded
+                                                downloaded
                                             } catch (_: Exception) { null }
                                         } else {
                                             try { Uri.parse(bestMatch.suggestedArtUri) } catch (_: Exception) { null }
@@ -186,11 +191,22 @@ class JanitorScanUseCase(
             jobList.joinAll()
         }
 
-        // Second pass: Share album artwork
-        val finalResults = results.map { item ->
+        // Second pass: Share album artwork — from the track's ORIGINAL album
+        // (embedded art found on a sibling file) and from the MATCHED album
+        // (one track of a matched album usually carries the cover).
+        val matchedAlbumArt = Collections.synchronizedMap(mutableMapOf<String, Uri>())
+        results.forEach { item ->
+            val art = item.proposedEdit.artworkUri ?: return@forEach
             val albumKey = item.proposedEdit.album.trim().lowercase()
-            if (item.proposedEdit.artworkUri == null && !ArtworkUtils.isGenericAlbum(item.proposedEdit.album)) {
-                val sharedArt = albumArtworkMap[albumKey]
+            if (albumKey.isNotBlank() && !matchedAlbumArt.containsKey(albumKey)) {
+                matchedAlbumArt[albumKey] = art
+            }
+        }
+        val finalResults = results.map { item ->
+            val originalKey = item.song.album.trim().lowercase()
+            val matchedKey = item.proposedEdit.album.trim().lowercase()
+            if (item.proposedEdit.artworkUri == null) {
+                val sharedArt = albumArtworkMap[originalKey] ?: matchedAlbumArt[matchedKey]
                 if (sharedArt != null) {
                     item.proposedEdit = item.proposedEdit.copy(
                         artworkUri = sharedArt,

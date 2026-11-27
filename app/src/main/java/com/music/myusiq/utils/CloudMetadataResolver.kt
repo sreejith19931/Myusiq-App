@@ -520,6 +520,44 @@ object CloudMetadataResolver {
 
     private val searchCache = android.util.LruCache<String, List<CloudMetadata>>(100)
 
+    private fun searchiTunes(query: String, cleanTitle: String, cleanArtist: String, country: String?): List<CloudMetadata> {
+        val candidates = mutableListOf<CloudMetadata>()
+        try {
+            val q = URLEncoder.encode(query, "UTF-8").replace("+", "%20")
+            val countryParam = country?.let { "&country=$it" } ?: ""
+            val url = URL("https://itunes.apple.com/search?term=$q&entity=song&limit=10$countryParam")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.connectTimeout = 5000
+            connection.readTimeout = 5000
+
+            if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+                val response = connection.inputStream.bufferedReader().use { it.readText() }
+                val json = JSONObject(response)
+                val results = json.getJSONArray("results")
+
+                for (i in 0 until results.length()) {
+                    val item = results.getJSONObject(i)
+                    val foundArtist = item.optString("artistName").takeIf { it.isNotBlank() } ?: continue
+                    val foundTitle = item.optString("trackName").takeIf { it.isNotBlank() } ?: continue
+                    val album = item.optString("collectionName").takeIf { it.isNotBlank() }
+                    val releaseDate = item.optString("releaseDate")
+                    val year = if (releaseDate.length >= 4) releaseDate.substring(0, 4) else null
+                    val genre = item.optString("primaryGenreName").takeIf { it.isNotBlank() }
+                    val lowResArt = item.optString("artworkUrl100")
+                    val highResArt = if (lowResArt.isNotBlank()) lowResArt.replace(Regex("\\d+x\\d+bb"), "1000x1000bb") else null
+
+                    val titleSim = if (cleanTitle.isNotBlank()) calculateTokenSimilarity(cleanTitle, foundTitle) else 0.8
+                    val artistSim = if (cleanArtist.isNotBlank()) calculateTokenSimilarity(cleanArtist, foundArtist) else 0.8
+                    val score = (titleSim * 0.6) + (artistSim * 0.4)
+
+                    candidates.add(CloudMetadata(album, year, genre, highResArt, foundArtist, foundTitle, matchConfidence = score))
+                }
+            }
+        } catch (_: Exception) {}
+        return candidates
+    }
+
     suspend fun searchMultiple(query: String, cleanTitle: String = "", cleanArtist: String = ""): List<CloudMetadata> {
         val cacheKey = "${query.trim().lowercase()}|${cleanTitle.trim().lowercase()}|${cleanArtist.trim().lowercase()}"
         synchronized(searchCache) {
@@ -528,37 +566,19 @@ object CloudMetadataResolver {
 
         return withContext(Dispatchers.IO) {
             val candidates = mutableListOf<CloudMetadata>()
-            
+
+            // iTunes storefront defaults to the US catalogue, which is sparse
+            // for regional music; if the US search misses, retry the Indian
+            // storefront before falling through to Deezer.
             try {
-                val q = URLEncoder.encode(query, "UTF-8").replace("+", "%20")
-                val url = URL("https://itunes.apple.com/search?term=$q&entity=song&limit=10")
-                val connection = url.openConnection() as HttpURLConnection
-                connection.requestMethod = "GET"
-                connection.connectTimeout = 5000
-                connection.readTimeout = 5000
-
-                if (connection.responseCode == HttpURLConnection.HTTP_OK) {
-                    val response = connection.inputStream.bufferedReader().use { it.readText() }
-                    val json = JSONObject(response)
-                    val results = json.getJSONArray("results")
-
-                    for (i in 0 until results.length()) {
-                        val item = results.getJSONObject(i)
-                        val foundArtist = item.optString("artistName").takeIf { it.isNotBlank() } ?: continue
-                        val foundTitle = item.optString("trackName").takeIf { it.isNotBlank() } ?: continue
-                        val album = item.optString("collectionName").takeIf { it.isNotBlank() }
-                        val releaseDate = item.optString("releaseDate")
-                        val year = if (releaseDate.length >= 4) releaseDate.substring(0, 4) else null
-                        val genre = item.optString("primaryGenreName").takeIf { it.isNotBlank() }
-                        val lowResArt = item.optString("artworkUrl100")
-                        val highResArt = if (lowResArt.isNotBlank()) lowResArt.replace(Regex("""\d+x\d+bb"""), "1000x1000bb") else null
-
-                        val titleSim = if (cleanTitle.isNotBlank()) calculateTokenSimilarity(cleanTitle, foundTitle) else 0.8
-                        val artistSim = if (cleanArtist.isNotBlank()) calculateTokenSimilarity(cleanArtist, foundArtist) else 0.8
-                        val score = (titleSim * 0.6) + (artistSim * 0.4)
-
-                        candidates.add(CloudMetadata(album, year, genre, highResArt, foundArtist, foundTitle, matchConfidence = score))
-                    }
+                enforceRateLimit(150L)
+                candidates += searchiTunes(query, cleanTitle, cleanArtist, country = null)
+                val bestTitleSim = candidates.maxOfOrNull { meta ->
+                    if (cleanTitle.isNotBlank()) calculateTokenSimilarity(cleanTitle, meta.foundTitle ?: "") else 0.8
+                } ?: 0.0
+                if (bestTitleSim < 0.6) {
+                    enforceRateLimit(150L)
+                    candidates += searchiTunes(query, cleanTitle, cleanArtist, country = "IN")
                 }
             } catch (_: Exception) {}
 

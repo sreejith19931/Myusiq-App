@@ -157,6 +157,16 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         _isJanitorScanning.value = false
     }
 
+    /** Drops mood profiles for tracks removed from the library (duplicates deleted). */
+    fun invalidateMoodProfilesFor(songIds: List<Long>) {
+        if (songIds.isEmpty()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            for (id in songIds) {
+                try { moodEngine.invalidateProfile(id.toString()) } catch (_: Exception) {}
+            }
+        }
+    }
+
     fun cancelJanitorScan() {
         activeJanitorJob?.cancel()
         activeJanitorJob = null

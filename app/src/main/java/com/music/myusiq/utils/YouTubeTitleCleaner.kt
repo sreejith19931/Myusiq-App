@@ -166,7 +166,19 @@ object YouTubeTitleCleaner {
     }
 
     /**
-     * Converts all-caps or all-lowercase titles to Title Case.
+     * Common acronyms/artist names that must survive Title Case untouched
+     * (all-caps input like "DJ SNAKE - TURN DOWN" would otherwise become
+     * "Dj Snake - Turn Down" and pollute search queries and real tags).
+     */
+    private val PRESERVED_TOKENS = setOf(
+        "dj", "ost", "edm", "usa", "uk", "us", "mtv", "lmfao", "ok", "id",
+        "tv", "cd", "lp", "ep", "km", "hd", "4k", "ac/dc", "nbk", "bbc",
+        "dnb", "rnb"
+    )
+
+    /**
+     * Converts all-caps or all-lowercase titles to Title Case, preserving
+     * known acronyms and tokens containing digits.
      */
     fun toTitleCase(input: String): String {
         if (input.isBlank()) return input
@@ -177,6 +189,8 @@ object YouTubeTitleCleaner {
             return input.split(" ").joinToString(" ") { word ->
                 when {
                     word.equals("feat", ignoreCase = true) || word.equals("ft", ignoreCase = true) -> "feat."
+                    word.lowercase() in PRESERVED_TOKENS || word.any { it.isDigit() } ->
+                        word.uppercase()
                     word.length > 1 -> word.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
                     else -> word.uppercase()
                 }
