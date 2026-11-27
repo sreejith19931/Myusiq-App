@@ -41,8 +41,14 @@ class MoodEngine(
     )
 
     /** True when the local genre field carries no usable information. */
-    private fun genreIsUnknown(genre: String): Boolean =
-        genre.isBlank() || genre.equals("Unknown Genre", true)
+    private fun genreIsUnknown(genre: String): Boolean {
+        val g = genre.trim()
+        // MediaStore frequently reports junk genres ("music", "other") that
+        // are worthless for mood evidence — treat them as unknown so online
+        // enrichment can fetch real genres from iTunes/Deezer/MusicBrainz.
+        return g.isBlank() || g.equals("Unknown Genre", true) ||
+            g.equals("music", true) || g.equals("other", true) || g.equals("unknown", true)
+    }
 
     private fun parseLrcToText(raw: String): String {
         if (raw.isBlank()) return ""
@@ -286,6 +292,32 @@ class MoodEngine(
     }
 
     /**
+     * Playback-driven learning: the user's own listening outcome (finished
+     * vs skipped) updates the track's profile so future mood mixes rank it
+     * accordingly. Skipped tracks sink in their primary mood's mix; fully
+     * listened tracks rise.
+     */
+    suspend fun applyListeningFeedback(trackId: String, listenedFraction: Float) =
+        withContext(Dispatchers.IO) {
+            if (trackId.isBlank()) return@withContext
+            try {
+                val profile = moodDao.getMoodProfile(trackId) ?: return@withContext
+                if (profile.primaryMood.isBlank()) return@withContext
+                val feedback = MoodClassifier.nextListenFeedback(profile.listenFeedback, listenedFraction)
+                if (feedback == profile.listenFeedback) return@withContext
+                moodDao.upsertMoodProfile(
+                    profile.copy(
+                        listenFeedback = feedback,
+                        listenSamples = profile.listenSamples + 1,
+                        updatedAt = System.currentTimeMillis(),
+                    )
+                )
+            } catch (_: Exception) {
+                // Feedback must never break playback
+            }
+        }
+
+    /**
      * Loads the blend of base + learned scores for [mood], using persisted
      * mood profiles. Returns null when the library has no profiles yet.
      */
@@ -301,6 +333,14 @@ class MoodEngine(
                 (learned.sampleSize.coerceAtMost(50) / 50.0) * 0.4
             } else 0.0
 
+            // Listening behaviour: tracks the user actually plays get a small
+            // affinity boost, so the mix leans toward proven taste.
+            val playCounts = try {
+                repository.getAllPlayCounts().associate { it.songId to it.playCount }
+            } catch (_: Exception) {
+                emptyMap()
+            }
+
             val scored = songs.mapNotNull { song ->
                 val profile = profiles[song.id.toString()] ?: return@mapNotNull null
                 val base = MoodClassifier.parseMoodScores(profile.moodScores)[mood] ?: return@mapNotNull null
@@ -315,21 +355,50 @@ class MoodEngine(
                     val learnedScore = MoodClassifier.learnedFit(learned, signals)
                     score = (1 - lambda) * base + lambda * learnedScore
                 }
-                // Small freshness nudge for recently added tracks
+                // Listening nudge (capped), plus a freshness nudge for new tracks
+                val plays = playCounts[song.id.toString()] ?: 0
+                val listenBonus = 0.04 * (plays.coerceAtMost(10) / 10.0)
+                // Playback-feedback: repeatedly skipped tracks sink in this
+                // mood's mix, fully-listened tracks rise.
+                val feedbackBonus = profile.listenFeedback * 0.08
                 val freshBonus = if (System.currentTimeMillis() - song.dateAdded * 1000L < 14L * 24 * 60 * 60 * 1000) 0.02 else 0.0
-                Triple(song, score + freshBonus, profile)
+                Triple(song, score + listenBonus + feedbackBonus + freshBonus, profile)
             }.filter { (_, score, profile) -> score > 0.05 || profile.primaryMood == mood }
             .filter { (_, _, profile) -> !energyContradictsMood(mood, profile) }
 
             if (scored.isEmpty()) return@withContext emptyList<Song>()
 
-            // Prefer tracks that genuinely match the mood; only fall back to
-            // the wider pool when there is not enough real evidence yet.
-            // No shuffle: the ranking must survive (shuffling put loud tracks
-            // on top of the Relax list).
-            val strong = scored.filter { (_, score, profile) -> profile.primaryMood == mood || score >= 0.30 }
-            val pool = if (strong.size >= 8) strong else scored
-            pool.sortedByDescending { it.second }.take(limit).map { it.first }
+            // Tiered membership. A track earns its place in the mix through
+            // REAL evidence, in descending order of trust:
+            //   1. The engine classified it as this mood (primary).
+            //   2. Title/lyrics carry explicit keyword evidence for the mood
+            //      (e.g. "Ishq" for romance) — separates "Aakhri Ishq" from
+            //      "Didi (Sher-E-Baloch)" even at identical audio profiles.
+            //   3. A strong multi-signal fit score.
+            // Only when fewer than 6 such tracks exist do we pad with the
+            // wider scored pool (weakest evidence last). No shuffle: the
+            // ranking must survive.
+            val tier1 = scored.filter { (_, _, p) -> p.primaryMood == mood }
+            val tier1Ids = tier1.map { it.first.id }.toSet()
+            val rest = scored.filter { it.first.id !in tier1Ids }
+            val tier2 = rest.mapNotNull { (song, score, p) ->
+                if (mood in MoodClassifier.keywordMoodEvidence(song.title)) {
+                    // Keyword-confirmed tracks outrank raw audio-fit peers
+                    Triple(song, score + 0.08, p)
+                } else null
+            }
+            val tier2Ids = tier2.map { it.first.id }.toSet()
+            val tier3 = rest.filter { (song, score, _) ->
+                song.id !in tier2Ids && score >= 0.55
+            }
+            val confident = (tier1 + tier2 + tier3).sortedByDescending { it.second }
+            val pool = if (confident.size >= 6) confident else {
+                val confidentIds = confident.map { it.first.id }.toSet()
+                (confident + scored.filter { it.first.id !in confidentIds && it.second > 0.15 })
+                    .distinctBy { it.first.id }
+                    .sortedByDescending { it.second }
+            }
+            pool.take(limit).map { it.first }
         }
 
     /**
@@ -343,8 +412,8 @@ class MoodEngine(
         val e = profile.energyScore
         if (e !in 1..10) return false // no audio evidence yet
         val acceptable = when (mood) {
-            MoodClassifier.MOOD_RELAX, MoodClassifier.MOOD_FOCUS -> 1..6
-            MoodClassifier.MOOD_ROMANCE -> 1..7
+            MoodClassifier.MOOD_RELAX, MoodClassifier.MOOD_FOCUS -> 1..5
+            MoodClassifier.MOOD_ROMANCE -> 1..6
             MoodClassifier.MOOD_DRIVE -> 4..10
             MoodClassifier.MOOD_ENERGIZE, MoodClassifier.MOOD_PARTY -> 5..10
             else -> 1..10

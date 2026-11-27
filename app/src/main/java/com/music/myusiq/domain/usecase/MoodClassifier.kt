@@ -130,12 +130,15 @@ object MoodClassifier {
 
     /** Mood -> title keyword set (case-insensitive substrings). */
     val TITLE_KEYWORDS: Map<String, Set<String>> = mapOf(
-        MOOD_ENERGIZE to setOf("workout", "gym", "hype", "energy", "power", "warrior", "fight", "rise", "unstoppable", "thunder", "fire", "beast", "stronger", "alive"),
-        MOOD_PARTY to setOf("party", "dance", "club", "night out", "celebrate", "weekend", " friday", " fiesta", "banger", "get loud", "turn up", "disco"),
+        MOOD_ENERGIZE to setOf("workout", "gym", "hype", "energy", "power", "warrior", "fight", "rise", "unstoppable", "thunder", "fire", "beast", "stronger", "alive", "sher", "singham", "veeram"),
+        MOOD_PARTY to setOf("party", "dance", "club", "night out", "celebrate", "weekend", " friday", " fiesta", "banger", "get loud", "turn up", "disco", "kuthu", "gaana", "gana", "dappan", "dappanguthu", "jalsa", "jatar", "bangaraju"),
         MOOD_RELAX to setOf("sleep", "lullaby", "relax", "peaceful", "calm", "quiet", "chill", "cozy", "serenity", "breathe", "sunset", "slow down", "unwind"),
         MOOD_FOCUS to setOf("study", "focus", "deep", "flow", "concentration", "work", "rain", "waves", "river", "window"),
-        MOOD_ROMANCE to setOf("love", "heart", "kiss", "forever", "you & i", "only you", "beautiful", "angel", "honey", "baby i", "soulmate", "crush", "valentine"),
-        MOOD_DRIVE to setOf("road", "highway", "drive", "driving", "car", "city lights", "midnight drive", "route", "ride"),
+        // Romance vocabulary spans Indian film-song languages: Urdu/Hindi
+        // (ishq, pyaar, mohabbat, sanam...), Tamil (kadhal, anbe, kanne...),
+        // Telugu/Malayalam (prema, priya, kanne...).
+        MOOD_ROMANCE to setOf("love", "heart", "kiss", "forever", "you & i", "only you", "beautiful", "angel", "honey", "baby i", "soulmate", "crush", "valentine", "ishq", "pyaar", "pyar", "mohabbat", "sanam", "deewana", "deewani", "dhadkan", "dilbar", "dildara", "prem", "prema", "kadhal", "kaadhal", "anbe", "anbu", "kanne", "kanmani", "priya", "piya", "sajna", "sajan", "chalun"),
+        MOOD_DRIVE to setOf("road", "highway", "drive", "driving", "car", "city lights", "midnight drive", "route", "ride", "raftaar"),
     )
 
     /** Mood -> lyric keyword set (word-level, weighted same as title keywords). */
@@ -203,6 +206,37 @@ object MoodClassifier {
 
     private fun keywordMatches(text: String, keywords: Set<String>): Int =
         keywords.count { text.contains(it, ignoreCase = true) }
+
+    /**
+     * Exponentially-weighted listening feedback: +1 for a full listen (track
+     * kept to >= 70%), -1 for an early skip (<= 25%). The EMA (70% old / 30%
+     * new) tolerates occasional flukes while letting repeated skips drag a
+     * profile's trust down.
+     */
+    fun nextListenFeedback(oldFeedback: Double, listenedFraction: Float): Double {
+        val sample = when {
+            listenedFraction >= 0.70f -> 1.0
+            listenedFraction <= 0.25f -> -1.0
+            else -> 0.0
+        }
+        if (sample == 0.0) return oldFeedback
+        return ((oldFeedback * 0.7) + (sample * 0.3)).coerceIn(-1.0, 1.0)
+    }
+
+    /**
+     * Moods for which the track's title (and optional lyrics) carry explicit
+     * keyword evidence, e.g. "Aakhri Ishq" is direct romance evidence while
+     * "Didi (Sher-E-Baloch)" carries none. Used by the mood mixes to separate
+     * keyword-confirmed tracks from weak genre-only candidates.
+     */
+    fun keywordMoodEvidence(title: String, lyrics: String? = null): Set<String> {
+        val titleLower = title.lowercase()
+        val lyricsLower = lyrics?.lowercase()?.take(4000)
+        return ALL_MOODS.filter { mood ->
+            TITLE_KEYWORDS.getValue(mood).any { titleLower.contains(it, ignoreCase = true) } ||
+                (lyricsLower != null && LYRIC_KEYWORDS.getValue(mood).any { lyricsLower.contains(it, ignoreCase = true) })
+        }.toSet()
+    }
 
     /**
      * Scores the track against every mood. Signal weights are re-normalised

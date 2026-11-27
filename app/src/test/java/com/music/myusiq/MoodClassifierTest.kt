@@ -2,6 +2,7 @@ package com.music.myusiq
 
 import com.music.myusiq.domain.models.PlaylistProfile
 import com.music.myusiq.domain.usecase.MoodClassifier
+import com.music.myusiq.domain.usecase.MoodEngine
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -110,4 +111,44 @@ class MoodClassifierTest {
         val emptyProfile = PlaylistProfile(profileKey = "playlist:1", sampleSize = 0)
         assertEquals(0.0, MoodClassifier.learnedFit(emptyProfile, signals(energy = 9)), 1e-9)
     }
+    @Test
+    fun `keyword evidence separates Indian romance titles from non-romance`() {
+        val ishq = MoodClassifier.keywordMoodEvidence("Aakhri Ishq (From \"Dhurandhar The Revenge\")")
+        assertTrue("ishq should evidence romance, got $ishq", "romance" in ishq)
+
+        val didi = MoodClassifier.keywordMoodEvidence("Didi (Sher-E-Baloch) [From \"Dhurandhar The Revenge\"]")
+        assertFalse("Didi has no romance keyword, got $didi", "romance" in didi)
+    }
+
+    @Test
+    fun `keyword evidence covers english keywords and party kuthu`() {
+        val love = MoodClassifier.keywordMoodEvidence("Love Story")
+        assertTrue("love song should evidence romance, got $love", "romance" in love)
+
+        val kuthu = MoodClassifier.keywordMoodEvidence("Kuthu Fire Dance")
+        assertTrue("kuthu should evidence party, got $kuthu", "party" in kuthu)
+
+        val plain = MoodClassifier.keywordMoodEvidence("23 Theme")
+        assertTrue("plain title should carry no evidence, got $plain", plain.isEmpty())
+    }
+
+    @Test
+    fun `listening feedback ema responds to completions and skips`() {
+        var fb = MoodClassifier.nextListenFeedback(0.0, 0.95f) // full listen
+        assertEquals(0.3, fb, 1e-9)
+        fb = MoodClassifier.nextListenFeedback(fb, 0.9f)
+        assertEquals(0.51, fb, 1e-9)
+
+        fb = MoodClassifier.nextListenFeedback(0.0, 0.1f) // early skip
+        assertEquals(-0.3, fb, 1e-9)
+        fb = MoodClassifier.nextListenFeedback(fb, 0.05f)
+        assertEquals(-0.51, fb, 1e-9)
+
+        // Middle-band playback (partial listen) leaves feedback unchanged
+        assertEquals(0.4, MoodClassifier.nextListenFeedback(0.4, 0.5f), 1e-9)
+        // Bounds respected
+        assertEquals(-1.0, MoodClassifier.nextListenFeedback(-1.0, 0.0f), 1e-9)
+        assertEquals(1.0, MoodClassifier.nextListenFeedback(1.0, 1.0f), 1e-9)
+    }
+
 }

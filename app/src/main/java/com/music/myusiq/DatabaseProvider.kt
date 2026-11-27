@@ -78,16 +78,25 @@ object DatabaseProvider {
         }
     }
 
+    val MIGRATION_15_16 = object : Migration(15, 16) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // Playback-driven mood learning: per-track listening feedback
+            db.execSQL("ALTER TABLE mood_profiles ADD COLUMN listenFeedback REAL NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE mood_profiles ADD COLUMN listenSamples INTEGER NOT NULL DEFAULT 0")
+        }
+    }
+
     private val ALL_MIGRATIONS: Array<Migration> by lazy {
         val olderMigrations = (1..12).map { startVersion ->
-            object : Migration(startVersion, 15) {
+            object : Migration(startVersion, 16) {
                 override fun migrate(db: SupportSQLiteDatabase) {
                     ensureSchemaIntegrity(db)
                     MIGRATION_14_15.migrate(db)
+                    MIGRATION_15_16.migrate(db)
                 }
             }
         }
-        (olderMigrations + MIGRATION_13_14 + MIGRATION_14_15).toTypedArray()
+        (olderMigrations + MIGRATION_13_14 + MIGRATION_14_15 + MIGRATION_15_16).toTypedArray()
     }
 
     fun getDatabase(context: Context): AppDatabase {

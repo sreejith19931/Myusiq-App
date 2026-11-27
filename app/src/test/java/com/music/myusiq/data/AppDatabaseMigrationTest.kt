@@ -77,6 +77,10 @@ class AppDatabaseMigrationTest {
         val migration14To15 = com.music.myusiq.DatabaseProvider.MIGRATION_14_15
         assertEquals(14, migration14To15.startVersion)
         assertEquals(15, migration14To15.endVersion)
+
+        val migration15To16 = com.music.myusiq.DatabaseProvider.MIGRATION_15_16
+        assertEquals(15, migration15To16.startVersion)
+        assertEquals(16, migration15To16.endVersion)
     }
 
     @Test

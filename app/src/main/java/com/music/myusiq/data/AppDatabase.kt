@@ -18,7 +18,7 @@ import com.music.myusiq.data.dao.*
         MoodProfile::class,
         PlaylistProfile::class,
     ],
-    version = 15,
+    version = 16,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {

@@ -23,6 +23,8 @@ data class MoodProfile(
     val genreTags: String = "",                // Comma-separated genre tokens (local + online)
     val keywords: String = "",                 // Comma-separated title/lyric keywords
     val sources: String = "",                  // Comma-separated: AUDIO,TAGS,ONLINE,LYRICS
+    val listenFeedback: Double = 0.0,          // -1..1 EMA of listening outcome (skip=-, full listen=+)
+    val listenSamples: Int = 0,                // Number of listening events folded into the feedback
     val updatedAt: Long = 0,
 )
 

@@ -844,9 +844,38 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                     }
 
                     if (dur > 0) _playbackProgressPct.value = ((pos * 100f) / dur.toFloat()).toInt().coerceIn(0, 100)
+                    if (controller.currentMediaItem != null) {
+                        if (feedbackMediaId == null) feedbackMediaId = controller.currentMediaItem?.mediaId
+                        feedbackLastPositionMs = pos.toFloat()
+                        feedbackLastDurationMs = dur.toFloat()
+                    }
                     if (abs(pos - lastSavedPos) > 5000) { lastSavedPos = pos; viewModelScope.launch(Dispatchers.IO) { persistence.saveLastPosition(pos.toLong()) } }
                 }
                 delay(32.milliseconds) // Faster polling for smooth lyrics shading and UI progress
+            }
+        }
+    }
+
+    // ---- Playback-driven mood learning ---------------------------------
+    // While a track plays, remember its id and latest position; when the
+    // player moves to the next item, the fraction the user actually listened
+    // to becomes feedback for the track's mood profile (finished -> +,
+    // early skip -> -).
+    private var feedbackMediaId: String? = null
+    private var feedbackLastPositionMs = 0f
+    private var feedbackLastDurationMs = 0f
+
+    private fun captureListeningFeedback() {
+        val mediaId = feedbackMediaId ?: return
+        val dur = feedbackLastDurationMs
+        if (dur <= 0) return
+        val fraction = (feedbackLastPositionMs / dur).coerceIn(0f, 1f)
+        val id = mediaId
+        feedbackMediaId = null
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                moodEngine.applyListeningFeedback(id, fraction)
+            } catch (_: Exception) {
             }
         }
     }
@@ -861,7 +890,11 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                     mediaController = controllerFuture?.get()
                     mediaController?.addListener(
                         object : Player.Listener {
-                            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) { 
+                            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                                captureListeningFeedback()
+                                feedbackMediaId = mediaItem?.mediaId
+                                feedbackLastPositionMs = 0f
+                                feedbackLastDurationMs = mediaController?.duration?.toFloat() ?: 0f
                                 syncServiceStateWithLiveData()
                                 refreshAudioSessionId()
                             }
