@@ -263,6 +263,7 @@
     <string name="authorize_permissions_toast">Please authorize media permissions first.</string>
     <string name="select_directory_toast">Please select a directory to scan.</string>
     <string name="failed_to_persist_access">Failed to persist directory access. Please choose another folder.</string>
+    <string name="mood_preparing">Preparing playlist… The Mood Engine is organizing your tracks</string>
     <string name="mood_energize">Energize</string>
     <string name="mood_relax">Relax</string>
     <string name="mood_party">Party</string>

@@ -305,6 +305,27 @@ class MoodEngine(
                 if (profile.primaryMood.isBlank()) return@withContext
                 val feedback = MoodClassifier.nextListenFeedback(profile.listenFeedback, listenedFraction)
                 if (feedback == profile.listenFeedback) return@withContext
+
+                // Repeated early skips mean the assigned category is wrong for
+                // this track in the user's judgment: demote the penalized mood
+                // and let the next-best mood take over (re-categorization,
+                // not just re-ranking). Feedback resets so the new category
+                // starts learning from a clean slate.
+                if (feedback <= -0.6 && profile.listenSamples + 1 >= 2) {
+                    val (newScores, newPrimary) = MoodClassifier.demoteMood(profile.moodScores, profile.primaryMood)
+                    moodDao.upsertMoodProfile(
+                        profile.copy(
+                            moodScores = newScores,
+                            primaryMood = newPrimary,
+                            listenFeedback = 0.0,
+                            listenSamples = 0,
+                            sources = if (profile.sources.contains("LISTEN")) profile.sources else profile.sources + ",LISTEN",
+                            updatedAt = System.currentTimeMillis(),
+                        )
+                    )
+                    return@withContext
+                }
+
                 moodDao.upsertMoodProfile(
                     profile.copy(
                         listenFeedback = feedback,

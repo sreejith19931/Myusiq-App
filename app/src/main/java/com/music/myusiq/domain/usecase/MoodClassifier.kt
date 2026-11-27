@@ -213,6 +213,30 @@ object MoodClassifier {
      * new) tolerates occasional flukes while letting repeated skips drag a
      * profile's trust down.
      */
+    /**
+     * Dampens a track's penalized mood (the one the user kept skipping) and
+     * re-picks the primary mood from the remaining scores. This is how
+     * listening feedback changes a track's CATEGORY, not just its ranking:
+     * repeated early skips of a track classified "drive" let the next-best
+     * mood (e.g. romance from title keywords) take over. Returns the updated
+     * serialized scores and the new primary mood ("" when nothing is left
+     * above the confidence threshold).
+     */
+    fun demoteMood(moodScores: String, penalizedMood: String): Pair<String, String> {
+        val scores = parseMoodScores(moodScores).toMutableMap()
+        if (penalizedMood !in scores) {
+            val current = scores.entries.filter { it.value >= CONFIDENCE_THRESHOLD }
+                .maxByOrNull { it.value }?.key ?: ""
+            return moodScores to current
+        }
+        scores[penalizedMood] = (scores[penalizedMood] ?: 0.0) * 0.5
+        val newScores = serializeMoodScores(scores)
+        val newPrimary = scores.entries
+            .filter { it.value >= CONFIDENCE_THRESHOLD }
+            .maxByOrNull { it.value }?.key ?: ""
+        return newScores to newPrimary
+    }
+
     fun nextListenFeedback(oldFeedback: Double, listenedFraction: Float): Double {
         val sample = when {
             listenedFraction >= 0.70f -> 1.0

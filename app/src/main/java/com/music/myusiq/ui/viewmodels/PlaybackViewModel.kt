@@ -1578,6 +1578,8 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                 emptyMap()
             }
 
+            // Chips are blocked while the engine organizes this session
+            _moodEngineReady.postValue(false)
             // Immediate tags/keywords pass so mood playlists exist right away;
             // they refresh with audio evidence as waveforms land below.
             Log.d("PlaybackViewModel", "waveform job: firing initial mood pass")
@@ -1766,6 +1768,12 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         return smartPlaylistUseCase.getMoodMix(originalTrackList, mood)
     }
 
+    /** True once a mood classification pass has completed this session. */
+    private val _moodEngineReady = androidx.lifecycle.MutableLiveData(false)
+    val moodEngineReady: androidx.lifecycle.LiveData<Boolean> = _moodEngineReady
+
+    fun isMoodEngineReady(): Boolean = _moodEngineReady.value == true
+
     /** Runs a local-only classification pass (no network) in the background. */
     private var moodClassifyJob: kotlinx.coroutines.Job? = null
     private fun autoClassifyMoodsLocalOnly() {
@@ -1774,9 +1782,12 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         moodClassifyJob = viewModelScope.launch(Dispatchers.IO) {
             try {
                 moodEngine.organize(originalTrackList.toList(), enrichOnline = false, onlineLimit = 0)
+                // First completed pass unblocks the mood chips
+                _moodEngineReady.postValue(true)
             } catch (e: Exception) {
                 // Mood classification must never break library loading
                 Log.e("PlaybackViewModel", "mood classify failed", e)
+                _moodEngineReady.postValue(true)
             }
         }
     }

@@ -232,11 +232,30 @@ class PlaylistsFragment : Fragment(R.layout.fragment_playlists) {
             view.findViewById<Chip?>(chipId)?.apply {
                 // Tap: open the Mood Engine-powered playlist page for this mood.
                 // Long-press: instantly start playing the mix (legacy behavior).
-                setOnClickListener { openMoodPlaylist(chip.key, chip.displayName) }
+                // While the engine is still organizing the library, taps show a
+                // "preparing" toast instead of an empty playlist.
+                setOnClickListener {
+                    if (viewModel.isMoodEngineReady()) {
+                        openMoodPlaylist(chip.key, chip.displayName)
+                    } else {
+                        Toast.makeText(requireContext(), R.string.mood_preparing, Toast.LENGTH_SHORT).show()
+                    }
+                }
                 setOnLongClickListener {
-                    startMoodPlaylist(chip.key, chip.displayName)
+                    if (viewModel.isMoodEngineReady()) {
+                        startMoodPlaylist(chip.key, chip.displayName)
+                    } else {
+                        Toast.makeText(requireContext(), R.string.mood_preparing, Toast.LENGTH_SHORT).show()
+                    }
                     true
                 }
+            }
+        }
+
+        // Dim the chips while the engine organizes; restore once ready.
+        viewModel.moodEngineReady.observe(viewLifecycleOwner) { ready ->
+            moods.keys.forEach { id ->
+                view.findViewById<Chip?>(id)?.alpha = if (ready == true) 1f else 0.4f
             }
         }
     }

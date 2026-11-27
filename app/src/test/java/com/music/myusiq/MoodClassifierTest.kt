@@ -151,4 +151,28 @@ class MoodClassifierTest {
         assertEquals(1.0, MoodClassifier.nextListenFeedback(1.0, 1.0f), 1e-9)
     }
 
+    @Test
+    fun `demoteMood hands the category to the next best mood`() {
+        val scores = "drive:0.63|romance:0.61|party:0.53|relax:0.16"
+        val (newScores, newPrimary) = MoodClassifier.demoteMood(scores, "drive")
+        // drive is halved, so romance takes over
+        assertTrue("romance should become primary, got $newPrimary", newPrimary == "romance")
+        val parsed = MoodClassifier.parseMoodScores(newScores)
+        assertTrue("drive should be halved", parsed["drive"]!! < 0.35)
+    }
+
+    @Test
+    fun `demoteMood clears primary when nothing is left confident`() {
+        val scores = "drive:0.63|relax:0.16"
+        val (newScores, newPrimary) = MoodClassifier.demoteMood(scores, "drive")
+        assertTrue("no confident mood should remain, got $newPrimary", newPrimary.isEmpty())
+    }
+
+    @Test
+    fun `demoteMood is a no-op for unknown penalized mood`() {
+        val (newScores, newPrimary) = MoodClassifier.demoteMood("drive:0.63", "romance")
+        assertEquals("drive:0.63", newScores)
+        assertEquals("drive", newPrimary)
+    }
+
 }
