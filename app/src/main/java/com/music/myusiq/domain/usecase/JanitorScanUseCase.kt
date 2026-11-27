@@ -35,7 +35,8 @@ class JanitorScanUseCase(
     private val downloadImage: suspend (Context, String) -> Uri?,
     private val metadataSanitizerUseCase: MetadataSanitizerUseCase,
     private val fingerprintingUseCase: AudioFingerprintingUseCase,
-    private val matchSearchUseCase: MatchSearchUseCase
+    private val matchSearchUseCase: MatchSearchUseCase,
+    private val waveformProvider: suspend () -> Map<String, String> = { emptyMap() },
 ) {
     fun scanTracks(tracks: List<Song>, context: Context): Flow<ScanState> = channelFlow {
         val totalTracks = tracks.size
@@ -51,6 +52,15 @@ class JanitorScanUseCase(
         }
 
         withContext(Dispatchers.IO) {
+            // Reuse the Mood Engine's stored waveforms (avoids a second full
+            // audio decode per track) and load the user's dismissed matches.
+            val waveformCache = try {
+                waveformProvider()
+            } catch (_: Exception) {
+                emptyMap<String, String>()
+            }
+            val dismissed = loadDismissedMatches(context)
+
             // Pre-scan for album artwork
             tracks.forEach { song ->
                 if (!ArtworkUtils.isGenericAlbum(song.album)) {
@@ -71,7 +81,7 @@ class JanitorScanUseCase(
                 launch {
                     semaphore.withPermit {
                         try {
-                            kotlinx.coroutines.withTimeoutOrNull(6000L) {
+                            kotlinx.coroutines.withTimeoutOrNull(30000L) {
                                 // 1. Sanitize metadata using song properties
                                 val sanitizedSong = metadataSanitizerUseCase.sanitize(
                                     song,
@@ -81,13 +91,16 @@ class JanitorScanUseCase(
                                     song.albumId
                                 )
 
-                                // 2. Generate fingerprint using sanitized metadata and acoustic characteristics
-                                val fingerprint = fingerprintingUseCase.generateFingerprint(sanitizedSong, context)
+                                // 2. Generate fingerprint using sanitized metadata and stored waveform
+                                val fingerprint = fingerprintingUseCase.generateFingerprint(
+                                    sanitizedSong,
+                                    context,
+                                    waveformCache[song.id.toString()]
+                                )
 
-                                // 3. Find matches using sanitized metadata, audio fingerprint, and song context
+                                // 3. Find matches using sanitized metadata and song context
                                 val matchesFlow = matchSearchUseCase.findMatches(
                                     sanitizedSong,
-                                    fingerprint,
                                     song.year,
                                     song.genre,
                                     context
@@ -101,7 +114,7 @@ class JanitorScanUseCase(
                                 val bestMatch: SuggestedMetadataItem? = suggestions.maxByOrNull { it.confidenceScore }
                                 val isHighConfidence = bestMatch != null && bestMatch.confidenceScore >= 0.85f
 
-                                if (bestMatch != null) {
+                                if (bestMatch != null && !dismissed.contains(dismissKey(song.id.toString(), bestMatch))) {
                                     val isComplete = bestMatch.suggestedTitle.isNotBlank() && bestMatch.suggestedArtist.isNotBlank() && bestMatch.suggestedAlbum.isNotBlank()
 
                                     val artworkUri: Uri? = if (!bestMatch.suggestedArtUri.isNullOrBlank()) {
@@ -151,8 +164,6 @@ class JanitorScanUseCase(
                                         suggestedMatches = suggestions
                                     )
                                     results.add(item)
-                                } else {
-                                    addFallbackItem(song, context, albumArtworkMap, results)
                                 }
                             } ?: run {
                                 addFallbackItem(song, context, albumArtworkMap, results)
@@ -199,6 +210,18 @@ class JanitorScanUseCase(
     }
 
 
+
+    private fun dismissKey(songId: String, match: SuggestedMetadataItem): String =
+        "$songId|${match.suggestedTitle.trim().lowercase()}|${match.suggestedArtist.trim().lowercase()}"
+
+    private fun loadDismissedMatches(context: Context): Set<String> {
+        return try {
+            context.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
+                .getStringSet("janitor_dismissed_matches", emptySet()) ?: emptySet()
+        } catch (_: Exception) {
+            emptySet()
+        }
+    }
 
     private fun addFallbackItem(song: Song, context: Context, albumArtworkMap: Map<String, Uri>, results: MutableList<JanitorUpdateItem>) {
         val fallbackMeta = CloudMetadataResolver.extractOfflineFallbackMetadata(song.path, song.title, song.artist, song.album)

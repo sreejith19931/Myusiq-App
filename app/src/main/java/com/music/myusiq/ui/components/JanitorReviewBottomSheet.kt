@@ -106,6 +106,12 @@ class JanitorReviewBottomSheet : BottomSheetDialogFragment() {
         }
 
         btnCancel.setOnClickListener {
+            // Remember proposals the user closed without applying, so future
+            // scans stop re-proposing the same rejected matches.
+            val unselected = candidateItems.filter { !it.isSelected && it.proposedEdit.matchConfidence > 0 }
+            if (unselected.isNotEmpty()) {
+                com.music.myusiq.utils.JanitorResultsCache.recordDismissed(requireContext(), unselected)
+            }
             viewModel.cancelJanitorScan()
             viewModel.cancelBulkUpdate()
             viewModel.clearJanitorScanState()

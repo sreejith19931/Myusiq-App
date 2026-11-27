@@ -31,7 +31,6 @@ class MatchSearchUseCase {
      */
     fun findMatches(
         song: Song,
-        fingerprint: String,
         suggestedYear: String?,
         suggestedGenre: String?,
         context: Context? = null
@@ -48,20 +47,7 @@ class MatchSearchUseCase {
 
         val searchQuery = if (cleanArtist.isNotBlank() && cleanArtist != "Unknown Artist") "$cleanArtist $cleanTitle" else cleanTitle
 
-        val durationSec = (song.duration / 1000).coerceAtLeast(0)
-        val acoustIdMatches = if (durationSec > 0 && fingerprint.isNotBlank()) {
-            com.music.myusiq.utils.AcoustIdClient.lookup(durationSec, fingerprint)
-        } else emptyList()
-
-        val acoustIdCandidates = mutableListOf<com.music.myusiq.utils.CloudMetadata>()
-        for (match in acoustIdMatches.take(2)) {
-            val meta = CloudMetadataResolver.fetchMusicBrainzByMbid(match.recordingId)
-            if (meta != null) {
-                acoustIdCandidates.add(meta.copy(matchConfidence = maxOf(meta.matchConfidence, match.score)))
-            }
-        }
-
-        var candidateList = acoustIdCandidates + CloudMetadataResolver.searchMultiple(
+        var candidateList = CloudMetadataResolver.searchMultiple(
             query = searchQuery,
             cleanTitle = cleanTitle,
             cleanArtist = cleanArtist
@@ -86,7 +72,6 @@ class MatchSearchUseCase {
             }
         }
 
-        val hasAcousticProfile = fingerprint.contains("energy:")
         val localDuration = song.duration
 
         candidateList.take(5).forEachIndexed { index, meta ->
@@ -120,10 +105,6 @@ class MatchSearchUseCase {
                 } else if (diffMs > 25000L) {
                     score -= 0.40f // Significant duration mismatch -> heavy penalty
                 }
-            }
-
-            if (hasAcousticProfile && isMatch) {
-                score = (score + 0.05f).coerceAtMost(1.0f)
             }
 
             val finalScore = score.coerceIn(0.0f, 1.0f)

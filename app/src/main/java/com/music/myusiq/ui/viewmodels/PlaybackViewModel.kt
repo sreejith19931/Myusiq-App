@@ -113,7 +113,15 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         downloadImage = { ctx, url -> downloadImageToCache(ctx, url) },
         metadataSanitizerUseCase = metadataSanitizerUseCase,
         fingerprintingUseCase = audioFingerprintUseCase,
-        matchSearchUseCase = matchSearchUseCase
+        matchSearchUseCase = matchSearchUseCase,
+        waveformProvider = {
+            try {
+                musicRepository.getAllLibraryTracksSync()
+                    .associate { it.id to (it.waveformAmplitudes ?: "") }
+            } catch (_: Exception) {
+                emptyMap()
+            }
+        }
     )
     private val _janitorScanState = MutableStateFlow<com.music.myusiq.domain.usecase.ScanState?>(null)
     val janitorScanState: StateFlow<com.music.myusiq.domain.usecase.ScanState?> = _janitorScanState.asStateFlow()
@@ -141,6 +149,12 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     fun clearJanitorScanState() {
         _janitorScanState.value = null
+    }
+
+    /** Shows previously persisted background scan results without re-scanning. */
+    fun showCachedJanitorResults(results: List<com.music.myusiq.domain.models.JanitorUpdateItem>) {
+        _janitorScanState.value = com.music.myusiq.domain.usecase.ScanState.ScanCompleted(results)
+        _isJanitorScanning.value = false
     }
 
     fun cancelJanitorScan() {
@@ -207,6 +221,10 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         }
 
         override fun onUpdateFinished(data: PendingTrackEdit, refreshLibrary: Boolean) {
+            // Corrected metadata invalidates the old mood classification
+            viewModelScope.launch(Dispatchers.IO) {
+                try { moodEngine.invalidateProfile(data.songId.toString()) } catch (_: Exception) {}
+            }
             finishMetadataUpdate(data, refreshLibrary)
         }
 

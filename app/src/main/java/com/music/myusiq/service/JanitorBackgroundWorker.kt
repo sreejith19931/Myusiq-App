@@ -68,6 +68,9 @@ class JanitorBackgroundWorker(
 
             val results = scanState?.results ?: emptyList()
             if (results.isNotEmpty()) {
+                // Persist so tapping the notification opens the review sheet
+                // directly instead of re-running the entire network scan.
+                com.music.myusiq.utils.JanitorResultsCache.save(context, results)
                 showJanitorNotification(results.size)
             }
 

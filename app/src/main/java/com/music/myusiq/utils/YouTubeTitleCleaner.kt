@@ -203,8 +203,11 @@ object YouTubeTitleCleaner {
     fun cleanAndSplit(rawTitle: String): Pair<String, String> {
         val cleaned = cleanTitle(rawTitle)
 
-        return if (cleaned.contains("-")) {
-            val parts = cleaned.split("-", limit = 2)
+        // Split on a spaced dash only ("Artist - Title"). Splitting on any
+        // dash would mangle artists like "Jay-Z" into artist "Jay".
+        val spacedDash = Regex("""\s+-\s+""")
+        return if (spacedDash.containsMatchIn(cleaned)) {
+            val parts = spacedDash.split(cleaned, limit = 2)
             val artist = cleanArtist(parts[0].trim())
             val title = cleanTitle(parts[1].trim())
             Pair(artist, if (title.isNotBlank()) title else cleaned)

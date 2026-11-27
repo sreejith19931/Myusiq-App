@@ -24,15 +24,26 @@ class AudioFingerprintingUseCase {
      * @param context Optional Android Context for extracting waveform amplitudes.
      * @return A string signature representing the track's acoustic waveform characteristics.
      */
-    suspend fun generateFingerprint(song: Song, context: Context? = null): String {
+    suspend fun generateFingerprint(
+        song: Song,
+        context: Context? = null,
+        cachedWaveform: String? = null,
+    ): String {
         return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 val durationSec = (song.duration / 1000).coerceAtLeast(0)
                 val file = File(song.path)
                 val fileSizeKb = if (file.exists()) file.length() / 1024L else 0L
 
-                var waveform: String? = null
-                if (context != null && file.exists()) {
+                // Reuse the waveform the Mood Engine already extracted and
+                // stored for this track instead of a full second decode —
+                // makes Janitor scans ~10x faster.
+                var waveform: String? = cachedWaveform?.takeIf {
+                    it.isNotBlank() &&
+                        !WaveformExtractor.isSaturated(it) &&
+                        !WaveformExtractor.isLegacyPeakEnvelope(it)
+                }
+                if (waveform == null && context != null && file.exists()) {
                     val uri = Uri.fromFile(file)
                     waveform = WaveformExtractor.extractWaveform(context, uri)
                 }

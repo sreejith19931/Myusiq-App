@@ -90,7 +90,18 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
         if (arguments?.getBoolean("auto_start_scan", false) == true) {
             arguments?.putBoolean("auto_start_scan", false)
             view.post {
-                startAutoFix()
+                // A fresh background scan may already be persisted — open it
+                // directly instead of re-scanning the whole library online.
+                val cached = com.music.myusiq.utils.JanitorResultsCache.rebuildItems(
+                    requireContext().applicationContext,
+                    viewModel.songsLibrary.value
+                )
+                if (cached.isNotEmpty()) {
+                    viewModel.showCachedJanitorResults(cached)
+                    JanitorReviewBottomSheet().show(parentFragmentManager, JanitorReviewBottomSheet.TAG)
+                } else {
+                    startAutoFix()
+                }
             }
         }
     }

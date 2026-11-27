@@ -297,6 +297,17 @@ class MoodEngine(
      * accordingly. Skipped tracks sink in their primary mood's mix; fully
      * listened tracks rise.
      */
+    /**
+     * Drops a track's mood profile so the next classification pass rebuilds
+     * it from the corrected metadata (used after the Library Janitor fixes
+     * title/artist/genre — the old profile would keep stale evidence).
+     */
+    suspend fun invalidateProfile(trackId: String) = withContext(Dispatchers.IO) {
+        try {
+            if (trackId.isNotBlank()) moodDao.deleteMoodProfile(trackId)
+        } catch (_: Exception) {}
+    }
+
     suspend fun applyListeningFeedback(trackId: String, listenedFraction: Float) =
         withContext(Dispatchers.IO) {
             if (trackId.isBlank()) return@withContext
