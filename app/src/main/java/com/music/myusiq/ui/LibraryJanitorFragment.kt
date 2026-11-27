@@ -155,7 +155,7 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
     private fun startRescanAllTracks() {
         val allSongs = viewModel.songsLibrary.value
         if (allSongs.isEmpty()) {
-            Toast.makeText(requireContext(), "No tracks found in library", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), R.string.janitor_no_tracks, Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -179,7 +179,7 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
     private fun startAutoFix() {
         val allSongs = viewModel.songsLibrary.value
         if (allSongs.isEmpty()) {
-            Toast.makeText(requireContext(), "No tracks found in library", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), R.string.janitor_no_tracks, Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -195,7 +195,7 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
         }
 
         if (candidates.isEmpty()) {
-            Toast.makeText(requireContext(), "All tracks in your library are already up to date!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), R.string.janitor_all_up_to_date, Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -311,22 +311,22 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
                 allFixCandidates = consolidatedCandidates
 
                 val totalDuplicates = groups.sumOf { it.size - 1 }
-                tvDuplicateStatus.text = if (totalDuplicates > 0) "Found $totalDuplicates redundant duplicates." else "No duplicates found."
+                tvDuplicateStatus.text = if (totalDuplicates > 0) getString(R.string.janitor_duplicates_found, totalDuplicates) else getString(R.string.janitor_no_duplicates)
                 btnCleanDuplicates.isVisible = totalDuplicates > 0
 
                 val statusMessage = when {
                     !initialScanDone ->
-                        "First-time Scan: ${allSongs.size} tracks ready for artwork & metadata check. Tap to start."
+                        getString(R.string.janitor_first_scan, allSongs.size)
                     allFixCandidates.isEmpty() ->
-                        "All metadata and artwork look clean. Use 'Rescan & Fix All Tracks' to perform a complete reset and scan."
+                        getString(R.string.janitor_first_scan, allSongs.size)
                     toRepair.isNotEmpty() && missingArt.isNotEmpty() ->
-                        "Found ${toRepair.size} tracks with messy metadata and ${missingArt.size} tracks with missing artwork. Tap to review."
+                        getString(R.string.janitor_messy_and_art, toRepair.size, missingArt.size)
                     toRepair.isNotEmpty() ->
-                        "Found ${toRepair.size} tracks with messy metadata. Tap to review."
+                        getString(R.string.janitor_messy_only, toRepair.size)
                     missingArt.isNotEmpty() ->
-                        "Found ${missingArt.size} tracks with missing artwork. Tap to review."
+                        getString(R.string.janitor_art_only, missingArt.size)
                     else ->
-                        "All metadata and artwork look clean. Use 'Rescan & Fix All Tracks' to perform a complete reset and scan."
+                        getString(R.string.janitor_clean_hint)
                 }
                 tvAutoFixStatus.text = statusMessage
                 btnAutoFixAll.isVisible = consolidatedCandidates.isNotEmpty()
@@ -398,7 +398,7 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
                     var deletedCount = 0
                     songsToDelete.forEach { if (File(it.path).delete()) deletedCount++ }
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(requireContext(), "Deleted $deletedCount files.", Toast.LENGTH_LONG).show()
+                        Toast.makeText(requireContext(), getString(R.string.janitor_deleted_files, deletedCount), Toast.LENGTH_LONG).show()
                         viewModel.forceScanMediaLibrary()
                     }
                 }
@@ -406,7 +406,7 @@ class LibraryJanitorFragment : Fragment(R.layout.fragment_library_janitor) {
                 var deletedCount = 0
                 songsToDelete.forEach { if (File(it.path).delete()) deletedCount++ }
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(requireContext(), "Deleted $deletedCount files.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(requireContext(), getString(R.string.janitor_deleted_files, deletedCount), Toast.LENGTH_LONG).show()
                     viewModel.forceScanMediaLibrary()
                 }
             }

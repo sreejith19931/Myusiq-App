@@ -511,7 +511,12 @@ class PlaylistsFragment : Fragment(R.layout.fragment_playlists) {
                         val totalPlays = item["totalPlays"] as? String ?: "0"
                         val topArtist = item["topArtist"] as? String ?: "None yet"
                         val topTrack = item["topTrack"] as? String ?: "None yet"
-                        holder.tvDetailedStats.text = "All-time Stats:\n\n• Total Listening: $totalTime\n• Total Play Count: $totalPlays\n• Most Played Artist: $topArtist\n• Most Played Track: $topTrack\n\nKeep listening to see more detailed trends!"
+                        holder.tvDetailedStats.text = getString(R.string.stats_all_time) + "\n\n" +
+                            "• " + getString(R.string.stats_total_listening, totalTime) + "\n" +
+                            "• " + getString(R.string.stats_total_plays, totalPlays.toString()) + "\n" +
+                            "• " + getString(R.string.stats_top_artist, topArtist) + "\n" +
+                            "• " + getString(R.string.stats_top_track, topTrack) + "\n\n" +
+                            getString(R.string.stats_keep_listening)
                         
                         holder.layoutExpanded.visibility = View.VISIBLE
                         holder.layoutExpanded.alpha = 0f

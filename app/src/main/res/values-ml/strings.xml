@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Malayalam (machine-translated, review advisable) -->
+<resources>
+    <string name="app_name">Myusiq</string>
+
+    <!-- Janitor -->
+    <string name="janitor_no_tracks">ലൈബ്രറിയിൽ ട്രാക്കുകൾ കണ്ടെത്തിയില്ല</string>
+    <string name="janitor_all_up_to_date">നിങ്ങളുടെ ലൈബ്രറിയിലെ എല്ലാ ട്രാക്കുകളും ഇതിനകം അപ്‌ഡേറ്റ് ചെയ്യപ്പെട്ടിരിക്കുന്നു!</string>
+    <string name="janitor_no_duplicates">ഡ്യൂപ്ലിക്കേറ്റുകൾ കണ്ടെത്തിയില്ല.</string>
+    <string name="janitor_duplicates_found">%1$d ആവശ്യമില്ലാത്ത ഡ്യൂപ്ലിക്കേറ്റുകൾ കണ്ടെത്തി.</string>
+    <string name="janitor_first_scan">ആദ്യ സ്കാൻ: %1$d ട്രാക്കുകൾ ആർട്ട്‌വർക്ക് &amp; മെറ്റാഡേറ്റ പരിശോധനയ്ക്ക് തയ്യാർ. ആരംഭിക്കാൻ ടാപ്പ് ചെയ്യുക.</string>
+    <string name="janitor_clean_hint">എല്ലാ മെറ്റാഡേറ്റയും ആർട്ട്‌വർക്കും വൃത്തിയാണ്. പൂർണ റീസ്കാനുള്ള ’എല്ലാ ട്രാക്കുകളും വീണ്ടും സ്കാൻ ചെയ്യുക’ ഉപയോഗിക്കുക.</string>
+    <string name="janitor_messy_and_art">%1$d ട്രാക്കുകളുടെ മെറ്റാഡേറ്റ കുഴപ്പമാണ്, %2$d ട്രാക്കുകളിൽ ആർട്ട്‌വർക്ക് ഇല്ല. അവലോകനത്തിന് ടാപ്പ് ചെയ്യുക.</string>
+    <string name="janitor_messy_only">%1$d ട്രാക്കുകളുടെ മെറ്റാഡേറ്റ കുഴപ്പമാണ്. അവലോകനത്തിന് ടാപ്പ് ചെയ്യുക.</string>
+    <string name="janitor_art_only">%1$d ട്രാക്കുകളിൽ ആർട്ട്‌വർക്ക് ഇല്ല. അവലോകനത്തിന് ടാപ്പ് ചെയ്യുക.</string>
+    <string name="janitor_deleted_files">%1$d ഫയലുകൾ ഇല്ലാതാക്കി.</string>
+
+    <!-- Playback errors -->
+    <string name="playback_repeated_errors">ആവർത്തിച്ചുള്ള പിശകുകൾ കാരണം പ്ലേബാക്ക് നിർത്തി</string>
+    <string name="playback_err_not_found">ട്രാക്ക് ഫയൽ കണ്ടെത്തിയില്ല</string>
+    <string name="playback_err_network">നെറ്റ്‌വർക്ക് അല്ലെങ്കിൽ സ്ട്രീം പിശക്</string>
+    <string name="playback_err_codec">ട്രാക്ക് പ്ലേ ചെയ്യുന്നതിൽ കോഡെക് പിശക്</string>
+    <string name="playback_err_generic">ട്രാക്ക് പ്ലേ ചെയ്യുന്നതിൽ പിശക്</string>
+
+    <!-- Equalizer -->
+    <string name="eq_set_to">ഇക്വലൈസർ %1$s ആയി സജ്ജീകരിച്ചു</string>
+    <string name="eq_prefix">ഇക്വലൈസർ: %1$s</string>
+
+    <!-- Stats -->
+    <string name="stats_all_time">എല്ലാ കാലത്തെയും സ്ഥിതിവിവരങ്ങൾ:</string>
+    <string name="stats_total_listening">ആകെ കേട്ടത്: %1$s</string>
+    <string name="stats_total_plays">ആകെ പ്ലേ എണ്ണം: %1$s</string>
+    <string name="stats_top_artist">ഏറ്റവും കേട്ട കലാകാരൻ: %1$s</string>
+    <string name="stats_top_track">ഏറ്റവും കേട്ട ട്രാക്ക്: %1$s</string>
+    <string name="stats_keep_listening">കൂടുതൽ വിശദമായ പ്രവണതകൾ കാണാൻ കേട്ടുകൊണ്ടിരിക്കുക!</string>
+
+    <!-- M3U -->
+    <string name="export_m3u">M3U എക്സ്പോർട്ട് ചെയ്യുക</string>
+    <string name="import_m3u">M3U ഫയൽ ഇമ്പോർട്ട് ചെയ്യുക</string>
+    <string name="m3u_exported">പ്ലേലിസ്റ്റ് എക്സ്പോർട്ട് ചെയ്തു</string>
+    <string name="m3u_empty_playlist">എക്സ്പോർട്ട് ചെയ്യാൻ ഒന്നില്ല: പ്ലേലിസ്റ്റ് ശൂന്യമാണ്</string>
+    <string name="m3u_import_failed">M3U ഫയൽ വായിക്കാനായില്ല</string>
+    <string name="m3u_imported">പ്ലേലിസ്റ്റ് ഇമ്പോർട്ട് ചെയ്തു: %1$d ട്രാക്കുകൾ പൊരുത്തപ്പെട്ടു, %2$d ലൈബ്രറിയിൽ ഇല്ല</string>
+
+    <!-- Mood -->
+    <string name="mood_auto_dj">മൂഡ് ഓട്ടോ-DJ</string>
+    <string name="mood_auto_dj_desc">ക്യൂ തുടരട്ടെ: മൂഡ് പ്ലേലിസ്റ്റ് അവസാനിക്കുമ്പോൾ, ചേരുന്ന ട്രാക്കുകൾ സ്വയമേവ ചേർക്കുന്നു</string>
+    <string name="mood_preparing">പ്ലേലിസ്റ്റ് തയ്യാറാക്കുന്നു… മൂഡ് എഞ്ചിൻ നിങ്ങളുടെ ട്രാക്കുകൾ ക്രമീകരിക്കുന്നു</string>
+</resources>

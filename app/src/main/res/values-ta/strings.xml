@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tamil (machine-translated, review advisable) -->
+<resources>
+    <string name="app_name">Myusiq</string>
+
+    <!-- Janitor -->
+    <string name="janitor_no_tracks">லைப்ரரியில் ட்ரேக்குகள் இல்லை</string>
+    <string name="janitor_all_up_to_date">உங்கள் லைப்ரரியின் அனைத்து ட்ரேக்குகளும் ஏற்கனவே புதுப்பிக்கப்பட்டுள்ளன!</string>
+    <string name="janitor_no_duplicates">நகல்கள் எதுவும் இல்லை.</string>
+    <string name="janitor_duplicates_found">%1$d தேவையற்ற நகல்கள் கண்டறியப்பட்டன.</string>
+    <string name="janitor_first_scan">முதல் ஸ்கேன்: %1$d ட்ரேக்குகள் ஆர்ட்வர்க் &amp; மெட்டாடேட்டா சோதனைக்கு தயார். தொடங்க தட்டவும்.</string>
+    <string name="janitor_clean_hint">அனைத்து மெட்டாடேட்டா மற்றும் ஆர்ட்வர்க் சுத்தமாக உள்ளது. முழு மீள்-ஸ்கேனுக்கு ’எல்லா ட்ரேக்குகளையும் மீண்டும் ஸ்கேன் செய்’ பயன்படுத்தவும்.</string>
+    <string name="janitor_messy_and_art">%1$d ட்ரேக்குகளின் மெட்டாடேட்டா குழப்பமாக உள்ளது, %2$d ட்ரேக்குகளில் ஆர்ட்வர்க் இல்லை. மறிவாய்வுக்கு தட்டவும்.</string>
+    <string name="janitor_messy_only">%1$d ட்ரேக்குகளின் மெட்டாடேட்டா குழப்பமாக உள்ளது. மறிவாய்வுக்கு தட்டவும்.</string>
+    <string name="janitor_art_only">%1$d ட்ரேக்குகளில் ஆர்ட்வர்க் இல்லை. மறிவாய்வுக்கு தட்டவும்.</string>
+    <string name="janitor_deleted_files">%1$d கோப்புகள் நீக்கப்பட்டன.</string>
+
+    <!-- Playback errors -->
+    <string name="playback_repeated_errors">தொடர் பிழைகளால் இயக்கம் நிறுத்தப்பட்டது</string>
+    <string name="playback_err_not_found">ட்ரேக் கோப்பு கிடைக்கவில்லை</string>
+    <string name="playback_err_network">நெட்வொர்க் அல்லது ஸ்ட்ரீம் பிழை</string>
+    <string name="playback_err_codec">ட்ரேக்கை இயக்குவதில் கோடெக் பிழை</string>
+    <string name="playback_err_generic">ட்ரேக்கை இயக்குவதில் பிழை</string>
+
+    <!-- Equalizer -->
+    <string name="eq_set_to">ஈக்குவலைசர் %1$s ஆக அமைக்கப்பட்டது</string>
+    <string name="eq_prefix">ஈக்குவலைசர்: %1$s</string>
+
+    <!-- Stats -->
+    <string name="stats_all_time">எல்லா காலத்துக்குமான புள்ளிவிவரங்கள்:</string>
+    <string name="stats_total_listening">மொத்த கேட்பு: %1$s</string>
+    <string name="stats_total_plays">மொத்த இயக்க எண்ணிக்கை: %1$s</string>
+    <string name="stats_top_artist">அதிகம் கேட்கப்பட்ட கலைஞர்: %1$s</string>
+    <string name="stats_top_track">அதிகம் கேட்கப்பட்ட ட்ரேக்: %1$s</string>
+    <string name="stats_keep_listening">மேலும் விரிவான போக்குகளைக் காண கேட்டுக்கொண்டிருங்கள்!</string>
+
+    <!-- M3U -->
+    <string name="export_m3u">M3U ஏற்றுமதி</string>
+    <string name="import_m3u">M3U கோப்பு இறக்குமதி</string>
+    <string name="m3u_exported">பிளேலிஸ்ட் ஏற்றுமதி செய்யப்பட்டது</string>
+    <string name="m3u_empty_playlist">ஏற்றுமதிக்கு எதுவுமில்லை: பிளேலிஸ்ட் காலியாக உள்ளது</string>
+    <string name="m3u_import_failed">M3U கோப்பை படிக்க முடியவில்லை</string>
+    <string name="m3u_imported">பிளேலிஸ்ட் இறக்குமதி: %1$d ட்ரேக்குகள் பொருந்தின, %2$d லைப்ரரியில் இல்லை</string>
+
+    <!-- Mood -->
+    <string name="mood_auto_dj">மூட் ஆட்டோ-DJ</string>
+    <string name="mood_auto_dj_desc">வரிசை தொடரட்டும்: மூட் பிளேலிஸ்ட் முடியும்போது, பொருந்தும் ட்ரேக்குகள் தானாக சேர்க்கப்படும்</string>
+    <string name="mood_preparing">பிளேலிஸ்ட் தயாராகிறது… மூட் எஞ்சின் உங்கள் ட்ரேக்குகளை ஒழுங்குபடுத்துகிறது</string>
+</resources>

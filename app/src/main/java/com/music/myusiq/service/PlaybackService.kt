@@ -979,7 +979,7 @@ class PlaybackService : MediaLibraryService() {
                                     val success = EqualizerManager.applyPresetToHardware(applicationContext, presetName)
                                     serviceScope.launch(Dispatchers.Main) {
                                         if (success) {
-                                            Toast.makeText(applicationContext, "Equalizer set to $presetName", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(applicationContext, getString(R.string.eq_set_to, presetName), Toast.LENGTH_SHORT).show()
                                         }
                                     }
                                     val currentItem = withContext(Dispatchers.Main) { exoPlayer.currentMediaItem }
@@ -1283,7 +1283,7 @@ class PlaybackService : MediaLibraryService() {
                             val nextIndex = if (currIndex != -1) (currIndex + 1) % presets.size else 0
                             val nextPreset = presets[nextIndex]
                             EqualizerManager.applyPresetToHardware(applicationContext, nextPreset)
-                            Toast.makeText(applicationContext, "Equalizer: $nextPreset", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(applicationContext, getString(R.string.eq_prefix, nextPreset), Toast.LENGTH_SHORT).show()
                             updateMediaSessionCustomLayout()
                         }
                         return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
@@ -1544,7 +1544,7 @@ class PlaybackService : MediaLibraryService() {
                         if (consecutiveErrorCount >= 5) {
                             // Actually stop: pausing breaks the skip cycle and
                             // resets on the next successful STATE_READY.
-                            Toast.makeText(applicationContext, "Playback stopped due to repeated errors", Toast.LENGTH_LONG).show()
+                            Toast.makeText(applicationContext, getString(R.string.playback_repeated_errors), Toast.LENGTH_LONG).show()
                             player.pause()
                             consecutiveErrorCount = 0
                             return@withContext
@@ -1554,12 +1554,12 @@ class PlaybackService : MediaLibraryService() {
                         // batch would otherwise flash five toasts in 5 seconds.
                         if (consecutiveErrorCount == 1) {
                             val message = when (error.errorCode) {
-                                PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND -> "Track file not found"
+                                PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND -> getString(R.string.playback_err_not_found)
                                 PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS,
-                                PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED -> "Network or stream error"
+                                PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED -> getString(R.string.playback_err_network)
                                 PlaybackException.ERROR_CODE_DECODER_INIT_FAILED,
-                                PlaybackException.ERROR_CODE_DECODER_QUERY_FAILED -> "Codec error playing track"
-                                else -> "Error playing track"
+                                PlaybackException.ERROR_CODE_DECODER_QUERY_FAILED -> getString(R.string.playback_err_codec)
+                                else -> getString(R.string.playback_err_generic)
                             }
                             Toast.makeText(applicationContext, message, Toast.LENGTH_SHORT).show()
                         }

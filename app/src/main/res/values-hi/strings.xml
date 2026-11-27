@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Hindi (machine-translated, review advisable) -->
+<resources>
+    <string name="app_name">Myusiq</string>
+
+    <!-- Janitor -->
+    <string name="janitor_no_tracks">लाइब्रेरी में कोई ट्रैक नहीं मिला</string>
+    <string name="janitor_all_up_to_date">आपकी लाइब्रेरी के सभी ट्रैक पहले से अप-टू-डेट हैं!</string>
+    <string name="janitor_no_duplicates">कोई डुप्लिकेट नहीं मिला।</string>
+    <string name="janitor_duplicates_found">%1$d अनावश्यक डुप्लिकेट मिले।</string>
+    <string name="janitor_first_scan">पहली स्कैन: %1$d ट्रैक आर्टवर्क और मेटाडेटा जाँच के लिए तैयार हैं। शुरू करने के लिए टैप करें।</string>
+    <string name="janitor_clean_hint">सभी मेटाडेटा और आर्टवर्क साफ़ हैं। पूरा रीसेट स्कैन करने के लिए ’सभी ट्रैक फिर से स्कैन करें’ का उपयोग करें।</string>
+    <string name="janitor_messy_and_art">%1$d ट्रैक का मेटाडेटा गड़बड़ है और %2$d ट्रैक में आर्टवर्क गायब है। समीक्षा के लिए टैप करें।</string>
+    <string name="janitor_messy_only">%1$d ट्रैक का मेटाडेटा गड़बड़ है। समीक्षा के लिए टैप करें।</string>
+    <string name="janitor_art_only">%1$d ट्रैक में आर्टवर्क गायब है। समीक्षा के लिए टैप करें।</string>
+    <string name="janitor_deleted_files">%1$d फ़ाइलें हटा दी गईं।</string>
+
+    <!-- Playback errors -->
+    <string name="playback_repeated_errors">बार-बार त्रुटियों के कारण प्लेबैक रुक गया</string>
+    <string name="playback_err_not_found">ट्रैक फ़ाइल नहीं मिली</string>
+    <string name="playback_err_network">नेटवर्क या स्ट्रीम त्रुटि</string>
+    <string name="playback_err_codec">ट्रैक चलाने में कोडेक त्रुटि</string>
+    <string name="playback_err_generic">ट्रैक चलाने में त्रुटि</string>
+
+    <!-- Equalizer -->
+    <string name="eq_set_to">इक्वलाइज़र %1$s पर सेट</string>
+    <string name="eq_prefix">इक्वलाइज़र: %1$s</string>
+
+    <!-- Stats -->
+    <string name="stats_all_time">सभी समय के आंकड़े:</string>
+    <string name="stats_total_listening">कुल सुनना: %1$s</string>
+    <string name="stats_total_plays">कुल प्ले संख्या: %1$s</string>
+    <string name="stats_top_artist">सबसे ज्यादा सुना गया कलाकार: %1$s</string>
+    <string name="stats_top_track">सबसे ज्यादा सुना गया ट्रैक: %1$s</string>
+    <string name="stats_keep_listening">और विस्तृत रुझान देखने के लिए सुनते रहें!</string>
+
+    <!-- M3U -->
+    <string name="export_m3u">M3U निर्यात करें</string>
+    <string name="import_m3u">M3U फ़ाइल आयात करें</string>
+    <string name="m3u_exported">प्लेलिस्ट निर्यात हुई</string>
+    <string name="m3u_empty_playlist">निर्यात करने के लिए कुछ नहीं: प्लेलिस्ट खाली है</string>
+    <string name="m3u_import_failed">M3U फ़ाइल पढ़ी नहीं जा सकी</string>
+    <string name="m3u_imported">प्लेलिस्ट आयातित: %1$d ट्रैक मेल खाए, %2$d लाइब्रेरी से गायब</string>
+
+    <!-- Mood -->
+    <string name="mood_auto_dj">मूड ऑटो-DJ</string>
+    <string name="mood_auto_dj_desc">कतार चलती रहे: जब मूड प्लेलिस्ट खत्म होने लगे, मैचिंग ट्रैक स्वतः जुड़ते हैं</string>
+    <string name="mood_preparing">प्लेलिस्ट तैयार हो रही है… मूड इंजन आपके ट्रैक व्यवस्थित कर रहा है</string>
+</resources>
