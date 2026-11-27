@@ -353,6 +353,18 @@ class MoodEngine(
      * Loads the blend of base + learned scores for [mood], using persisted
      * mood profiles. Returns null when the library has no profiles yet.
      */
+    /** Tracks the user has consistently skipped from this mood (EMA <= -0.6).
+     *  Auto-DJ excludes these so the endless queue respects learned taste. */
+    suspend fun penalizedTrackIds(): Set<String> =
+        try {
+            moodDao.getAllMoodProfiles()
+                .filter { it.listenFeedback <= -0.6 }
+                .map { it.trackId }
+                .toSet()
+        } catch (_: Exception) {
+            emptySet()
+        }
+
     suspend fun getMoodMix(songs: List<Song>, mood: String, limit: Int = 40): List<Song>? =
         withContext(Dispatchers.Default) {
             if (songs.isEmpty()) return@withContext null

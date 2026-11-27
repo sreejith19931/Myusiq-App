@@ -89,6 +89,13 @@ class AudioSettingsFragment : Fragment(R.layout.fragment_settings_audio) {
             viewModel.notifySettingsChanged()
         }
 
+        // Mood Auto-DJ (endless mood queue)
+        val switchAutoDj = view.findViewById<MaterialSwitch>(R.id.switchAutoDj)
+        switchAutoDj.isChecked = sharedPreferences.getBoolean("auto_dj_enabled", true)
+        switchAutoDj.setOnCheckedChangeListener { _, isChecked ->
+            sharedPreferences.edit { putBoolean("auto_dj_enabled", isChecked) }
+        }
+
         // Ducking
         val switchDucking = view.findViewById<MaterialSwitch>(R.id.switchDucking)
         switchDucking.isChecked = sharedPreferences.getBoolean("audio_ducking", true)

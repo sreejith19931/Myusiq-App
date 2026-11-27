@@ -44,6 +44,7 @@ class PlaylistDetailsFragment : Fragment(R.layout.fragment_tracks) {
     private var currentPlaylistSongs: List<Song> = emptyList()
     private var playlistId: Long = -1
     private var playlistName: String = ""
+    private var moodKey: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,6 +59,7 @@ class PlaylistDetailsFragment : Fragment(R.layout.fragment_tracks) {
         
         playlistId = arguments?.getLong("playlistId") ?: -1
         playlistName = arguments?.getString("playlistName") ?: ""
+        moodKey = arguments?.getString("moodKey")
 
         val ivHeaderArt = view.findViewById<ImageView>(R.id.ivHeaderArt)
         ivHeaderArt.visibility = View.VISIBLE
@@ -73,6 +75,7 @@ class PlaylistDetailsFragment : Fragment(R.layout.fragment_tracks) {
         fabShuffleAll.setOnClickListener {
             if (currentPlaylistSongs.isNotEmpty()) {
                 viewModel.shuffleAllTracks(currentPlaylistSongs)
+                if (moodKey != null) viewModel.setAutoDjMood(moodKey)
             }
         }
 
@@ -82,6 +85,7 @@ class PlaylistDetailsFragment : Fragment(R.layout.fragment_tracks) {
                 val list = trackAdapter.currentList.map { it.song }
                 if (position in list.indices) {
                     (activity as? MainActivity)?.playFromView(list, position, imageView)
+                    if (moodKey != null) viewModel.setAutoDjMood(moodKey)
                 }
             },
             onOptionSelected = { song, id ->

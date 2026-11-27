@@ -890,6 +890,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                     if (now - lastThrottledUpdate >= 500) {
                         _currentPositionThrottled.value = pos
                         lastThrottledUpdate = now
+                        maybeExtendAutoDjQueue()
                     }
 
                     if (dur > 0) _playbackProgressPct.value = ((pos * 100f) / dur.toFloat()).toInt().coerceIn(0, 100)
@@ -946,6 +947,10 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                                 feedbackLastDurationMs = mediaController?.duration?.toFloat() ?: 0f
                                 syncServiceStateWithLiveData()
                                 refreshAudioSessionId()
+                                if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO ||
+                                    reason == Player.MEDIA_ITEM_TRANSITION_REASON_SEEK) {
+                                    maybeExtendAutoDjQueue()
+                                }
                             }
                             override fun onPlaybackStateChanged(playbackState: Int) { syncServiceStateWithLiveData() }
                             override fun onIsPlayingChanged(isPlaying: Boolean) { syncServiceStateWithLiveData() }
@@ -1123,6 +1128,10 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     fun playSong(list: List<Song>, index: Int, playImmediately: Boolean = true, shouldExpand: Boolean = false) {
         Log.d("PlaybackViewModel", "playSong called: index=$index, listSize=${list.size}, playImmediately=$playImmediately")
+
+        // A brand-new playback request replaces the queue source; mood Auto-DJ
+        // is re-armed right after by the fragment if this IS a mood playlist.
+        autoDjMood = null
         
         if (playImmediately) {
             restoreJob?.cancel()
@@ -1807,6 +1816,79 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
      * ranking; falls back to the original keyword heuristics when the
      * library has not been analyzed yet.
      */
+    // ---- Mood Auto-DJ ---------------------------------------------------
+    // When the user plays a mood playlist, Auto-DJ keeps the queue flowing:
+    // as the player approaches the end of the queue, more tracks from the
+    // same mood mix are appended, skipping queued/recently-appended and
+    // penalized (repeatedly skipped) tracks. Feedback learning keeps
+    // steering which tracks surface over time.
+    @Volatile private var autoDjMood: String? = null
+    private val autoDjRecentIds = LinkedHashSet<String>()
+    private var autoDjExtendJob: kotlinx.coroutines.Job? = null
+
+    /** Arms Auto-DJ for a mood playlist (call AFTER the playback request). */
+    fun setAutoDjMood(mood: String?) {
+        autoDjMood = mood
+        if (mood != null) maybeExtendAutoDjQueue()
+    }
+
+    fun isActiveAutoDj(): Boolean = autoDjMood != null
+
+    private fun autoDjEnabled(): Boolean =
+        getApplication<Application>().getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+            .getBoolean("auto_dj_enabled", true)
+
+    private fun maybeExtendAutoDjQueue() {
+        val controller = mediaController ?: return
+        val mood = autoDjMood ?: return
+        if (!autoDjEnabled()) return
+        // Repeat One loops a single track; no extension needed
+        if (controller.repeatMode == Player.REPEAT_MODE_ONE) return
+        val remaining = controller.mediaItemCount - (controller.currentMediaItemIndex + 1)
+        if (remaining > 2) return
+        if (autoDjExtendJob?.isActive == true) return
+
+        autoDjExtendJob = viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val queuedIds = (0 until controller.mediaItemCount)
+                    .map { controller.getMediaItemAt(it).mediaId }
+                    .toSet()
+                val penalized = moodEngine.penalizedTrackIds()
+                val mix = getMoodMix(mood) ?: return@launch
+
+                val fresh = mix.filter { song ->
+                    val id = song.id.toString()
+                    id !in queuedIds && id !in autoDjRecentIds && id !in penalized
+                }.shuffled().take(10)
+
+                val batch = if (fresh.isNotEmpty()) {
+                    fresh
+                } else {
+                    // The mix is exhausted relative to the recent pool:
+                    // reset it and reshuffle whatever is not currently queued.
+                    autoDjRecentIds.clear()
+                    mix.filter { it.id.toString() !in queuedIds }.shuffled().take(10)
+                }
+                if (batch.isEmpty()) return@launch
+
+                withContext(Dispatchers.Main) {
+                    val c = mediaController ?: return@withContext
+                    c.addMediaItems(batch.map { it.toMediaItem() })
+                }
+                synchronized(autoDjRecentIds) {
+                    batch.forEach { autoDjRecentIds.add(it.id.toString()) }
+                    while (autoDjRecentIds.size > 60) {
+                        val first = autoDjRecentIds.firstOrNull() ?: break
+                        autoDjRecentIds.remove(first)
+                    }
+                }
+                Log.d("PlaybackViewModel", "Auto-DJ appended ${batch.size} tracks for mood $mood")
+            } catch (t: Throwable) {
+                Log.w("PlaybackViewModel", "Auto-DJ extension failed", t)
+            }
+        }
+    }
+
     suspend fun getMoodMix(mood: String): List<Song> {
         val engineMix = try {
             moodEngine.getMoodMix(originalTrackList, mood)
