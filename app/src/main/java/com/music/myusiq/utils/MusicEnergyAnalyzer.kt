@@ -21,32 +21,33 @@ object MusicEnergyAnalyzer {
     )
 
     /**
-     * Analyzes track energy based on waveform RMS power, amplitude variance, and peak density.
+     * Analyzes track energy based on the per-window peak envelope produced by
+     * WaveformExtractor (values in 0..1, roughly the track's loudness contour).
+     *
+     * Calibration (peak-envelope scale): a loud modern master has mean peak
+     * ≈ 0.6-0.8 and high peak density → 8-10; mellow pop/ballads ≈ 0.3-0.5
+     * mean → 4-6; quiet acoustic/classical/lo-fi ≈ 0.15-0.3 → 1-3.
+     * Loudness dominates, dynamics (variance across windows) and peak
+     * density modulate. Saturated/corrupt waveforms (all ≈ 1.0) are rejected
+     * so they can never masquerade as "maximum energy".
      */
     suspend fun analyze(waveform: String?): Int {
-        if (waveform.isNullOrBlank()) return 5
-        
+        if (waveform.isNullOrBlank() || WaveformExtractor.isSaturated(waveform)) return 5
+
         return withContext(Dispatchers.Default) {
             try {
                 val samples = waveform.split(",").mapNotNull { it.toFloatOrNull() }
-                if (samples.isEmpty()) return@withContext 5
+                if (samples.size < 10) return@withContext 5
 
-                // 1. RMS (Root Mean Square) for overall audio power/loudness
-                val rms = sqrt(samples.asSequence().map { it * it }.average()).toFloat()
-
-                // 2. Amplitude Variance (Dynamic range variations)
-                val average = samples.average()
-                val variance = samples.asSequence().map { abs(it - average) }.average().toFloat()
-
-                // 3. Peak Density (Frequent spikes above 70% max amplitude)
+                val mean = samples.average()
+                val variance = samples.asSequence().map { abs(it - mean) }.average().toFloat()
                 val max = samples.maxOrNull() ?: 1f
                 val peakThreshold = max * 0.7f
-                val peaks = samples.count { it > peakThreshold }
-                val peakDensity = peaks.toFloat() / samples.size.toFloat()
+                val peakDensity = samples.count { it > peakThreshold }.toFloat() / samples.size.toFloat()
 
-                // Calculate energy score weighting RMS power and peak density
-                val score = (rms * 5.0f) + (variance * 2.5f) + (peakDensity * 3.5f)
-                (score * 16.0f).toInt().coerceIn(1, 10)
+                // Loudness dominates; dynamics and peak density modulate.
+                val raw = (7.0 * mean) + (5.0 * variance) + (3.0 * peakDensity)
+                (raw * 1.05).roundToInt().coerceIn(1, 10)
             } catch (_: Exception) {
                 5
             }
@@ -54,10 +55,12 @@ object MusicEnergyAnalyzer {
     }
 
     /**
-     * Estimates track tempo (BPM) from peak onset intervals in the waveform sample.
+     * Estimates track tempo (BPM) from the median interval between beat
+     * onsets in the peak envelope. Median is robust against intro/outro
+     * dynamics that distort the mean.
      */
     suspend fun estimateBpm(waveform: String?, trackDurationMs: Long = 180000L): Int {
-        if (waveform.isNullOrBlank()) return 120
+        if (waveform.isNullOrBlank() || WaveformExtractor.isSaturated(waveform)) return 120
 
         return withContext(Dispatchers.Default) {
             try {
@@ -80,8 +83,15 @@ object MusicEnergyAnalyzer {
                 for (i in 1 until peakIndices.size) {
                     intervals.add(peakIndices[i] - peakIndices[i - 1])
                 }
+                if (intervals.isEmpty()) return@withContext 120
 
-                val avgIntervalSamples = intervals.average()
+                // Median interval (robust to one-off gaps between sections)
+                val sortedIntervals = intervals.sorted()
+                val avgIntervalSamples = if (sortedIntervals.size % 2 == 1) {
+                    sortedIntervals[sortedIntervals.size / 2].toDouble()
+                } else {
+                    (sortedIntervals[sortedIntervals.size / 2 - 1] + sortedIntervals[sortedIntervals.size / 2]) / 2.0
+                }
                 if (avgIntervalSamples <= 0) return@withContext 120
 
                 val totalDurationSec = (trackDurationMs / 1000.0).coerceAtLeast(1.0)

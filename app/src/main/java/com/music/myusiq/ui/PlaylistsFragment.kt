@@ -76,7 +76,7 @@ class PlaylistsFragment : Fragment(R.layout.fragment_playlists) {
                 headerIconRes = R.drawable.ic_playlist,
                 features = listOf(
                     GuideFeatureItem(R.drawable.ic_speed, "Smart AI Auto-Mixes", "Enjoy auto-generated Morning Mix, Top Artists, Forgotten Favorites, and Discover mixes."),
-                    GuideFeatureItem(R.drawable.ic_heart_filled, "Mood Playlists", "Tap a mood chip (Energize, Relax, Party, Focus, Romance, Drive) to open its mood playlist. Tap Auto-Organize to let the Mood Engine analyze your library and learn from your playlists. Long-press a chip to play it instantly."),
+                    GuideFeatureItem(R.drawable.ic_heart_filled, "Mood Playlists", "Tap a mood chip (Energize, Relax, Party, Focus, Romance, Drive) to open its mood playlist. The Mood Engine automatically analyzes your library in the background and learns from your playlists. Long-press a chip to play it instantly."),
                     GuideFeatureItem(R.drawable.ic_add, "Custom Playlists", "Tap the floating '+' button to create user playlists and organize your audio collection.")
                 )
             )
@@ -152,14 +152,6 @@ class PlaylistsFragment : Fragment(R.layout.fragment_playlists) {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch {
-                    viewModel.moodOrganizeResult.observe(viewLifecycleOwner) { result ->
-                        result?.let {
-                            showOrganizeResult(it)
-                            viewModel.clearMoodOrganizeResult()
-                        }
-                    }
-                }
                 viewModel.playlistsWithTracks.collectLatest { playlists ->
                     // Fetch Insights
                     val appContext = requireContext().applicationContext
@@ -247,10 +239,6 @@ class PlaylistsFragment : Fragment(R.layout.fragment_playlists) {
                 }
             }
         }
-
-        view.findViewById<Chip?>(R.id.chipOrganizeMoods)?.setOnClickListener {
-            organizeMoodPlaylists()
-        }
     }
 
     private data class MoodChip(val key: String, val displayName: String)
@@ -271,29 +259,6 @@ class PlaylistsFragment : Fragment(R.layout.fragment_playlists) {
             .hide(this@PlaylistsFragment)
             .addToBackStack(null)
             .commit()
-    }
-
-    /**
-     * Runs the Mood Engine: classifies unanalyzed tracks (audio + tags +
-     * capped online genre enrichment), learns from the user's playlists, and
-     * reports a summary. Results then power the mood chips and suggestions.
-     */
-    private fun organizeMoodPlaylists() {
-        val allTracks = viewModel.originalTrackList
-        if (allTracks.isEmpty()) {
-            Toast.makeText(requireContext(), R.string.library_loading, Toast.LENGTH_SHORT).show()
-            return
-        }
-        Toast.makeText(requireContext(), R.string.mood_organize_running, Toast.LENGTH_SHORT).show()
-        viewModel.organizeMoodPlaylists()
-    }
-
-    private fun showOrganizeResult(result: com.music.myusiq.domain.usecase.MoodEngine.OrganizeResult) {
-        val msg = getString(
-            R.string.mood_organize_done,
-            result.analyzed, result.classified, result.enrichedOnline, result.playlistsLearned
-        )
-        Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
     }
 
     private fun startMoodPlaylist(moodKey: String, displayName: String) {

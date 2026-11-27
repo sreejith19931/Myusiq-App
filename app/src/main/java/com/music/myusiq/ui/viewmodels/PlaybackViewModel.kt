@@ -104,8 +104,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             metadataResolver = CloudMetadataResolver,
         )
     }
-    private val _moodOrganizeResult = MutableLiveData<MoodEngine.OrganizeResult?>()
-    val moodOrganizeResult: LiveData<MoodEngine.OrganizeResult?> = _moodOrganizeResult
+
     private val metadataUpdateUseCase = MetadataUpdateUseCase(musicRepository, application, viewModelScope)
     private val metadataSanitizerUseCase = MetadataSanitizerUseCase()
     private val audioFingerprintUseCase = AudioFingerprintingUseCase()
@@ -1015,7 +1014,9 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                 // Defer heavy waveform extraction so ExoPlayer gets 100% of I/O priority at playback start
                 delay(750)
 
-                if (entity?.waveformAmplitudes == null) {
+                val waveformUsable = entity?.waveformAmplitudes != null &&
+                    !WaveformExtractor.isSaturated(entity.waveformAmplitudes)
+                if (entity?.waveformAmplitudes == null || !waveformUsable) {
                     val waveform = WaveformExtractor.extractWaveform(getApplication(), songItem.path.toUri())
                     if (waveform != null) {
                         _currentTrackWaveform.value = waveform
@@ -1524,7 +1525,6 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             loadFoldersInternal(force = true)
             startAutoMetadataImprovement()
             startBackgroundWaveformAnalysis()
-            autoClassifyMoodsLocalOnly()
         }
     }
 
@@ -1546,7 +1546,9 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             for (song in tracksToAnalyze) {
                 if (!coroutineContext.isActive) break
                 val entity = libraryEntities[song.id.toString()]
-                if (entity?.waveformAmplitudes == null || entity.energyScore == -1) {
+                val waveformUsable = entity?.waveformAmplitudes != null &&
+                    !WaveformExtractor.isSaturated(entity.waveformAmplitudes)
+                if (entity?.waveformAmplitudes == null || entity.energyScore == -1 || !waveformUsable) {
                     try {
                         val waveform = WaveformExtractor.extractWaveform(getApplication(), song.path.toUri())
                         if (waveform != null) {
@@ -1564,6 +1566,13 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                     delay(100)
                 }
             }
+
+            // Mood classification runs AFTER waveforms exist, so profiles carry
+            // real energy/BPM evidence instead of being written unusable and
+            // never refreshed. Local pass first, then the background worker
+            // finishes the job with online genre enrichment + playlist learning.
+            autoClassifyMoodsLocalOnly()
+            scheduleMoodClassification(enrichOnline = true)
         }
     }
 
@@ -1722,22 +1731,36 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
-     * Full Mood Engine run requested by the user: classification with capped
-     * online genre enrichment plus playlist learning.
+     * Auto-Organize is a background process, not a button: after every
+     * library/waveform pass the Mood Engine runs through WorkManager with
+     * capped online genre enrichment and playlist learning. Re-runs are
+     * cheap because trusted profiles are skipped.
      */
-    fun organizeMoodPlaylists() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val result = try {
-                moodEngine.organize(originalTrackList.toList(), enrichOnline = true, onlineLimit = 25)
-            } catch (e: Exception) {
-                MoodEngine.OrganizeResult(0, 0, 0, 0)
-            }
-            withContext(Dispatchers.Main) { _moodOrganizeResult.value = result }
+    private fun scheduleMoodClassification(enrichOnline: Boolean) {
+        try {
+            val constraints = androidx.work.Constraints.Builder()
+                .setRequiredNetworkType(
+                    if (enrichOnline) androidx.work.NetworkType.CONNECTED
+                    else androidx.work.NetworkType.NOT_REQUIRED
+                )
+                .build()
+            val request = androidx.work.OneTimeWorkRequestBuilder<com.music.myusiq.service.MoodClassificationWorker>()
+                .setInputData(
+                    androidx.work.workDataOf(
+                        com.music.myusiq.service.MoodClassificationWorker.KEY_ENRICH_ONLINE to enrichOnline,
+                        com.music.myusiq.service.MoodClassificationWorker.KEY_ONLINE_LIMIT to 25,
+                    )
+                )
+                .setConstraints(constraints)
+                .build()
+            androidx.work.WorkManager.getInstance(getApplication()).enqueueUniqueWork(
+                "mood_classification",
+                androidx.work.ExistingWorkPolicy.REPLACE,
+                request,
+            )
+        } catch (_: Exception) {
+            // WorkManager unavailable: silent background pass already ran
         }
-    }
-
-    fun clearMoodOrganizeResult() {
-        _moodOrganizeResult.value = null
     }
 
     /** Ranked tracks similar to a playlist's learned profile. */

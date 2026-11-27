@@ -9,6 +9,7 @@ import com.music.myusiq.domain.models.PlaylistWithTracks
 import com.music.myusiq.domain.models.Song
 import com.music.myusiq.utils.CloudMetadataResolver
 import com.music.myusiq.utils.MusicEnergyAnalyzer
+import com.music.myusiq.utils.WaveformExtractor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -59,7 +60,11 @@ class MoodEngine(
         onlineGenre: String?,
         lyrics: String?,
     ): MoodClassifier.TrackSignals {
-        val bpm = if (waveform.isNullOrBlank() || trackEnergy < 1) -1
+        // Energy is only trustworthy when the waveform itself is usable;
+        // saturated garbage (the old extractor bug) must never count as audio.
+        val waveformUsable = !WaveformExtractor.isSaturated(waveform)
+        val energy = if (waveformUsable) trackEnergy else -1
+        val bpm = if (waveform.isNullOrBlank() || !waveformUsable || energy < 1) -1
         else MusicEnergyAnalyzer.estimateBpm(waveform, song.duration.toLong() * 1000L)
 
         val extraTags = onlineGenre?.let { MoodClassifier.tokenizeGenre(it).toSet() } ?: emptySet()
@@ -130,8 +135,20 @@ class MoodEngine(
             val id = song.id.toString()
             val track = tracksById[id]
             val profile = existingProfiles[id]
-            val hasEnergy = (track?.energyScore ?: -1) in 1..10
-            if (profile != null && hasEnergy) {
+
+            // A profile is only trusted when it carries real audio evidence
+            // (energy + bpm). Profiles written before waveform analysis
+            // finished, or from corrupt waveforms, get re-classified.
+            val profileTrusted = profile != null && profile.energyScore in 1..10 && profile.bpm != -1
+            if (profileTrusted) {
+                skipped++
+                continue
+            }
+            val audioUsable = (track?.energyScore ?: -1) in 1..10 &&
+                !WaveformExtractor.isSaturated(track?.waveformAmplitudes)
+            if (!audioUsable && profile != null) {
+                // No new audio evidence yet and a tags-only profile exists:
+                // keep it and avoid churning on every run.
                 skipped++
                 continue
             }
@@ -145,8 +162,10 @@ class MoodEngine(
         for (song in toClassify) {
             val id = song.id.toString()
             val track = tracksById[id]
-            val waveform = track?.waveformAmplitudes
-            val energy = track?.energyScore ?: -1
+            val trackWaveform = track?.waveformAmplitudes
+            val waveformUsable = !WaveformExtractor.isSaturated(trackWaveform)
+            val waveform = if (waveformUsable) trackWaveform else null
+            val energy = if (waveformUsable) (track?.energyScore ?: -1) else -1
             val lyrics = lyricsByPath[song.path]?.rawLyrics
 
             // Online genre enrichment: only for tracks we cannot tag locally,
