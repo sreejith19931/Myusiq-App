@@ -1430,9 +1430,19 @@ class PlaybackService : MediaLibraryService() {
                 val isReplayGainEnabled = p.getBoolean("replaygain_enabled", false)
                 
                 val currentPath = mediaItem?.mediaMetadata?.extras?.getString("path") ?: ""
+                val currentSongId = mediaItem?.mediaMetadata?.extras?.getLong("id") ?: 0L
                 if (isReplayGainEnabled && currentPath.isNotBlank()) {
                     serviceScope.launch(Dispatchers.IO) {
-                        val factor = ReplayGainUtil.getVolumeFactorForFile(currentPath, true)
+                        // No ReplayGain tag in the file? Fall back to the Mood
+                        // Engine's cached RMS waveform so normalization still
+                        // works for tag-less (converted/downloaded) tracks.
+                        val factor = ReplayGainUtil.getVolumeFactorForFile(currentPath, true) {
+                            if (currentSongId > 0L) {
+                                try {
+                                    musicRepository.getTrackByIdSync(currentSongId.toString())?.waveformAmplitudes
+                                } catch (_: Exception) { null }
+                            } else null
+                        }
                         withContext(Dispatchers.Main) {
                             currentReplayGainFactor = factor
                             if (exoPlayer === player && crossfadeAnimator?.isRunning != true) {
