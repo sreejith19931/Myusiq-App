@@ -43,6 +43,13 @@
     <string name="m3u_imported">प्लेलिस्ट आयातित: %1$d ट्रैक मेल खाए, %2$d लाइब्रेरी से गायब</string>
 
     <!-- Mood -->
+        <string name="scrobble_title">ListenBrainz पर स्क्रॉबल करें</string>
+        <string name="scrobble_desc">अपने ListenBrainz प्रोफ़ाइल पर प्ले भेजें (मुफ़्त, ओपन सोर्स)</string>
+        <string name="scrobble_token_title">ListenBrainz टोकन</string>
+        <string name="scrobble_token_message">स्क्रॉबलिंग शुरू करने के लिए listenbrainz.org/profile से अपना यूज़र टोकन पेस्ट करें।</string>
+        <string name="scrobble_token_hint">ListenBrainz यूज़र टोकन</string>
+        <string name="scrobble_token_saved">ListenBrainz जुड़ गया</string>
+        <string name="scrobble_token_invalid">यह टोकन मान्य नहीं है। जाँचकर फिर से कोशिश करें।</string>
     <string name="mood_auto_dj">मूड ऑटो-DJ</string>
     <string name="mood_auto_dj_desc">कतार चलती रहे: जब मूड प्लेलिस्ट खत्म होने लगे, मैचिंग ट्रैक स्वतः जुड़ते हैं</string>
     <string name="mood_preparing">प्लेलिस्ट तैयार हो रही है… मूड इंजन आपके ट्रैक व्यवस्थित कर रहा है</string>
